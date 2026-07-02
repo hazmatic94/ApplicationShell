@@ -1,18 +1,12 @@
 import { useEffect, useRef, useState } from "react";
-import { createPortal } from "react-dom";
 import {
   Button,
-  GameHeaderRail,
+  GameShell,
   HiLoBettingPanel as JokerHiLoBettingPanel,
   MinesBettingPanel as JokerMinesBettingPanel,
-  Navigation,
 } from "@joker/design-system";
 
 const jokerIcon = new URL("../assets/iconJoker.svg", import.meta.url).href;
-const jokerDimmedLogo = new URL("../assets/jokerDimmed.svg", import.meta.url).href;
-const settingsIcon = new URL("../assets/settings-icon.svg", import.meta.url).href;
-const starIcon = new URL("../assets/star_icon.svg", import.meta.url).href;
-const graphIcon = new URL("../assets/graph-icon.svg", import.meta.url).href;
 const infoIcon = new URL("../assets/info.svg", import.meta.url).href;
 const goldIcon = new URL("../assets/gold.png", import.meta.url).href;
 const dynamiteIcon = new URL("../assets/dynamite.png", import.meta.url).href;
@@ -308,7 +302,6 @@ function MinesPage({ onGameChange }) {
   const [shieldActive, setShieldActive] = useState(false);
   const [shieldUsed, setShieldUsed] = useState(false);
   const [cashoutResult, setCashoutResult] = useState(null);
-  const [playArea, setPlayArea] = useState(null);
   const cashoutResetTimeout = useRef(null);
 
   const activeMineCount = clampTileAmount(mines);
@@ -341,17 +334,6 @@ function MinesPage({ onGameChange }) {
 
     openMinesMenu();
     const frameId = window.requestAnimationFrame(openMinesMenu);
-
-    return () => window.cancelAnimationFrame(frameId);
-  }, []);
-
-  useEffect(() => {
-    const updatePlayArea = () => {
-      setPlayArea(document.querySelector(".joker-game-shell-play-area"));
-    };
-
-    updatePlayArea();
-    const frameId = window.requestAnimationFrame(updatePlayArea);
 
     return () => window.cancelAnimationFrame(frameId);
   }, []);
@@ -481,6 +463,20 @@ function MinesPage({ onGameChange }) {
             opacity: 0;
           }
 
+          .joker-game-shell .joker-navigation-body {
+            max-width: none;
+            justify-self: start;
+          }
+
+          .joker-game-shell .joker-navigation--compact .joker-navigation-body {
+            max-width: none;
+          }
+
+          .joker-game-shell .joker-game-shell-stage {
+            width: min(100%, var(--game-shell-inner-max-width));
+            justify-self: center;
+          }
+
           .joker-game-shell .joker-game-shell-play-area {
             grid-template-rows: minmax(0, 1fr) auto;
             grid-template-columns: minmax(0, 3fr) minmax(0, 7fr);
@@ -495,22 +491,39 @@ function MinesPage({ onGameChange }) {
             overflow-y: hidden;
           }
 
+          .joker-game-shell--mines .joker-game-shell-empty-stage {
+            container-type: size;
+          }
+
           .joker-mines-board-area {
+            --mines-board-edge: calc(var(--spacing-40) + var(--spacing-8));
             position: relative;
             display: grid;
             height: 100%;
             min-height: 0;
             place-items: center;
-            padding: clamp(var(--spacing-24), 5vmin, var(--spacing-64));
+            padding: clamp(var(--spacing-16), 3vmin, var(--mines-board-edge));
           }
 
           .joker-mines-grid {
+            --mines-grid-gap: clamp(var(--spacing-8), 1.55cqw, var(--spacing-12));
             display: grid;
-            width: min(760px, 82vmin, calc(100% - var(--spacing-32)));
+            width: min(
+              calc(100cqw - var(--mines-board-edge)),
+              calc(100cqh - var(--mines-board-edge)),
+              760px
+            );
             aspect-ratio: 1;
             grid-template-columns: repeat(5, minmax(0, 1fr));
-            gap: var(--spacing-12);
+            gap: var(--mines-grid-gap);
             overflow: visible;
+          }
+
+          @supports not (width: 1cqw) {
+            .joker-mines-grid {
+              width: min(760px, calc(100% - var(--mines-board-edge)), 82vmin);
+              gap: var(--spacing-12);
+            }
           }
 
           .joker-mines-frame-footer {
@@ -1284,50 +1297,41 @@ function MinesPage({ onGameChange }) {
           }
         `}
       </style>
-      <div className="joker-game-shell joker-game-shell--mines">
-        <Navigation
-          balance={formatBalance(balance)}
-          className="joker-game-shell-navigation"
-          defaultValue={minesNavigationPreset.defaultValue}
-          onValueChange={onGameChange}
-          value={minesNavigationPreset.selectedValue}
-        >
-          <main className="joker-game-shell-stage" aria-label="Game stage">
-            <GameHeaderRail game={minesNavigationPreset.game} />
-            <div className="joker-game-shell-play-area">
-              <aside className="joker-game-shell-betting">
-                <PackagedMinesBettingPanel
-                  betAmount={betAmount}
-                  bettingMode={bettingMode}
-                  currentProfit={currentProfit}
-                  gameInPlay={gameInPlay}
-                  mines={mines}
-                  multiplier={multiplier}
-                  nextMultiplier={nextMultiplier}
-                  nextProfit={nextProfit}
-                  onBetAmountChange={setBetAmount}
-                  onMinesChange={setMines}
-                  onModeChange={setBettingMode}
-                  onPlaceBet={handleBetAction}
-                />
-              </aside>
-              <div className="joker-game-shell-empty-stage" aria-label="Game canvas">
-                <MinesGrid
-                  board={board}
-                  cashoutResult={cashoutResult}
-                  freshRevealedTiles={freshRevealedTiles}
-                  hasBetAmount={hasBetAmount}
-                  multiplier={multiplier}
-                  onTileClick={handleTileClick}
-                  revealedTiles={revealedTiles}
-                  roundStatus={roundStatus}
-                />
-              </div>
-            </div>
-          </main>
-        </Navigation>
-      </div>
-      {playArea && createPortal(<GameShellFooter />, playArea)}
+      <GameShell
+        balance={formatBalance(balance)}
+        className="joker-game-shell--mines"
+        defaultValue={minesNavigationPreset.defaultValue}
+        game={minesNavigationPreset.game}
+        onValueChange={onGameChange}
+        value={minesNavigationPreset.selectedValue}
+        bettingPanel={
+          <PackagedMinesBettingPanel
+            betAmount={betAmount}
+            bettingMode={bettingMode}
+            currentProfit={currentProfit}
+            gameInPlay={gameInPlay}
+            mines={mines}
+            multiplier={multiplier}
+            nextMultiplier={nextMultiplier}
+            nextProfit={nextProfit}
+            onBetAmountChange={setBetAmount}
+            onMinesChange={setMines}
+            onModeChange={setBettingMode}
+            onPlaceBet={handleBetAction}
+          />
+        }
+      >
+        <MinesGrid
+          board={board}
+          cashoutResult={cashoutResult}
+          freshRevealedTiles={freshRevealedTiles}
+          hasBetAmount={hasBetAmount}
+          multiplier={multiplier}
+          onTileClick={handleTileClick}
+          revealedTiles={revealedTiles}
+          roundStatus={roundStatus}
+        />
+      </GameShell>
     </>
   );
 }
@@ -1342,7 +1346,6 @@ function HiloPage({ onGameChange }) {
   ]);
   const [message, setMessage] = useState("");
   const [multiplier, setMultiplier] = useState(1);
-  const [playArea, setPlayArea] = useState(null);
   const [roundStatus, setRoundStatus] = useState("pre-game");
   const [skipAvailable, setSkipAvailable] = useState(true);
 
@@ -1377,17 +1380,6 @@ function HiloPage({ onGameChange }) {
 
     openHiloMenu();
     const frameId = window.requestAnimationFrame(openHiloMenu);
-
-    return () => window.cancelAnimationFrame(frameId);
-  }, []);
-
-  useEffect(() => {
-    const updatePlayArea = () => {
-      setPlayArea(document.querySelector(".joker-game-shell-play-area"));
-    };
-
-    updatePlayArea();
-    const frameId = window.requestAnimationFrame(updatePlayArea);
 
     return () => window.cancelAnimationFrame(frameId);
   }, []);
@@ -1516,6 +1508,20 @@ function HiloPage({ onGameChange }) {
 
           .joker-game-shell .joker-game-header-info svg {
             opacity: 0;
+          }
+
+          .joker-game-shell .joker-navigation-body {
+            max-width: none;
+            justify-self: start;
+          }
+
+          .joker-game-shell .joker-navigation--compact .joker-navigation-body {
+            max-width: none;
+          }
+
+          .joker-game-shell .joker-game-shell-stage {
+            width: min(100%, var(--game-shell-inner-max-width));
+            justify-self: center;
           }
 
           .joker-game-shell .joker-game-shell-play-area {
@@ -1695,6 +1701,9 @@ function HiloPage({ onGameChange }) {
           }
 
           .joker-hilo-main-area {
+            --hilo-side-card-width: 154px;
+            --hilo-main-card-width: 184px;
+            --hilo-card-gap: clamp(var(--spacing-24), 4.5cqw, var(--spacing-48, calc(var(--spacing-40) + var(--spacing-8))));
             display: grid;
             height: 100%;
             min-height: 0;
@@ -1711,10 +1720,11 @@ function HiloPage({ onGameChange }) {
             width: 100%;
             height: 415px;
             min-height: 0;
-            grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+            grid-template-columns: var(--hilo-side-card-width) var(--hilo-main-card-width) var(--hilo-side-card-width);
             align-items: center;
             justify-items: center;
-            gap: var(--spacing-32);
+            justify-content: center;
+            gap: var(--hilo-card-gap);
             border: 0;
             border-radius: 9999px;
             background:
@@ -1722,7 +1732,7 @@ function HiloPage({ onGameChange }) {
               linear-gradient(180deg, var(--color-bg-surface), var(--color-bg-code));
             box-shadow:
               inset 0 0 var(--spacing-64) rgb(0 0 0 / 0.28);
-            padding: 0 clamp(var(--spacing-64), 10vw, 180px);
+            padding: 0 clamp(var(--spacing-24), 4cqw, var(--spacing-64));
           }
 
           .joker-hilo-game-frame::before {
@@ -1773,7 +1783,7 @@ function HiloPage({ onGameChange }) {
             position: relative;
             z-index: 2;
             display: grid;
-            width: 184px;
+            width: var(--hilo-main-card-width);
             height: 260px;
             place-items: center;
             overflow: visible;
@@ -1885,7 +1895,7 @@ function HiloPage({ onGameChange }) {
           .joker-hilo-prediction-card {
             position: relative;
             display: grid;
-            width: 154px;
+            width: var(--hilo-side-card-width);
             height: 220px;
             grid-template-rows: minmax(0, 1fr) 40px;
             justify-items: center;
@@ -1993,6 +2003,17 @@ function HiloPage({ onGameChange }) {
             text-align: center;
           }
 
+          .joker-hilo-stage-choice-stack {
+            position: relative;
+            display: grid;
+            width: 100%;
+          }
+
+          .joker-hilo-stage-choice-stack.has-skip {
+            min-height: 116px;
+            align-items: end;
+          }
+
           .joker-hilo-stage-choice-row {
             display: grid;
             width: 100%;
@@ -2003,6 +2024,31 @@ function HiloPage({ onGameChange }) {
             border: var(--border-width-default) solid var(--joker-black-300);
             border-radius: var(--radius-md, 8px);
             background: var(--joker-black-700);
+          }
+
+          .joker-hilo-stage-choice-row .joker-button {
+            position: relative;
+            z-index: 2;
+          }
+
+          .joker-hilo-stage-skip-button {
+            position: absolute;
+            top: calc((var(--spacing-4) + var(--spacing-2, 2px)) * -1);
+            left: 50%;
+            z-index: 1;
+            width: 240px;
+            border-bottom: 0;
+            border-bottom-right-radius: 0;
+            border-bottom-left-radius: 0;
+            transform: translateX(-50%);
+          }
+
+          .joker-hilo-stage-skip-button:not(:disabled):hover {
+            transform: translateX(-50%) translateY(calc(var(--spacing-2, 2px) * -1));
+          }
+
+          .joker-hilo-stage-skip-button .joker-button__content {
+            gap: var(--button-hi-lo-skip-gap);
           }
 
           .joker-hilo-status {
@@ -2105,55 +2151,46 @@ function HiloPage({ onGameChange }) {
           }
         `}
       </style>
-      <div className="joker-game-shell joker-game-shell--hilo">
-        <Navigation
-          balance={formatBalance(balance)}
-          className="joker-game-shell-navigation"
-          defaultValue={hiloNavigationPreset.defaultValue}
-          onValueChange={onGameChange}
-          value={hiloNavigationPreset.selectedValue}
-        >
-          <main className="joker-game-shell-stage" aria-label="Game stage">
-            <GameHeaderRail game={hiloNavigationPreset.game} />
-            <div className="joker-game-shell-play-area">
-              <aside className="joker-game-shell-betting">
-                <PackagedHiloBettingPanel
-                  betAmount={betAmount}
-                  currentProfit={currentProfit}
-                  gameInPlay={gameInPlay}
-                  higherOdds={formatHiloPercent(odds.higherPercent)}
-                  lowerOdds={formatHiloPercent(odds.lowerPercent)}
-                  onBetAmountChange={setBetAmount}
-                  onPlaceBet={handleBetAction}
-                  onHigherSame={() => handlePrediction("higher")}
-                  onLowerSame={() => handlePrediction("lower")}
-                  onSkipCard={handleSkipCard}
-                  roundStatus={roundStatus}
-                  skipAvailable={skipAvailable}
-                />
-              </aside>
-              <div className="joker-game-shell-empty-stage" aria-label="Game canvas">
-                <HiloStage
-                  currentCard={currentCard}
-                  choicesDisabled={!gameInPlay}
-                  higherMultiplier={higherMultiplier}
-                  higherPercent={odds.higherPercent}
-                  history={history}
-                  lowerMultiplier={lowerMultiplier}
-                  lowerPercent={odds.lowerPercent}
-                  message={message}
-                  onHigherSame={() => handlePrediction("higher")}
-                  onLowerSame={() => handlePrediction("lower")}
-                  onSkipCard={handleSkipCard}
-                  roundStatus={roundStatus}
-                  skipAvailable={skipAvailable}
-                />
-              </div>
-            </div>
-          </main>
-        </Navigation>
-      </div>
-      {playArea && createPortal(<GameShellFooter />, playArea)}
+      <GameShell
+        balance={formatBalance(balance)}
+        className="joker-game-shell--hilo"
+        defaultValue={hiloNavigationPreset.defaultValue}
+        game={hiloNavigationPreset.game}
+        onValueChange={onGameChange}
+        value={hiloNavigationPreset.selectedValue}
+        bettingPanel={
+          <PackagedHiloBettingPanel
+            betAmount={betAmount}
+            currentProfit={currentProfit}
+            gameInPlay={gameInPlay}
+            higherOdds={formatHiloPercent(odds.higherPercent)}
+            lowerOdds={formatHiloPercent(odds.lowerPercent)}
+            onBetAmountChange={setBetAmount}
+            onPlaceBet={handleBetAction}
+            onHigherSame={() => handlePrediction("higher")}
+            onLowerSame={() => handlePrediction("lower")}
+            onSkipCard={handleSkipCard}
+            roundStatus={roundStatus}
+            skipAvailable={skipAvailable}
+          />
+        }
+      >
+        <HiloStage
+          currentCard={currentCard}
+          choicesDisabled={!gameInPlay}
+          higherMultiplier={higherMultiplier}
+          higherPercent={odds.higherPercent}
+          history={history}
+          lowerMultiplier={lowerMultiplier}
+          lowerPercent={odds.lowerPercent}
+          message={message}
+          onHigherSame={() => handlePrediction("higher")}
+          onLowerSame={() => handlePrediction("lower")}
+          onSkipCard={handleSkipCard}
+          roundStatus={roundStatus}
+          skipAvailable={skipAvailable}
+        />
+      </GameShell>
     </>
   );
 }
@@ -2209,7 +2246,7 @@ function HiloStage({
             card={currentCard}
             key={currentCard.id}
             onSkipCard={onSkipCard}
-            skipAvailable={skipAvailable && roundStatus === "active"}
+            skipAvailable={false}
           />
           <HiloPredictionCard
             direction="up"
@@ -2227,21 +2264,35 @@ function HiloStage({
             }
           />
         </div>
-        <div className="joker-hilo-stage-choice-row" aria-label="Hilo choices">
-          <HiloChoiceButton
-            disabled={choicesDisabled}
-            direction="down"
-            label="Lower / Same"
-            onClick={onLowerSame}
-            percentage={formatHiloPercent(lowerPercent)}
-          />
-          <HiloChoiceButton
-            disabled={choicesDisabled}
-            direction="up"
-            label="Higher / Same"
-            onClick={onHigherSame}
-            percentage={formatHiloPercent(higherPercent)}
-          />
+        <div
+          className={`joker-hilo-stage-choice-stack ${
+            roundStatus === "active" && skipAvailable ? "has-skip" : ""
+          }`.trim()}
+        >
+          {roundStatus === "active" && skipAvailable && (
+            <Button className="joker-hilo-stage-skip-button" onClick={onSkipCard} type="button" variant="hi-lo-skip">
+              <span className="joker-hi-lo-skip-label">Skip Card</span>
+              <span className="joker-hi-lo-skip-icon" aria-hidden="true">
+                <ChevronRightIcon />
+              </span>
+            </Button>
+          )}
+          <div className="joker-hilo-stage-choice-row" aria-label="Hilo choices">
+            <HiloChoiceButton
+              disabled={choicesDisabled}
+              direction="down"
+              label="Lower / Same"
+              onClick={onLowerSame}
+              percentage={formatHiloPercent(lowerPercent)}
+            />
+            <HiloChoiceButton
+              disabled={choicesDisabled}
+              direction="up"
+              label="Higher / Same"
+              onClick={onHigherSame}
+              percentage={formatHiloPercent(higherPercent)}
+            />
+          </div>
         </div>
         {message && (
           <div className={`joker-hilo-status joker-hilo-status--${roundStatus}`} role="status" aria-live="polite">
@@ -2480,26 +2531,6 @@ function MinesGrid({
         )}
       </div>
     </section>
-  );
-}
-
-function GameShellFooter() {
-  return (
-    <footer className="joker-mines-frame-footer" aria-label="Game tools">
-      <div className="joker-mines-footer-actions">
-        <button className="joker-mines-footer-button" type="button" aria-label="Settings">
-          <img className="joker-mines-footer-icon" src={settingsIcon} alt="" aria-hidden="true" />
-        </button>
-        <button className="joker-mines-footer-button" type="button" aria-label="Favourite">
-          <img className="joker-mines-footer-icon" src={starIcon} alt="" aria-hidden="true" />
-        </button>
-        <button className="joker-mines-footer-button" type="button" aria-label="Statistics">
-          <img className="joker-mines-footer-icon" src={graphIcon} alt="" aria-hidden="true" />
-        </button>
-      </div>
-      <img className="joker-mines-footer-logo" src={jokerDimmedLogo} alt="" aria-hidden="true" />
-      <span className="joker-mines-footer-spacer" aria-hidden="true" />
-    </footer>
   );
 }
 
