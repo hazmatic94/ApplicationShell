@@ -81,6 +81,16 @@ const hiloNavigationPreset = {
   openMenuLabel: "Originals",
   selectedValue: "hilo",
 };
+const appBase = import.meta.env.BASE_URL.replace(/\/$/, "");
+
+function normalizePathname(pathname) {
+  if (!appBase) return pathname;
+  return pathname.startsWith(appBase) ? pathname.slice(appBase.length) || "/" : pathname;
+}
+
+function withBase(path) {
+  return `${appBase}${path}`;
+}
 
 function clampTileAmount(value) {
   const numericValue = Number(value);
@@ -266,11 +276,12 @@ function updateHiloHistory(history, direction, nextEntry) {
 
 export function App() {
   const [pathname, setPathname] = useState(() =>
-    typeof window === "undefined" ? "/" : window.location.pathname
+    typeof window === "undefined" ? "/" : normalizePathname(window.location.pathname)
   );
 
   useEffect(() => {
-    const handleLocationChange = () => setPathname(window.location.pathname);
+    const handleLocationChange = () =>
+      setPathname(normalizePathname(window.location.pathname));
 
     window.addEventListener("popstate", handleLocationChange);
 
@@ -278,14 +289,15 @@ export function App() {
   }, []);
 
   function navigateToGame(nextValue) {
-    const nextPath = nextValue === "hilo" ? "/hilo" : nextValue === "mines" ? "/" : null;
+    const nextPath = nextValue === "hilo" ? withBase("/hilo") : nextValue === "mines" ? withBase("/") : null;
+    const normalizedNextPath = nextValue === "hilo" ? "/hilo" : nextValue === "mines" ? "/" : null;
 
-    if (!nextPath || window.location.pathname === nextPath) {
+    if (!nextPath || normalizePathname(window.location.pathname) === normalizedNextPath) {
       return;
     }
 
     window.history.pushState({}, "", nextPath);
-    setPathname(nextPath);
+    setPathname(normalizedNextPath);
   }
 
   if (pathname === "/hilo") {
