@@ -14,11 +14,17 @@ export const navigationIconAssets = {
   rewards: new URL("../../assets/nav-icons/rewards.svg", import.meta.url).href,
 };
 
+const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
+
+function withBase(path) {
+  return `${basePath}${path}`;
+}
+
 export const navigationItemRegistry = {
-  home: { label: "Home", icon: "home", href: "/home", section: "home" },
-  favourites: { label: "Favourites", icon: "favourites", href: "/favourites", section: "home" },
-  recentlyPlayed: { label: "Recently Played", icon: "recently-played", href: "/recently-played", section: "home" },
-  newReleases: { label: "New Releases", icon: "new-releases", href: "/new-releases", section: "home" },
+  home: { label: "Home", icon: "home", href: withBase("/home"), section: "home" },
+  favourites: { label: "Favourites", icon: "favourites", href: withBase("/favourites"), section: "home" },
+  recentlyPlayed: { label: "Recently Played", icon: "recently-played", href: withBase("/recently-played"), section: "home" },
+  newReleases: { label: "New Releases", icon: "new-releases", href: withBase("/new-releases"), section: "home" },
   originals: { label: "Originals", icon: "sparkles", section: "games" },
   crash: { label: "Crash", icon: "crash", value: "crash", section: "games" },
   chickenCross: { label: "Chicken Cross", icon: "chicken-cross", value: "chicken-cross", section: "games" },
@@ -27,11 +33,11 @@ export const navigationItemRegistry = {
   tower: { label: "Tower", icon: "tower", value: "tower", section: "games" },
   casino: { label: "Casino", icon: "casino", section: "games" },
   promotions: { label: "Promotions", icon: "gift", section: "games" },
-  soccer: { label: "Soccer", icon: "soccer", href: "/sports/soccer", section: "games" },
-  liveSupport: { label: "Live Support", icon: "live-support", href: "/support", section: "misc" },
-  rewards: { label: "Rewards", icon: "rewards", href: "/rewards", section: "misc" },
-  logout: { label: "Log Out", icon: "log-out", href: "/logout", section: "account", tone: "danger" },
-  wallet: { label: "Wallet", icon: "wallet", href: "/wallet", section: "topRail" },
+  soccer: { label: "Soccer", icon: "soccer", href: withBase("/sports/soccer"), section: "games" },
+  liveSupport: { label: "Live Support", icon: "live-support", href: withBase("/support"), section: "misc" },
+  rewards: { label: "Rewards", icon: "rewards", href: withBase("/rewards"), section: "misc" },
+  logout: { label: "Log Out", icon: "log-out", href: withBase("/logout"), section: "account", tone: "danger" },
+  wallet: { label: "Wallet", icon: "wallet", href: withBase("/wallet"), section: "topRail" },
   notifications: { label: "Notifications", icon: "bell", section: "topRail" },
   messages: { label: "Messages", icon: "message-square", section: "topRail" },
 };

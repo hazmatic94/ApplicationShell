@@ -178,10 +178,25 @@
     "@jridgewell/sourcemap-codec" "^1.5.0"
     "@jridgewell/trace-mapping" "^0.3.24"
 
+<<<<<<< HEAD
 "@jridgewell/remapping@^2.3.5":
   version "2.3.5"
   resolved "https://registry.npmjs.org/@jridgewell/remapping/-/remapping-2.3.5.tgz"
   integrity sha512-LI9u/+laYG4Ds1TDKSJW2YPrIlcVYOwi2fUC6xB43lueCjgxV4lffOCZCtYFiH6TNOX+tQKXx97T4IKHbhyHEQ==
+=======
+"@joker/design-system@https://github.com/mjprod/DesignSystemGames.git#main":
+  version: 0.1.12
+  resolution: "@joker/design-system@https://github.com/mjprod/DesignSystemGames.git#commit=5575c0abf5ee16d087df161533c1fb9d53dd2b71"
+  peerDependencies:
+    react: ">=18"
+  checksum: 10c0/522b5c49bfa405c93416d3c5cc1c0492e4b34ae41c9f54e7b5c2acc3bdc1b80bfa8c7fcf8f3f7d449789b2c6289a315d76291c1c031d8a849e1e562570797693
+  languageName: node
+  linkType: hard
+
+"@jridgewell/gen-mapping@npm:^0.3.12, @jridgewell/gen-mapping@npm:^0.3.5":
+  version: 0.3.13
+  resolution: "@jridgewell/gen-mapping@npm:0.3.13"
+>>>>>>> 08d95e324a8b2d4312d41dbd3fc62a7c3d2c1e90
   dependencies:
     "@jridgewell/gen-mapping" "^0.3.5"
     "@jridgewell/trace-mapping" "^0.3.24"
@@ -440,7 +455,19 @@ react-refresh@^0.17.0:
   resolved "https://registry.npmjs.org/react/-/react-18.3.1.tgz"
   integrity sha512-wS+hAgJShR0KhEvPJArfuPVN1+Hz1t0Y6n5jLrGQbkb4urgPE/0Rve+1kMB1v/oWgHgm4WIcV+i7F2pTVj+2iQ==
   dependencies:
+<<<<<<< HEAD
     loose-envify "^1.1.0"
+=======
+    "@joker/design-system": "https://github.com/mjprod/DesignSystemGames.git#main"
+    "@vitejs/plugin-react": "npm:^4.3.4"
+    lucide-react: "npm:^0.468.0"
+    react: "npm:^18.3.1"
+    react-dom: "npm:^18.3.1"
+    typescript: "npm:^5.7.2"
+    vite: "npm:^6.0.7"
+  languageName: unknown
+  linkType: soft
+>>>>>>> 08d95e324a8b2d4312d41dbd3fc62a7c3d2c1e90
 
 rollup@^4.34.9:
   version "4.62.2"
