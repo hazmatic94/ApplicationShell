@@ -27,7 +27,7 @@ jobs:
           git config --global url."https://${{ secrets.PRIVATE_REPO_TOKEN }}@github.com/".insteadOf "https://github.com/"
 
       - name: Install dependencies
-        run: yarn install --immutable
+        run: yarn install
 
       - name: Build GameShell
         run: yarn build
