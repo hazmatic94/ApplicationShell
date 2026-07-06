@@ -216,12 +216,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@esbuild/android-arm64@npm:0.25.12":
-  version: 0.25.12
-  resolution: "@esbuild/android-arm64@npm:0.25.12"
-  conditions: os=android & cpu=arm64
-  languageName: node
-  linkType: hard
+"@joker/design-system@file:../Design System/joker-design-system-0.1.18.tgz":
+  version "0.1.18"
+  resolved "file:../Design System/joker-design-system-0.1.18.tgz"
+  integrity sha512-9FBF9QG7R+r/QAjnCx6Y9mEWnH4qMs7nl7DwugEH+N1jhGNGg3DImjWsEUdyXqaeeHAPRdNG3a4zmxhVnhqnkQ==
 
 "@esbuild/android-arm@npm:0.25.12":
   version: 0.25.12
@@ -400,18 +398,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@joker/design-system@https://github.com/mjprod/DesignSystemGames.git#main":
-  version: 0.1.18
-  resolution: "@joker/design-system@https://github.com/mjprod/DesignSystemGames.git#commit=95b12cabd0bc037acdf0aebbf5507cee04ff2a5c"
-  peerDependencies:
-    react: ">=18"
-  checksum: 10c0/d37ae25e44c0283d4f02bb525f5f44656b98d373bcaf4c3576740d6f33ece6d19fa239a4ba16ad157e9fda47ff455875246ed81c46cabd934db865b4298b9fac
-  languageName: node
-  linkType: hard
-
-"@jridgewell/gen-mapping@npm:^0.3.12, @jridgewell/gen-mapping@npm:^0.3.5":
-  version: 0.3.13
-  resolution: "@jridgewell/gen-mapping@npm:0.3.13"
+"@jridgewell/remapping@^2.3.5":
+  version "2.3.5"
+  resolved "https://registry.npmjs.org/@jridgewell/remapping/-/remapping-2.3.5.tgz"
+  integrity sha512-LI9u/+laYG4Ds1TDKSJW2YPrIlcVYOwi2fUC6xB43lueCjgxV4lffOCZCtYFiH6TNOX+tQKXx97T4IKHbhyHEQ==
   dependencies:
     "@jridgewell/sourcemap-codec": "npm:^1.5.0"
     "@jridgewell/trace-mapping": "npm:^0.3.24"
@@ -915,15 +905,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "game-shell@workspace:."
   dependencies:
-    "@joker/design-system": "https://github.com/mjprod/DesignSystemGames.git#main"
-    "@vitejs/plugin-react": "npm:^4.3.4"
-    lucide-react: "npm:^0.468.0"
-    react: "npm:^18.3.1"
-    react-dom: "npm:^18.3.1"
-    typescript: "npm:^5.7.2"
-    vite: "npm:^6.0.7"
-  languageName: unknown
-  linkType: soft
+    loose-envify "^1.1.0"
 
 "gensync@npm:^1.0.0-beta.2":
   version: 1.0.0-beta.2
