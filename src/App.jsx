@@ -1,10 +1,14 @@
 import { useEffect, useRef, useState } from "react";
-import { Button } from "../node_modules/@joker/design-system/dist/components/Button/Button.js";
-import { CrashBettingPanel as JokerCrashBettingPanel } from "../node_modules/@joker/design-system/dist/components/CrashBettingPanel/CrashBettingPanel.js";
-import { GameShell } from "../node_modules/@joker/design-system/dist/components/GameShell/GameShell.js";
-import { HiLoBettingPanel as JokerHiLoBettingPanel } from "../node_modules/@joker/design-system/dist/components/HiLoBettingPanel/HiLoBettingPanel.js";
-import { MinesBettingPanel as JokerMinesBettingPanel } from "../node_modules/@joker/design-system/dist/components/MinesBettingPanel/MinesBettingPanel.js";
-import { WinCard } from "../node_modules/@joker/design-system/dist/components/WinCard/WinCard.js";
+import {
+  Button,
+  CocoHutBettingPanel as JokerCocoHutBettingPanel,
+  CrashBettingPanel as JokerCrashBettingPanel,
+  GameShell,
+  HiLoBettingPanel as JokerHiLoBettingPanel,
+  LossCard,
+  MinesBettingPanel as JokerMinesBettingPanel,
+  WinCard,
+} from "@joker/design-system";
 
 const jokerIcon = new URL("../assets/iconJoker.svg", import.meta.url).href;
 const infoIcon = new URL("../assets/info.svg", import.meta.url).href;
@@ -87,6 +91,18 @@ const crashNavigationPreset = {
   game: { label: "Crash", icon: "crash" },
   openMenuLabel: "Originals",
   selectedValue: "crash",
+};
+const cocoHutNavigationPreset = {
+  defaultValue: "coco-hut",
+  game: { label: "CocoHut", icon: "coco-hut" },
+  openMenuLabel: "Originals",
+  selectedValue: "coco-hut",
+};
+const gameRouteMap = {
+  "coco-hut": "/coco-hut",
+  crash: "/crash",
+  hilo: "/hilo",
+  mines: "/",
 };
 const appBase = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -287,6 +303,154 @@ function updateHiloHistory(history, direction, nextEntry) {
   ];
 }
 
+function MobileShellScrollFix() {
+  return (
+    <style>
+      {`
+        .joker-game-shell {
+          --game-shell-inner-game-height: clamp(620px, calc(100dvh - 150px), 780px);
+        }
+
+        .joker-game-shell .joker-game-shell-empty-stage > * {
+          min-height: 100%;
+        }
+
+        @media (min-width: 1024px) {
+          .joker-game-shell .joker-page-wrapper {
+            justify-items: center;
+          }
+
+          .joker-game-shell .joker-page-wrapper > .joker-game-inner.joker-game-shell-stage {
+            width: min(100%, 1400px) !important;
+            justify-self: center !important;
+          }
+        }
+
+        @media (max-width: 1023px) {
+          html:has(.joker-game-shell),
+          body:has(.joker-game-shell) {
+            min-height: 100%;
+            overflow-y: auto;
+          }
+
+          body:has(.joker-game-shell):not(:has(.app-shell)) {
+            overflow-y: auto;
+          }
+
+          #root:has(.joker-game-shell) {
+            min-height: 100dvh;
+          }
+
+          .joker-game-shell {
+            --game-shell-inner-game-height: clamp(520px, 72dvh, 640px);
+            height: auto;
+            min-height: 100dvh;
+            overflow: visible;
+          }
+
+          .joker-game-shell .joker-game-shell-empty-stage {
+            height: var(--game-shell-inner-game-height);
+            min-height: var(--game-shell-inner-game-height);
+          }
+
+          .joker-game-shell .joker-navigation-shell {
+            min-height: 100dvh;
+            height: auto;
+          }
+
+          .joker-game-shell .joker-navigation-mobile-content {
+            display: block;
+            height: auto;
+            min-height: 0;
+            overflow: visible;
+          }
+
+          .joker-game-shell .joker-navigation-mobile-content .joker-page-wrapper {
+            height: auto;
+            min-height: 0;
+          }
+
+          .joker-game-shell .joker-navigation-mobile-content .joker-page-wrapper > .joker-game-inner,
+          .joker-game-shell .joker-navigation-mobile-content .joker-game-shell-stage {
+            height: auto;
+            min-height: 0;
+            overflow: visible;
+          }
+
+          .joker-game-shell .joker-navigation-mobile-content .joker-game-shell-play-area {
+            display: flex;
+            min-height: 0;
+            flex-direction: column;
+          }
+
+          .joker-game-shell .joker-navigation-mobile-content .joker-game-shell-empty-stage,
+          .joker-game-shell .joker-navigation-mobile-content .joker-game-shell-betting {
+            width: 100%;
+            min-height: var(--game-shell-inner-game-height);
+          }
+
+          .joker-game-shell .joker-navigation-mobile-content .joker-game-shell-empty-stage {
+            height: var(--game-shell-inner-game-height);
+          }
+
+          .joker-game-shell .joker-navigation-mobile-content .joker-game-shell-betting {
+            order: 2;
+            min-height: 0;
+            overflow: visible;
+          }
+
+          .joker-game-shell .joker-navigation-mobile-content .joker-betting-panel {
+            width: 100%;
+            min-width: 0;
+            min-height: auto;
+            border-right: 0;
+            border-top: var(--border-width-default) solid var(--joker-black-300);
+          }
+
+          .joker-game-shell--hilo .joker-navigation-mobile-content .joker-hilo-betting-panel {
+            display: grid;
+            grid-template-rows: auto auto auto;
+            align-content: start;
+            gap: var(--spacing-16);
+            padding: var(--spacing-24);
+          }
+
+          .joker-game-shell--hilo .joker-navigation-mobile-content .joker-hilo-betting-panel > .joker-betting-submit-group {
+            order: 1;
+          }
+
+          .joker-game-shell--hilo .joker-navigation-mobile-content .joker-hilo-betting-panel > .joker-hilo-betting-submit-spacer {
+            display: none;
+          }
+
+          .joker-game-shell--hilo .joker-navigation-mobile-content .joker-hilo-betting-panel > .joker-betting-divider {
+            order: 2;
+          }
+
+          .joker-game-shell--hilo .joker-navigation-mobile-content .joker-hilo-betting-panel > .joker-hilo-betting-main {
+            order: 3;
+          }
+
+          .joker-game-shell--hilo .joker-navigation-mobile-content .joker-hilo-betting-panel .joker-hilo-betting-main {
+            gap: var(--spacing-16);
+          }
+
+          .joker-game-shell--hilo .joker-navigation-mobile-content .joker-hilo-betting-panel .joker-hilo-betting-actions,
+          .joker-game-shell--hilo .joker-navigation-mobile-content .joker-hilo-betting-panel .joker-hilo-betting-main .joker-betting-divider,
+          .joker-game-shell--hilo .joker-navigation-mobile-content .joker-hilo-betting-panel .joker-hilo-betting-main .joker-betting-fields > button {
+            display: none;
+          }
+
+          .joker-game-shell--hilo .joker-navigation-mobile-content .joker-hilo-betting-panel .joker-betting-fields {
+            gap: var(--spacing-16);
+          }
+
+        }
+      `}
+    </style>
+  );
+}
+
 export function App() {
   const [pathname, setPathname] = useState(() =>
     typeof window === "undefined" ? "/" : normalizePathname(window.location.pathname)
@@ -302,15 +466,8 @@ export function App() {
   }, []);
 
   function navigateToGame(nextValue) {
-    const nextPath = nextValue === "hilo" ? withBase("/hilo") : nextValue === "mines" ? withBase("/") : null;
-    const normalizedNextPath =
-      nextValue === "hilo"
-        ? "/hilo"
-        : nextValue === "crash"
-          ? "/crash"
-          : nextValue === "mines"
-            ? "/"
-            : null;
+    const normalizedNextPath = gameRouteMap[nextValue] ?? null;
+    const nextPath = normalizedNextPath ? withBase(normalizedNextPath) : null;
 
     if (!nextPath || normalizePathname(window.location.pathname) === normalizedNextPath) {
       return;
@@ -321,14 +478,38 @@ export function App() {
   }
 
   if (pathname === "/hilo") {
-    return <HiloPage onGameChange={navigateToGame} />;
+    return (
+      <>
+        <MobileShellScrollFix />
+        <HiloPage onGameChange={navigateToGame} />
+      </>
+    );
   }
 
   if (pathname === "/crash") {
-    return <CrashPage onGameChange={navigateToGame} />;
+    return (
+      <>
+        <MobileShellScrollFix />
+        <CrashPage onGameChange={navigateToGame} />
+      </>
+    );
   }
 
-  return <MinesPage onGameChange={navigateToGame} />;
+  if (pathname === "/coco-hut") {
+    return (
+      <>
+        <MobileShellScrollFix />
+        <CocoHutPage onGameChange={navigateToGame} />
+      </>
+    );
+  }
+
+  return (
+    <>
+      <MobileShellScrollFix />
+      <MinesPage onGameChange={navigateToGame} />
+    </>
+  );
 }
 
 function MinesPage({ onGameChange }) {
@@ -539,7 +720,7 @@ function MinesPage({ onGameChange }) {
 
           .joker-game-shell .joker-navigation-body {
             max-width: none;
-            justify-self: start;
+            justify-self: center;
           }
 
           .joker-game-shell .joker-navigation--compact .joker-navigation-body {
@@ -547,8 +728,8 @@ function MinesPage({ onGameChange }) {
           }
 
           .joker-game-shell .joker-game-shell-stage {
-            width: min(100%, var(--game-shell-inner-max-width));
-            justify-self: center;
+            width: 100%;
+            justify-self: stretch;
           }
 
           .joker-game-shell .joker-game-shell-betting,
@@ -556,42 +737,52 @@ function MinesPage({ onGameChange }) {
             min-height: 0;
           }
 
-          .joker-game-shell--mines .joker-game-shell-betting {
-            overflow-y: hidden;
-          }
-
-          .joker-game-shell--mines .joker-game-shell-empty-stage {
-            container-type: size;
+          @media (min-width: 1024px) {
+            .joker-game-shell--mines .joker-game-shell-betting {
+              overflow-y: hidden;
+            }
           }
 
           .joker-mines-board-area {
             --mines-board-edge: calc(var(--spacing-40) + var(--spacing-8));
+            --mines-board-padding: clamp(var(--spacing-16), 3vmin, var(--mines-board-edge));
             position: relative;
             display: grid;
             height: 100%;
             min-height: 0;
             place-items: center;
-            padding: clamp(var(--spacing-16), 3vmin, var(--mines-board-edge));
+            padding: var(--mines-board-padding);
+            overflow: hidden;
           }
 
           .joker-mines-grid {
-            --mines-grid-gap: clamp(var(--spacing-8), 1.55cqw, var(--spacing-12));
+            --mines-grid-gap: clamp(var(--spacing-8), 1.25vw, var(--spacing-12));
             display: grid;
-            width: min(
-              calc(100cqw - var(--mines-board-edge)),
-              calc(100cqh - var(--mines-board-edge)),
-              760px
-            );
+            width: min(100%, var(--mines-board-size, 760px));
             aspect-ratio: 1;
             grid-template-columns: repeat(5, minmax(0, 1fr));
             gap: var(--mines-grid-gap);
             overflow: visible;
           }
 
-          @supports not (width: 1cqw) {
+          .joker-game-shell .joker-navigation-mobile-content .joker-mines-stage {
+            height: auto;
+            min-height: 0;
+            overflow: visible;
+          }
+
+          .joker-game-shell .joker-navigation-mobile-content .joker-mines-board-area {
+            min-height: calc(var(--mines-board-size, 320px) + (var(--mines-board-padding) * 2));
+            overflow: visible;
+          }
+
+          @media (max-width: 767px) {
+            .joker-mines-board-area {
+              --mines-board-padding: var(--spacing-12);
+            }
+
             .joker-mines-grid {
-              width: min(760px, calc(100% - var(--mines-board-edge)), 82vmin);
-              gap: var(--spacing-12);
+              --mines-grid-gap: var(--spacing-8);
             }
           }
 
@@ -678,7 +869,7 @@ function MinesPage({ onGameChange }) {
               transform var(--motion-fast) var(--ease-standard);
           }
 
-          .joker-mines-grid.is-bet-ready .joker-mines-tile:not(.joker-mines-tile--revealed) {
+          .joker-mines-grid.is-round-active .joker-mines-tile:not(.joker-mines-tile--revealed) {
             cursor: pointer;
           }
 
@@ -727,12 +918,12 @@ function MinesPage({ onGameChange }) {
             transition: opacity var(--motion-fast) var(--ease-standard);
           }
 
-          .joker-mines-grid.is-bet-ready .joker-mines-tile--default:not(.joker-mines-tile--revealed) .joker-mines-tile-surface {
+          .joker-mines-grid.is-round-active .joker-mines-tile--default:not(.joker-mines-tile--revealed) .joker-mines-tile-surface {
             border-color: var(--joker-black-200);
             box-shadow: none;
           }
 
-          .joker-mines-grid.is-bet-ready .joker-mines-tile--default:not(.joker-mines-tile--revealed) .joker-mines-tile-surface::before {
+          .joker-mines-grid.is-round-active .joker-mines-tile--default:not(.joker-mines-tile--revealed) .joker-mines-tile-surface::before {
             opacity: 0;
           }
 
@@ -777,17 +968,17 @@ function MinesPage({ onGameChange }) {
               drop-shadow(0 var(--spacing-4) var(--spacing-8) rgb(0 0 0 / 0.4));
           }
 
-          .joker-mines-grid.is-bet-ready .joker-mines-tile:not(.joker-mines-tile--revealed):hover {
+          .joker-mines-grid.is-round-active .joker-mines-tile:not(.joker-mines-tile--revealed):hover {
             transform: translateY(calc(var(--border-width-default) * -1));
           }
 
-          .joker-mines-grid.is-bet-ready .joker-mines-tile:not(.joker-mines-tile--revealed):hover .joker-mines-tile-surface {
+          .joker-mines-grid.is-round-active .joker-mines-tile:not(.joker-mines-tile--revealed):hover .joker-mines-tile-surface {
             border-color: color-mix(in srgb, var(--joker-gold-400) 38%, var(--joker-black-300));
             background: color-mix(in srgb, var(--joker-black-700) 88%, var(--joker-gold-1000));
             box-shadow: none;
           }
 
-          .joker-mines-grid.is-bet-ready .joker-mines-tile--dynamite:not(.joker-mines-tile--revealed):hover .joker-mines-tile-surface,
+          .joker-mines-grid.is-round-active .joker-mines-tile--dynamite:not(.joker-mines-tile--revealed):hover .joker-mines-tile-surface,
           .joker-mines-tile--dynamite.joker-mines-tile--fresh-reveal .joker-mines-tile-surface {
             border-color: rgb(255 70 70 / 0.75);
             background:
@@ -1418,7 +1609,6 @@ function MinesPage({ onGameChange }) {
           board={board}
           cashoutResult={cashoutResult}
           freshRevealedTiles={freshRevealedTiles}
-          hasBetAmount={hasBetAmount}
           lossResult={lossResult}
           multiplier={multiplier}
           onResultClose={handleResultClose}
@@ -1607,7 +1797,7 @@ function HiloPage({ onGameChange }) {
 
           .joker-game-shell .joker-navigation-body {
             max-width: none;
-            justify-self: start;
+            justify-self: center;
           }
 
           .joker-game-shell .joker-navigation--compact .joker-navigation-body {
@@ -1615,8 +1805,8 @@ function HiloPage({ onGameChange }) {
           }
 
           .joker-game-shell .joker-game-shell-stage {
-            width: min(100%, var(--game-shell-inner-max-width));
-            justify-self: center;
+            width: 100%;
+            justify-self: stretch;
           }
 
           .joker-game-shell .joker-game-shell-betting,
@@ -1791,14 +1981,18 @@ function HiloPage({ onGameChange }) {
           }
 
           .joker-hilo-main-area {
-            --hilo-side-card-width: 154px;
-            --hilo-main-card-width: 184px;
-            --hilo-card-gap: clamp(var(--spacing-24), 4.5cqw, var(--spacing-48, calc(var(--spacing-40) + var(--spacing-8))));
+            --hilo-side-card-width: clamp(132px, 22cqw, 154px);
+            --hilo-main-card-width: clamp(160px, 27cqw, 184px);
+            --hilo-card-gap: clamp(var(--spacing-8), 2cqw, var(--spacing-24));
             display: grid;
+            width: 100%;
+            max-width: 100%;
             height: 100%;
+            box-sizing: border-box;
+            min-width: 0;
             min-height: 0;
-            grid-template-rows: auto auto;
-            align-content: center;
+            grid-template-rows: minmax(0, 1fr) auto;
+            align-content: stretch;
             gap: calc(var(--spacing-32) + var(--spacing-8));
             padding: var(--spacing-24);
           }
@@ -1808,7 +2002,10 @@ function HiloPage({ onGameChange }) {
             isolation: isolate;
             display: grid;
             width: 100%;
+            max-width: 100%;
             height: 415px;
+            box-sizing: border-box;
+            min-width: 0;
             min-height: 0;
             grid-template-columns: var(--hilo-side-card-width) var(--hilo-main-card-width) var(--hilo-side-card-width);
             align-items: center;
@@ -1816,24 +2013,16 @@ function HiloPage({ onGameChange }) {
             justify-content: center;
             gap: var(--hilo-card-gap);
             border: 0;
-            border-radius: 9999px;
-            background:
-              radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--joker-gold-400) 3%, transparent), transparent 36%),
-              linear-gradient(180deg, var(--color-bg-surface), var(--color-bg-code));
-            box-shadow:
-              inset 0 0 var(--spacing-64) rgb(0 0 0 / 0.28);
-            padding: 0 clamp(var(--spacing-24), 4cqw, var(--spacing-64));
+            border-radius: 0;
+            background: transparent;
+            box-shadow: none;
+            padding: 0 clamp(var(--spacing-12), 2cqw, var(--spacing-24));
+            align-self: center;
           }
 
           .joker-hilo-game-frame::before {
-            position: absolute;
-            inset: 0;
-            z-index: 0;
-            border: 2px dashed var(--color-border-default);
-            border-radius: inherit;
-            background: transparent;
-            content: "";
-            pointer-events: none;
+            display: none;
+            content: none;
           }
 
           .joker-hilo-main-card-wrap {
@@ -2097,6 +2286,10 @@ function HiloPage({ onGameChange }) {
             position: relative;
             display: grid;
             width: 100%;
+            max-width: 100%;
+            box-sizing: border-box;
+            min-width: 0;
+            align-self: end;
           }
 
           .joker-hilo-stage-choice-stack.has-skip {
@@ -2107,6 +2300,9 @@ function HiloPage({ onGameChange }) {
           .joker-hilo-stage-choice-row {
             display: grid;
             width: 100%;
+            max-width: 100%;
+            box-sizing: border-box;
+            min-width: 0;
             grid-template-columns: repeat(2, minmax(0, 1fr));
             gap: var(--spacing-12);
             padding: var(--spacing-12);
@@ -2119,6 +2315,8 @@ function HiloPage({ onGameChange }) {
           .joker-hilo-stage-choice-row .joker-button {
             position: relative;
             z-index: 2;
+            width: 100%;
+            min-width: 0;
           }
 
           .joker-hilo-stage-skip-button {
@@ -2239,6 +2437,168 @@ function HiloPage({ onGameChange }) {
             grid-row: 1;
             min-width: 0;
           }
+
+          @media (max-width: 767px) {
+            .joker-hilo-stage {
+              height: auto;
+              min-height: 0;
+              grid-template-rows: auto auto;
+              overflow: visible;
+            }
+
+            .joker-hilo-history-row {
+              height: 80px;
+              min-height: 80px;
+              border-bottom: 0;
+              padding: 0 var(--spacing-16);
+            }
+
+            .joker-hilo-history-track {
+              padding-top: var(--spacing-12);
+            }
+
+            .joker-hilo-main-area {
+              --hilo-side-card-width: clamp(84px, 25vw, 100px);
+              --hilo-main-card-width: clamp(110px, 33vw, 130px);
+              --hilo-card-gap: var(--spacing-8);
+              height: 100%;
+              grid-template-rows: minmax(0, 1fr) auto;
+              align-content: stretch;
+              gap: var(--spacing-24);
+              padding: var(--spacing-16) var(--spacing-8);
+            }
+
+            .joker-hilo-game-frame {
+              height: auto;
+              grid-template-columns: var(--hilo-side-card-width) var(--hilo-main-card-width) var(--hilo-side-card-width);
+              grid-auto-rows: auto;
+              align-items: end;
+              justify-content: center;
+              gap: var(--hilo-card-gap);
+              padding: 0;
+            }
+
+            .joker-hilo-game-frame > .joker-hilo-prediction-group {
+              transform: none;
+            }
+
+            .joker-hilo-game-frame > .joker-hilo-prediction-group:first-child {
+              grid-column: auto;
+              grid-row: auto;
+            }
+
+            .joker-hilo-game-frame > .joker-hilo-prediction-group:last-child {
+              grid-column: auto;
+              grid-row: auto;
+            }
+
+            .joker-hilo-main-card-wrap {
+              grid-column: auto;
+              grid-row: auto;
+              padding-bottom: var(--spacing-20);
+            }
+
+            .joker-hilo-main-card-stack {
+              width: var(--hilo-main-card-width);
+              height: var(--spacing-28);
+            }
+
+            .joker-hilo-main-card {
+              height: 200px;
+            }
+
+            .joker-hilo-main-card-face {
+              gap: var(--spacing-16);
+            }
+
+            .joker-hilo-main-card-rank {
+              font-size: 68px;
+            }
+
+            .joker-hilo-main-card-suit {
+              width: 52px;
+              height: 52px;
+            }
+
+            .joker-hilo-main-card-skip {
+              right: calc(var(--spacing-16) * -1);
+              width: 60px;
+              height: 36px;
+            }
+
+            .joker-hilo-prediction-card {
+              width: var(--hilo-side-card-width);
+              height: 132px;
+              grid-template-rows: minmax(0, 1fr) 30px;
+              padding: var(--spacing-12) var(--spacing-8) var(--spacing-8);
+            }
+
+            .joker-hilo-prediction-main {
+              gap: var(--spacing-4);
+            }
+
+            .joker-hilo-prediction-icon {
+              width: 18px;
+              height: 18px;
+            }
+
+            .joker-hilo-prediction-copy {
+              grid-template-rows: 16px var(--border-width-default) 16px;
+              gap: var(--spacing-4);
+              font-size: 10px;
+            }
+
+            .joker-hilo-prediction-label {
+              height: 16px;
+            }
+
+            .joker-hilo-prediction-divider {
+              width: 40px;
+            }
+
+            .joker-hilo-prediction-multiplier {
+              height: 30px;
+            }
+
+            .joker-hilo-prediction-x,
+            .joker-hilo-prediction-number {
+              font-size: 14px;
+            }
+
+            .joker-hilo-prediction-support {
+              width: 100%;
+              font-size: 10px;
+            }
+
+            .joker-hilo-stage-choice-stack.has-skip {
+              min-height: auto;
+              padding-top: calc(var(--spacing-64) - var(--spacing-8));
+            }
+
+            .joker-hilo-stage-choice-row {
+              position: relative;
+              z-index: 2;
+              grid-template-columns: 1fr;
+              gap: var(--spacing-16);
+              border-radius: calc(var(--radius-md, 8px) + var(--radius-md, 8px));
+              padding: var(--spacing-16);
+            }
+
+            .joker-hilo-stage-skip-button {
+              top: 0;
+              z-index: 1;
+              width: fit-content;
+              min-width: 0;
+              height: calc(var(--spacing-64) + var(--spacing-8));
+              padding-right: var(--spacing-32);
+              padding-left: var(--spacing-32);
+              transform: translateX(-50%);
+            }
+
+            .joker-hilo-stage-skip-button:not(:disabled):hover {
+              transform: translateX(-50%) translateY(calc(var(--spacing-2, 2px) * -1));
+            }
+          }
         `}
       </style>
       <GameShell
@@ -2285,25 +2645,260 @@ function HiloPage({ onGameChange }) {
   );
 }
 
+const crashGraphWidth = 1000;
+const crashGraphHeight = 640;
+const crashGraphDurationSeconds = 8;
+const crashGrowthRate = 0.3;
+const crashGraphBottom = 620;
+const crashGraphTop = 52;
+const crashResetDurationMs = 5000;
+const crashSocialEvents = [
+  { name: "James", multiplier: 1.42 },
+  { name: "Mia", multiplier: 1.86 },
+  { name: "Noah", multiplier: 2.42 },
+  { name: "Michael", multiplier: 3.18 },
+  { name: "Sofia", multiplier: 4.87 },
+  { name: "Alex", multiplier: 6.31 },
+  { name: "Kai", multiplier: 8.31 },
+  { name: "Lena", multiplier: 10.12 },
+];
+const crashParticles = Array.from({ length: 16 }, (_, index) => ({
+  delay: `${index * 190}ms`,
+  duration: `${3800 + (index % 5) * 620}ms`,
+  size: `${2 + (index % 3)}px`,
+  x: `${8 + ((index * 17) % 84)}%`,
+  y: `${12 + ((index * 23) % 74)}%`,
+}));
+
+function createCrashRound() {
+  const random = Math.random();
+  const crashPoint = Number(
+    (
+      random < 0.58
+        ? 1.18 + Math.random() * 1.08
+        : random < 0.84
+          ? 2.32 + Math.random() * 3.08
+          : random < 0.96
+            ? 5.62 + Math.random() * 3.56
+            : 9.48 + Math.random() * 1.22
+    ).toFixed(2)
+  );
+  const crashTimeMs = Math.min(
+    crashGraphDurationSeconds * 1000,
+    (Math.log(crashPoint) / crashGrowthRate) * 1000,
+  );
+
+  return {
+    status: "active",
+    elapsedMs: 0,
+    multiplier: 1,
+    crashPoint,
+    crashTimeMs,
+  };
+}
+
+function getCrashMultiplierAt(elapsedMs) {
+  return Math.max(1, Math.exp(crashGrowthRate * (elapsedMs / 1000)));
+}
+
+function formatCrashMultiplier(multiplier) {
+  return `${multiplier.toFixed(2)}x`;
+}
+
+function formatCrashAxisMultiplier(multiplier) {
+  return `${multiplier >= 10 ? multiplier.toFixed(0) : multiplier.toFixed(1)}x`;
+}
+
+function getCrashIntensity(multiplier) {
+  if (multiplier < 2) return Math.max(0, (multiplier - 1) / 1) * 0.24;
+  if (multiplier < 5) return 0.24 + ((multiplier - 2) / 3) * 0.3;
+  if (multiplier < 10) return 0.54 + ((multiplier - 5) / 5) * 0.32;
+  return Math.min(1, 0.86 + ((multiplier - 10) / 3) * 0.14);
+}
+
+function getCrashGraphPoint(elapsedMs, crashPoint) {
+  const seconds = elapsedMs / 1000;
+  const multiplier = getCrashMultiplierAt(elapsedMs);
+  const maxMultiplier = Math.max(1.82, crashPoint * 1.12);
+  const x = Math.min(crashGraphWidth, (seconds / crashGraphDurationSeconds) * crashGraphWidth);
+  const normalizedMultiplier = Math.min(1, (multiplier - 1) / (maxMultiplier - 1));
+  const y = crashGraphBottom - normalizedMultiplier * (crashGraphBottom - crashGraphTop);
+
+  return { x, y };
+}
+
+function buildCrashGraphPaths(elapsedMs, crashPoint) {
+  const clampedElapsed = Math.max(0, elapsedMs);
+  const samples = Math.max(2, Math.ceil(clampedElapsed / 40));
+  const points = Array.from({ length: samples }, (_, index) => {
+    const sampleElapsed = (clampedElapsed / (samples - 1)) * index;
+    return getCrashGraphPoint(sampleElapsed, crashPoint);
+  });
+  const linePath = points.reduce((path, point, index) => {
+    if (index === 0) {
+      return `M${point.x.toFixed(2)} ${point.y.toFixed(2)}`;
+    }
+
+    const previousPoint = points[index - 1];
+    const controlX = ((previousPoint.x + point.x) / 2).toFixed(2);
+    return `${path} Q${controlX} ${previousPoint.y.toFixed(2)} ${point.x.toFixed(2)} ${point.y.toFixed(2)}`;
+  }, "");
+  const endPoint = points[points.length - 1];
+  const fillPath = `${linePath} L${endPoint.x.toFixed(2)} ${crashGraphHeight} L0 ${crashGraphHeight} Z`;
+
+  return { linePath, fillPath, endPoint };
+}
+
 function CrashPage({ onGameChange }) {
   const [betAmount, setBetAmount] = useState("");
   const [bettingMode, setBettingMode] = useState("manual");
   const [balance, setBalance] = useState(150000);
   const [roundStatus, setRoundStatus] = useState("idle");
   const [numberOfBets, setNumberOfBets] = useState("");
+  const [crashResult, setCrashResult] = useState(null);
+  const [crashResetting, setCrashResetting] = useState(false);
+  const [crashRound, setCrashRound] = useState(() => ({
+    status: "idle",
+    elapsedMs: 0,
+    multiplier: 1,
+    crashPoint: 1.8,
+    crashTimeMs: crashGraphDurationSeconds * 1000,
+  }));
+  const crashStartRef = useRef(0);
+  const crashFrameRef = useRef(null);
   const numericBetAmount = Number(betAmount) || 0;
   const hasBetAmount = numericBetAmount > 0;
+  const crashGraph = buildCrashGraphPaths(crashRound.elapsedMs, crashRound.crashPoint);
+  const crashAxisMax = Math.max(1.82, crashRound.crashPoint * 1.12);
+  const crashYAxisLabels = [
+    crashAxisMax,
+    1 + (crashAxisMax - 1) * 0.75,
+    1 + (crashAxisMax - 1) * 0.5,
+    1 + (crashAxisMax - 1) * 0.25,
+    1,
+  ];
+  const crashSpeedIntensity = getCrashIntensity(crashRound.multiplier);
+  const crashLivePlayers = Math.max(3, Math.round(97 - crashSpeedIntensity * 94));
+  const visibleCrashCashouts = crashSocialEvents
+    .filter((event) => crashRound.multiplier >= event.multiplier)
+    .slice(-3);
+  const crashCameraStyle = {
+    "--crash-atmosphere": crashSpeedIntensity.toFixed(3),
+    "--crash-camera-scale": (1 + crashSpeedIntensity * 0.05).toFixed(3),
+    "--crash-camera-x": `${(-10 * crashSpeedIntensity).toFixed(2)}px`,
+    "--crash-camera-y": `${(6 * crashSpeedIntensity).toFixed(2)}px`,
+    "--crash-fill-peak-opacity": (0.14 + crashSpeedIntensity * 0.16).toFixed(3),
+    "--crash-line-trail-opacity": (0.06 + crashSpeedIntensity * 0.18).toFixed(3),
+    "--crash-line-width": `${(4 + crashSpeedIntensity * 1.4).toFixed(2)}px`,
+  };
+  const crashMultiplierTick = Math.floor(crashRound.multiplier * 100);
+  const crashEndpointStyle = {
+    left: `${(crashGraph.endPoint.x / crashGraphWidth) * 100}%`,
+    top: `${(crashGraph.endPoint.y / crashGraphHeight) * 100}%`,
+    "--crash-endpoint-scale": (1 + crashSpeedIntensity * 0.46).toFixed(2),
+    "--crash-endpoint-trail-opacity": (0.04 + crashSpeedIntensity * 0.18).toFixed(2),
+    "--crash-endpoint-trail-width": `${Math.round(14 + crashSpeedIntensity * 52)}px`,
+  };
+  const crashMultiplierStyle = {
+    "--crash-multiplier-pulse-duration": `${Math.round(280 - crashSpeedIntensity * 120)}ms`,
+    "--crash-multiplier-drift": `${(-4 * crashSpeedIntensity).toFixed(2)}px`,
+  };
+
+  useEffect(() => {
+    if (crashRound.status !== "active") return undefined;
+
+    function tick(now) {
+      const elapsedMs = Math.min(now - crashStartRef.current, crashRound.crashTimeMs);
+      const nextMultiplier = Math.min(getCrashMultiplierAt(elapsedMs), crashRound.crashPoint);
+
+      if (elapsedMs >= crashRound.crashTimeMs || nextMultiplier >= crashRound.crashPoint) {
+        setCrashRound((currentRound) => ({
+          ...currentRound,
+          status: "crashed",
+          elapsedMs: currentRound.crashTimeMs,
+          multiplier: currentRound.crashPoint,
+        }));
+        setCrashResetting(true);
+        setCrashResult({
+          type: "loss",
+          multiplier: crashRound.crashPoint,
+        });
+        setRoundStatus("crashed");
+        return;
+      }
+
+      setCrashRound((currentRound) => ({
+        ...currentRound,
+        elapsedMs,
+        multiplier: nextMultiplier,
+      }));
+      crashFrameRef.current = requestAnimationFrame(tick);
+    }
+
+    crashFrameRef.current = requestAnimationFrame(tick);
+
+    return () => {
+      if (crashFrameRef.current) {
+        cancelAnimationFrame(crashFrameRef.current);
+      }
+    };
+  }, [crashRound.status, crashRound.crashTimeMs, crashRound.crashPoint]);
+
+  useEffect(() => {
+    if (!crashResult) return undefined;
+
+    const timer = window.setTimeout(() => {
+      setCrashResult(null);
+      setCrashResetting(false);
+      setRoundStatus("idle");
+      setCrashRound((currentRound) => ({
+        ...currentRound,
+        status: "idle",
+        elapsedMs: 0,
+        multiplier: 1,
+      }));
+    }, crashResetDurationMs);
+
+    return () => window.clearTimeout(timer);
+  }, [crashResult]);
+
+  function handleCrashResultClose() {
+    setCrashResult(null);
+    setCrashResetting(false);
+    setRoundStatus("idle");
+    setCrashRound((currentRound) => ({
+      ...currentRound,
+      status: "idle",
+      elapsedMs: 0,
+      multiplier: 1,
+    }));
+  }
 
   function handleBetAction() {
     if (!hasBetAmount) return;
 
     if (roundStatus === "active") {
+      const payout = numericBetAmount * crashRound.multiplier;
       setRoundStatus("cashedOut");
-      setBalance((currentBalance) => currentBalance + numericBetAmount * 1.42);
+      setCrashResetting(true);
+      setCrashRound((currentRound) => ({
+        ...currentRound,
+        status: "cashedOut",
+      }));
+      setCrashResult({
+        type: "win",
+        amount: payout,
+        multiplier: crashRound.multiplier,
+      });
+      setBalance((currentBalance) => currentBalance + payout);
       return;
     }
 
+    const nextRound = createCrashRound();
+    crashStartRef.current = performance.now();
+    setCrashResult(null);
     setBalance((currentBalance) => Math.max(0, currentBalance - numericBetAmount));
+    setCrashRound(nextRound);
     setRoundStatus("active");
   }
 
@@ -2318,22 +2913,59 @@ function CrashPage({ onGameChange }) {
             display: grid;
             padding: 0;
             background: var(--joker-black-800);
+            overflow: hidden;
+          }
+
+          .joker-game-shell--crash .joker-crash-betting-panel {
+            height: 100%;
+            min-height: 0;
+            grid-template-rows: auto minmax(0, 1fr) auto auto;
+          }
+
+          .joker-game-shell--crash .joker-crash-betting-panel .joker-betting-submit-spacer {
+            min-height: 0;
           }
 
           .joker-crash-chart {
             position: relative;
+            width: 100%;
+            height: 100%;
             min-width: 0;
             min-height: 0;
-            background: var(--joker-black-800);
+            --crash-atmosphere: 0;
+            background:
+              radial-gradient(
+                circle at calc(58% + (var(--crash-atmosphere) * 12%)) calc(48% - (var(--crash-atmosphere) * 8%)),
+                color-mix(in srgb, #E6D0A4 calc(8% + (var(--crash-atmosphere) * 14%)), transparent) 0%,
+                transparent 48%
+              ),
+              var(--joker-black-800);
             overflow: hidden;
+            isolation: isolate;
+            transition: background 240ms var(--ease-standard);
           }
 
           .joker-crash-chart-grid {
             position: absolute;
-            inset: var(--spacing-24);
-            display: grid;
-            grid-template-columns: calc(var(--spacing-64) + var(--spacing-16)) minmax(0, 1fr);
-            grid-template-rows: minmax(0, 1fr) calc(var(--spacing-40) + var(--spacing-8));
+            inset: 0;
+            display: block;
+            z-index: 1;
+          }
+
+          .joker-crash-chart::after {
+            position: absolute;
+            inset: 0;
+            z-index: 0;
+            background:
+              linear-gradient(115deg, transparent 0%, rgb(255 255 255 / 0.018) 44%, transparent 52%),
+              radial-gradient(circle at 70% 35%, rgb(230 208 164 / 0.045), transparent 34%);
+            content: "";
+            opacity: calc(0.18 + var(--crash-atmosphere) * 0.32);
+            transform: translate3d(calc(var(--crash-atmosphere) * -14px), calc(var(--crash-atmosphere) * 8px), 0);
+            transition:
+              opacity 240ms var(--ease-standard),
+              transform 240ms var(--ease-standard);
+            pointer-events: none;
           }
 
           .joker-crash-y-axis,
@@ -2346,48 +2978,394 @@ function CrashPage({ onGameChange }) {
           }
 
           .joker-crash-y-axis {
-            grid-column: 1;
-            grid-row: 1;
+            position: absolute;
+            top: 0;
+            bottom: 56px;
+            left: 0;
+            width: 56px;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            align-items: end;
-            padding-top: var(--spacing-16);
-            padding-bottom: var(--spacing-32);
-            padding-right: var(--spacing-16);
+            align-items: center;
+            padding: 48px 0;
+            border-right: var(--border-width-default) solid var(--joker-black-300);
+          }
+
+          .joker-crash-y-axis span {
+            display: grid;
+            width: 100%;
+            min-height: 56px;
+            place-items: center;
           }
 
           .joker-crash-x-axis {
-            grid-column: 2;
-            grid-row: 2;
-            display: flex;
-            align-items: end;
-            justify-content: space-between;
-            padding-top: var(--spacing-16);
-            padding-right: 0;
-            padding-left: 0;
-          }
-
-          .joker-crash-axis-corner {
-            grid-column: 1;
-            grid-row: 2;
-          }
-
-          .joker-crash-plot {
-            position: relative;
-            grid-column: 2;
-            grid-row: 1;
-            border-left: var(--border-width-default) solid var(--joker-black-300);
-            overflow: hidden;
-          }
-
-          .joker-crash-plot::after {
-            content: "";
             position: absolute;
             right: 0;
             bottom: 0;
             left: 0;
-            border-bottom: var(--border-width-default) solid var(--joker-black-300);
+            height: 56px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 48px 0 calc(56px + 48px);
+            border-top: var(--border-width-default) solid var(--joker-black-300);
+          }
+
+          .joker-crash-x-axis span {
+            display: grid;
+            min-width: 56px;
+            height: 100%;
+            place-items: center;
+          }
+
+          .joker-crash-axis-corner {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 56px;
+            height: 56px;
+            border-top: var(--border-width-default) solid var(--joker-black-300);
+            border-right: var(--border-width-default) solid var(--joker-black-300);
+          }
+
+          .joker-crash-plot {
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 56px;
+            left: 56px;
+            overflow: hidden;
+          }
+
+          .joker-crash-camera {
+            position: absolute;
+            inset: 0;
+            transform:
+              translate3d(var(--crash-camera-x, 0), var(--crash-camera-y, 0), 0)
+              scale(var(--crash-camera-scale, 1));
+            transform-origin: 64% 60%;
+            transition: transform 120ms linear;
+            will-change: transform;
+          }
+
+          .joker-crash-graph {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+          }
+
+          .joker-crash-graph-fill {
+            fill: url("#joker-crash-fill");
+            transition: fill 180ms var(--ease-standard);
+          }
+
+          .joker-crash-graph-trail {
+            fill: none;
+            stroke: #E6D0A4;
+            stroke-width: 14;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            opacity: var(--crash-line-trail-opacity, 0.06);
+            filter: blur(10px);
+            transition:
+              opacity 160ms var(--ease-standard),
+              stroke 180ms var(--ease-standard);
+          }
+
+          .joker-crash-graph-line {
+            fill: none;
+            stroke: #E6D0A4;
+            stroke-width: var(--crash-line-width, 4px);
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            filter: drop-shadow(0 0 calc(var(--spacing-8) * var(--crash-atmosphere, 0)) rgb(230 208 164 / 0.2));
+            transition:
+              stroke 180ms var(--ease-standard),
+              stroke-width 160ms var(--ease-standard),
+              filter 160ms var(--ease-standard);
+          }
+
+          .joker-crash-multiplier {
+            position: absolute;
+            top: 54%;
+            left: 48%;
+            transform: translate(-50%, -50%);
+            color: var(--joker-white-50);
+            font-family: var(--font-display);
+            font-size: var(--text-display-d1, var(--display-d1));
+            font-weight: var(--text-display-weight);
+            line-height: var(--text-display-line-height-compact);
+            letter-spacing: 0;
+            pointer-events: none;
+            text-shadow: 0 var(--spacing-8) var(--spacing-32) rgb(0 0 0 / 0.34);
+          }
+
+          .joker-crash-multiplier-value {
+            display: inline-block;
+            transform-origin: center;
+            animation: joker-crash-multiplier-pulse var(--crash-multiplier-pulse-duration, 220ms) cubic-bezier(0.17, 0.89, 0.32, 1.28) both;
+          }
+
+          .joker-crash-multiplier.is-crashed {
+            color: var(--joker-red-500, #e24a4a);
+          }
+
+          .joker-crash-endpoint {
+            position: absolute;
+            width: 14px;
+            height: 14px;
+            border-radius: 9999px;
+            background: #E6D0A4;
+            transform: translate(-50%, -50%) scale(var(--crash-endpoint-scale, 1));
+            transform-origin: center;
+            pointer-events: none;
+            transition: background 180ms var(--ease-standard);
+          }
+
+          .joker-crash-endpoint::before {
+            position: absolute;
+            top: 50%;
+            right: 50%;
+            width: var(--crash-endpoint-trail-width, 14px);
+            height: 10px;
+            border-radius: 9999px;
+            background: linear-gradient(90deg, transparent, rgba(230, 208, 164, 0.72));
+            content: "";
+            opacity: var(--crash-endpoint-trail-opacity, 0);
+            transform: translateY(-50%) translateX(3px) rotate(-18deg);
+            filter: blur(2px);
+            pointer-events: none;
+          }
+
+          .joker-crash-particles {
+            position: absolute;
+            inset: 0;
+            z-index: 1;
+            overflow: hidden;
+            pointer-events: none;
+          }
+
+          .joker-crash-particle {
+            position: absolute;
+            left: var(--particle-x);
+            top: var(--particle-y);
+            width: var(--particle-size);
+            height: var(--particle-size);
+            border-radius: var(--radius-pill);
+            background: #E6D0A4;
+            opacity: calc(var(--crash-atmosphere, 0) * 0.24);
+            filter: blur(0.4px);
+            animation: joker-crash-particle-drift var(--particle-duration) linear infinite;
+            animation-delay: var(--particle-delay);
+            transform: translate3d(0, 0, 0);
+          }
+
+          .joker-crash-social {
+            position: absolute;
+            top: var(--spacing-24);
+            right: var(--spacing-24);
+            z-index: 2;
+            display: grid;
+            gap: var(--spacing-8);
+            min-width: 190px;
+            color: var(--joker-black-50);
+            font-family: var(--font);
+            font-size: var(--text-body-12);
+            line-height: var(--text-body-line-height);
+            pointer-events: none;
+          }
+
+          .joker-crash-live-count {
+            justify-self: end;
+            border: var(--border-width-default) solid color-mix(in srgb, var(--joker-black-300) 76%, transparent);
+            border-radius: var(--radius-sm);
+            background: color-mix(in srgb, var(--joker-black-700) 72%, transparent);
+            color: color-mix(in srgb, var(--joker-white-50) 74%, transparent);
+            padding: var(--spacing-4) var(--spacing-8);
+          }
+
+          .joker-crash-cashout-feed {
+            display: grid;
+            gap: var(--spacing-4);
+            justify-items: end;
+            min-height: 64px;
+          }
+
+          .joker-crash-cashout-feed span {
+            color: color-mix(in srgb, var(--joker-white-50) 54%, transparent);
+            opacity: 0.84;
+            text-transform: uppercase;
+            letter-spacing: 0.02em;
+            animation: joker-crash-social-enter 360ms var(--ease-standard) both;
+          }
+
+          .joker-crash-chart.is-crashed .joker-crash-graph-line {
+            stroke: var(--joker-red-500, #e24a4a);
+            filter: none;
+          }
+
+          .joker-crash-chart.is-crashed .joker-crash-graph-trail {
+            stroke: var(--joker-red-500, #e24a4a);
+            opacity: 0.12;
+          }
+
+          .joker-crash-chart.is-crashed .joker-crash-graph-fill {
+            fill: url("#joker-crash-fill-red");
+          }
+
+          .joker-crash-chart.is-crashed .joker-crash-endpoint {
+            background: var(--joker-red-500, #e24a4a);
+          }
+
+          .joker-crash-chart.is-crashed .joker-crash-endpoint::before {
+            background: linear-gradient(90deg, transparent, rgba(226, 74, 74, 0.72));
+          }
+
+          .joker-crash-chart.is-crashed .joker-crash-camera {
+            transition: none;
+          }
+
+          .joker-game-shell--crash .joker-crash-betting-panel.is-crash-active .joker-bet-submit {
+            position: relative;
+          }
+
+          .joker-game-shell--crash .joker-crash-betting-panel.is-crash-active .joker-bet-submit > span {
+            color: transparent;
+          }
+
+          .joker-game-shell--crash .joker-crash-betting-panel.is-crash-active .joker-bet-submit > span::after {
+            content: "Cashout";
+            position: absolute;
+            inset: 0;
+            display: grid;
+            place-items: center;
+            color: var(--button-primary-text);
+            font: inherit;
+            text-transform: inherit;
+          }
+
+          .joker-crash-result-overlay {
+            position: absolute;
+            inset: 0;
+            z-index: 8;
+            display: grid;
+            place-items: center;
+            padding: var(--spacing-24);
+            pointer-events: none;
+          }
+
+          .joker-crash-result-card {
+            pointer-events: auto;
+            animation: joker-crash-result-pop 420ms var(--ease-standard) both;
+          }
+
+          .joker-crash-reset-timer {
+            position: absolute;
+            right: var(--spacing-32);
+            bottom: calc(56px + var(--spacing-24));
+            left: calc(56px + var(--spacing-32));
+            z-index: 7;
+            display: grid;
+            gap: var(--spacing-8);
+            pointer-events: none;
+          }
+
+          .joker-crash-reset-copy {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            color: color-mix(in srgb, var(--joker-white-50) 62%, transparent);
+            font-family: var(--font);
+            font-size: var(--text-body-12);
+            line-height: var(--text-body-line-height);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+          }
+
+          .joker-crash-reset-track {
+            height: var(--spacing-4);
+            overflow: hidden;
+            border-radius: var(--radius-pill);
+            background: color-mix(in srgb, var(--joker-black-300) 46%, transparent);
+          }
+
+          .joker-crash-reset-fill {
+            width: 100%;
+            height: 100%;
+            border-radius: inherit;
+            background: linear-gradient(90deg, color-mix(in srgb, #E6D0A4 64%, transparent), #E6D0A4);
+            transform-origin: left;
+            animation: joker-crash-reset-fill ${crashResetDurationMs}ms linear both;
+          }
+
+          @keyframes joker-crash-result-pop {
+            0% {
+              opacity: 0;
+              transform: scale(0.92) translateY(var(--spacing-12));
+            }
+
+            68% {
+              opacity: 1;
+              transform: scale(1.03) translateY(0);
+            }
+
+            100% {
+              opacity: 1;
+              transform: scale(1) translateY(0);
+            }
+          }
+
+          @keyframes joker-crash-multiplier-pulse {
+            0% {
+              transform: translateY(var(--crash-multiplier-drift, 0)) scale(0.985);
+            }
+
+            52% {
+              transform: translateY(var(--crash-multiplier-drift, 0)) scale(1.035);
+            }
+
+            100% {
+              transform: translateY(var(--crash-multiplier-drift, 0)) scale(1);
+            }
+          }
+
+          @keyframes joker-crash-particle-drift {
+            0% {
+              transform: translate3d(0, var(--spacing-16), 0);
+              opacity: 0;
+            }
+
+            18% {
+              opacity: calc(var(--crash-atmosphere, 0) * 0.24);
+            }
+
+            100% {
+              transform: translate3d(calc(var(--crash-atmosphere, 0) * -26px), calc(var(--spacing-40) * -1), 0);
+              opacity: 0;
+            }
+          }
+
+          @keyframes joker-crash-social-enter {
+            0% {
+              opacity: 0;
+              transform: translateY(var(--spacing-4));
+            }
+
+            100% {
+              opacity: 0.84;
+              transform: translateY(0);
+            }
+          }
+
+          @keyframes joker-crash-reset-fill {
+            0% {
+              transform: scaleX(0);
+            }
+
+            100% {
+              transform: scaleX(1);
+            }
           }
         `}
       </style>
@@ -2402,6 +3380,7 @@ function CrashPage({ onGameChange }) {
           <PackagedCrashBettingPanel
             betAmount={betAmount}
             bettingMode={bettingMode}
+            gameInPlay={roundStatus === "active"}
             numberOfBets={numberOfBets}
             onBetAmountChange={setBetAmount}
             onModeChange={setBettingMode}
@@ -2411,17 +3390,84 @@ function CrashPage({ onGameChange }) {
         }
       >
         <section className="joker-crash-stage" aria-label="Crash game area">
-          <div className="joker-crash-chart">
+          <div
+            className={`joker-crash-chart ${crashRound.status === "crashed" ? "is-crashed" : ""}`.trim()}
+            style={crashCameraStyle}
+          >
             <div className="joker-crash-chart-grid">
               <div className="joker-crash-y-axis" aria-hidden="true">
-                <span>1.8x</span>
-                <span>1.7x</span>
-                <span>1.5x</span>
-                <span>1.2x</span>
-                <span>1.0x</span>
+                {crashYAxisLabels.map((label) => (
+                  <span key={label}>{formatCrashAxisMultiplier(label)}</span>
+                ))}
               </div>
               <div className="joker-crash-plot">
+                <div className="joker-crash-camera">
+                  <div className="joker-crash-particles" aria-hidden="true">
+                    {crashParticles.map((particle, index) => (
+                      <span
+                        className="joker-crash-particle"
+                        key={`${particle.x}-${particle.y}-${index}`}
+                        style={{
+                          "--particle-delay": particle.delay,
+                          "--particle-duration": particle.duration,
+                          "--particle-size": particle.size,
+                          "--particle-x": particle.x,
+                          "--particle-y": particle.y,
+                        }}
+                      />
+                    ))}
+                  </div>
+                  <svg
+                    className="joker-crash-graph"
+                    viewBox={`0 0 ${crashGraphWidth} ${crashGraphHeight}`}
+                    preserveAspectRatio="none"
+                    aria-hidden="true"
+                  >
+                    <defs>
+                      <linearGradient id="joker-crash-fill" x1="0" x2="0" y1="0" y2="1">
+                        <stop offset="0%" stopColor="#E6D0A4" stopOpacity="var(--crash-fill-peak-opacity)" />
+                        <stop offset="100%" stopColor="#E6D0A4" stopOpacity="0" />
+                      </linearGradient>
+                      <linearGradient id="joker-crash-fill-red" x1="0" x2="0" y1="0" y2="1">
+                        <stop offset="0%" stopColor="rgba(226, 74, 74, 0.22)" />
+                        <stop offset="100%" stopColor="rgba(226, 74, 74, 0)" />
+                      </linearGradient>
+                    </defs>
+                    <path
+                      className="joker-crash-graph-fill"
+                      d={crashGraph.fillPath}
+                    />
+                    <path
+                      className="joker-crash-graph-trail"
+                      d={crashGraph.linePath}
+                    />
+                    <path
+                      className="joker-crash-graph-line"
+                      d={crashGraph.linePath}
+                    />
+                  </svg>
+                  <span className="joker-crash-endpoint" style={crashEndpointStyle} aria-hidden="true" />
+                  <div
+                    className={`joker-crash-multiplier ${crashRound.status === "crashed" ? "is-crashed" : ""}`.trim()}
+                    style={crashMultiplierStyle}
+                    aria-live="polite"
+                  >
+                    <span className="joker-crash-multiplier-value" key={crashMultiplierTick}>
+                      {formatCrashMultiplier(crashRound.multiplier)}
+                    </span>
+                  </div>
+                </div>
               </div>
+              <aside className="joker-crash-social" aria-live="polite">
+                <span className="joker-crash-live-count">{crashLivePlayers} players live</span>
+                <div className="joker-crash-cashout-feed">
+                  {visibleCrashCashouts.map((event) => (
+                    <span key={`${event.name}-${event.multiplier}`}>
+                      {event.name} cashed out @ {formatCrashMultiplier(event.multiplier)}
+                    </span>
+                  ))}
+                </div>
+              </aside>
               <div className="joker-crash-axis-corner" aria-hidden="true" />
               <div className="joker-crash-x-axis" aria-hidden="true">
                 <span>0s</span>
@@ -2430,9 +3476,87 @@ function CrashPage({ onGameChange }) {
                 <span>6s</span>
                 <span>8s</span>
               </div>
+              {crashResetting && (
+                <div className="joker-crash-reset-timer" aria-live="polite">
+                  <div className="joker-crash-reset-copy">
+                    <span>Next round</span>
+                    <span>Bets opening</span>
+                  </div>
+                  <div className="joker-crash-reset-track" aria-hidden="true">
+                    <div className="joker-crash-reset-fill" />
+                  </div>
+                </div>
+              )}
+              {crashResult && (
+                <div className="joker-crash-result-overlay" role="status" aria-live="polite">
+                  {crashResult.type === "win" ? (
+                    <WinCard
+                      className="joker-crash-result-card"
+                      title="Cashout Successful"
+                      amountWon={formatCurrency(crashResult.amount)}
+                      currency={null}
+                      messagePrefix={`Cashed out at ${formatCrashMultiplier(crashResult.multiplier)}.`}
+                      messageSuffix="has been added to your balance."
+                      closeLabel="Close crash cashout card"
+                      onClose={handleCrashResultClose}
+                    />
+                  ) : (
+                    <LossCard
+                      className="joker-crash-result-card"
+                      title="Crashed"
+                      message={`Round ended at ${formatCrashMultiplier(crashResult.multiplier)}. Better luck next round.`}
+                      closeLabel="Close crash loss card"
+                      onClose={handleCrashResultClose}
+                    />
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </section>
+      </GameShell>
+    </>
+  );
+}
+
+function CocoHutPage({ onGameChange }) {
+  const [betAmount, setBetAmount] = useState("");
+  const [balance] = useState(150000);
+  const [difficulty, setDifficulty] = useState("tourist");
+
+  function handleBetAction() {
+    // Coco Hut gameplay will be wired here without touching the other games.
+  }
+
+  return (
+    <>
+      <style>
+        {`
+          .joker-coco-hut-stage {
+            display: grid;
+            min-height: 100%;
+            padding: var(--spacing-24);
+          }
+        `}
+      </style>
+      <GameShell
+        balance={formatBalance(balance)}
+        className="joker-game-shell--coco-hut"
+        defaultValue={cocoHutNavigationPreset.defaultValue}
+        game={cocoHutNavigationPreset.game}
+        onValueChange={onGameChange}
+        value={cocoHutNavigationPreset.selectedValue}
+        bettingPanel={
+          <PackagedCocoHutBettingPanel
+            betAmount={betAmount}
+            difficulty={difficulty}
+            onBetAmountChange={setBetAmount}
+            onDifficultyChange={setDifficulty}
+            onPlaceBet={handleBetAction}
+          />
+        }
+      >
+        <section className="joker-coco-hut-stage" aria-label="Coco Hut game area" />
       </GameShell>
     </>
   );
@@ -2692,7 +3816,6 @@ function MinesGrid({
   board,
   cashoutResult,
   freshRevealedTiles,
-  hasBetAmount,
   lossResult,
   multiplier,
   onResultClose,
@@ -2700,11 +3823,51 @@ function MinesGrid({
   revealedTiles,
   roundStatus,
 }) {
+  const gameActive = roundStatus === "active";
+  const boardAreaRef = useRef(null);
+  const [boardSize, setBoardSize] = useState(320);
+
+  useEffect(() => {
+    const boardArea = boardAreaRef.current;
+    if (!boardArea) return undefined;
+
+    function measureBoard() {
+      const styles = window.getComputedStyle(boardArea);
+      const horizontalPadding =
+        Number.parseFloat(styles.paddingLeft) + Number.parseFloat(styles.paddingRight);
+      const verticalPadding =
+        Number.parseFloat(styles.paddingTop) + Number.parseFloat(styles.paddingBottom);
+      const availableWidth = boardArea.clientWidth - horizontalPadding;
+      const availableHeight = boardArea.clientHeight - verticalPadding;
+      const isStackedShell = Boolean(boardArea.closest(".joker-navigation-mobile-content"));
+      const heightLimit = availableHeight > 0 ? availableHeight : availableWidth;
+      const fitLimit = isStackedShell ? availableWidth : Math.min(availableWidth, heightLimit);
+      const nextSize = Math.max(240, Math.floor(Math.min(fitLimit, 760)));
+
+      setBoardSize((currentSize) => (currentSize === nextSize ? currentSize : nextSize));
+    }
+
+    measureBoard();
+
+    const resizeObserver = new ResizeObserver(measureBoard);
+    resizeObserver.observe(boardArea);
+    window.addEventListener("resize", measureBoard);
+
+    return () => {
+      resizeObserver.disconnect();
+      window.removeEventListener("resize", measureBoard);
+    };
+  }, []);
+
   return (
     <section className="joker-mines-stage" aria-label="Mines game board">
-      <div className="joker-mines-board-area">
+      <div
+        className="joker-mines-board-area"
+        ref={boardAreaRef}
+        style={{ "--mines-board-size": `${boardSize}px` }}
+      >
         <div
-          className={`joker-mines-grid ${hasBetAmount ? "is-bet-ready" : ""} ${roundStatus === "lost" ? "is-round-lost" : ""}`.trim()}
+          className={`joker-mines-grid ${gameActive ? "is-round-active" : ""} ${roundStatus === "lost" ? "is-round-lost" : ""}`.trim()}
         >
           {mineTiles.map((tile, index) => {
             const revealed = revealedTiles.includes(tile);
@@ -2723,6 +3886,7 @@ function MinesGrid({
                 aria-label={`Tile ${tile}: ${asset.label}`}
                 aria-pressed={revealed}
                 data-selected={revealed || undefined}
+                disabled={!gameActive || revealed}
                 onClick={() => onTileClick(tile)}
               >
                 <span className="joker-mines-tile-surface">
@@ -2827,6 +3991,7 @@ function PackagedMinesBettingPanel({
       }}
       betAmount={betAmount}
       onBetAmountChange={handleBetAmountChange}
+      disablePlaceBetUntilBetAmount
       minesAmountOptions={gameOptions}
       minesAmount={mines}
       onMinesAmountChange={handleMinesAmountChange}
@@ -2869,6 +4034,7 @@ function PackagedHiloBettingPanel({
       lowerOdds={lowerOdds}
       higherOdds={higherOdds}
       skipLabel={skipAvailable ? "Skip Card" : "Skip Used"}
+      disablePlaceBetUntilBetAmount
     />
   );
 }
@@ -2876,6 +4042,7 @@ function PackagedHiloBettingPanel({
 function PackagedCrashBettingPanel({
   betAmount,
   bettingMode,
+  gameInPlay,
   numberOfBets,
   onBetAmountChange,
   onModeChange,
@@ -2892,6 +4059,7 @@ function PackagedCrashBettingPanel({
 
   return (
     <JokerCrashBettingPanel
+      className={gameInPlay ? "is-crash-active" : ""}
       mode={bettingMode}
       onModeChange={onModeChange}
       onPlaceBet={onPlaceBet}
@@ -2899,6 +4067,29 @@ function PackagedCrashBettingPanel({
       onBetAmountChange={handleBetAmountChange}
       numberOfBets={numberOfBets}
       onNumberOfBetsChange={handleNumberOfBetsChange}
+      disablePlaceBetUntilBetAmount
+    />
+  );
+}
+
+function PackagedCocoHutBettingPanel({
+  betAmount,
+  difficulty,
+  onBetAmountChange,
+  onDifficultyChange,
+  onPlaceBet,
+}) {
+  function handleBetAmountChange(event) {
+    onBetAmountChange(event.currentTarget.value.replace(/[^\d.]/g, ""));
+  }
+
+  return (
+    <JokerCocoHutBettingPanel
+      betAmount={betAmount}
+      difficulty={difficulty}
+      onBetAmountChange={handleBetAmountChange}
+      onDifficultyChange={onDifficultyChange}
+      onPlaceBet={onPlaceBet}
       disablePlaceBetUntilBetAmount
     />
   );
