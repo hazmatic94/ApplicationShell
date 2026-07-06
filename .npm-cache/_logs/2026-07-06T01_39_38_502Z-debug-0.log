@@ -1,0 +1,68 @@
+0 verbose cli /usr/local/bin/node /usr/local/bin/npm
+1 info using npm@11.6.2
+2 info using node@v24.11.1
+3 silly config load:file:/usr/local/lib/node_modules/npm/npmrc
+4 silly config load:file:/Users/Harry/Documents/Game Shell/.npmrc
+5 silly config load:file:/Users/Harry/.npmrc
+6 silly config load:file:/usr/local/etc/npmrc
+7 verbose title npm install /Users/Harry/Documents/Design System/joker-design-system-0.1.18.tgz
+8 verbose argv "install" "/Users/Harry/Documents/Design System/joker-design-system-0.1.18.tgz" "--cache" ".npm-cache"
+9 verbose logfile logs-max:10 dir:/Users/Harry/Documents/Game Shell/.npm-cache/_logs/2026-07-06T01_39_38_502Z-
+10 verbose logfile /Users/Harry/Documents/Game Shell/.npm-cache/_logs/2026-07-06T01_39_38_502Z-debug-0.log
+11 silly logfile done cleaning log files
+12 silly packumentCache heap:4496293888 maxSize:1124073472 maxEntrySize:562036736
+13 verbose shrinkwrap failed to load node_modules/.package-lock.json out of date, updated: node_modules
+14 silly idealTree buildDeps
+15 silly fetch manifest @joker/design-system@file:../Design System/joker-design-system-0.1.18.tgz
+16 silly fetch manifest react@^18.3.1
+17 silly packumentCache full:https://registry.npmjs.org/react cache-miss
+18 http fetch GET https://registry.npmjs.org/react attempt 1 failed with ENOTFOUND
+19 http fetch GET https://registry.npmjs.org/react attempt 2 failed with ENOTFOUND
+20 http fetch GET https://registry.npmjs.org/react attempt 3 failed with ENOTFOUND
+21 silly fetch manifest react@>=18
+22 silly packumentCache full:https://registry.npmjs.org/react cache-miss
+23 http fetch GET https://registry.npmjs.org/react attempt 1 failed with ENOTFOUND
+24 http fetch GET https://registry.npmjs.org/react attempt 2 failed with ENOTFOUND
+25 http fetch GET https://registry.npmjs.org/react attempt 3 failed with ENOTFOUND
+26 verbose stack Error: unable to resolve dependency tree
+26 verbose stack     at #failPeerConflict (/usr/local/lib/node_modules/npm/node_modules/@npmcli/arborist/lib/arborist/build-ideal-tree.js:1420:25)
+26 verbose stack     at #loadPeerSet (/usr/local/lib/node_modules/npm/node_modules/@npmcli/arborist/lib/arborist/build-ideal-tree.js:1386:33)
+26 verbose stack     at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+26 verbose stack     at async #buildDepStep (/usr/local/lib/node_modules/npm/node_modules/@npmcli/arborist/lib/arborist/build-ideal-tree.js:929:11)
+26 verbose stack     at async Arborist.buildIdealTree (/usr/local/lib/node_modules/npm/node_modules/@npmcli/arborist/lib/arborist/build-ideal-tree.js:182:7)
+26 verbose stack     at async Promise.all (index 1)
+26 verbose stack     at async Arborist.reify (/usr/local/lib/node_modules/npm/node_modules/@npmcli/arborist/lib/arborist/reify.js:114:5)
+26 verbose stack     at async Install.exec (/usr/local/lib/node_modules/npm/lib/commands/install.js:150:5)
+26 verbose stack     at async Npm.exec (/usr/local/lib/node_modules/npm/lib/npm.js:208:9)
+26 verbose stack     at async module.exports (/usr/local/lib/node_modules/npm/lib/cli/entry.js:67:5)
+27 error code ERESOLVE
+28 error ERESOLVE unable to resolve dependency tree
+29 error
+30 error While resolving: game-shell@0.1.0
+30 error Found: react@undefined
+30 error node_modules/react
+30 error   react@"^18.3.1" from the root project
+30 error
+30 error Could not resolve dependency:
+30 error peer react@">=18" from @joker/design-system@0.1.18
+30 error node_modules/@joker/design-system
+30 error   @joker/design-system@"file:../Design System/joker-design-system-0.1.18.tgz" from the root project
+30 error
+30 error Fix the upstream dependency conflict, or retry
+30 error this command with --force or --legacy-peer-deps
+30 error to accept an incorrect (and potentially broken) dependency resolution.
+31 error
+31 error
+31 error For a full report see:
+31 error /Users/Harry/Documents/Game Shell/.npm-cache/_logs/2026-07-06T01_39_38_502Z-eresolve-report.txt
+32 silly unfinished npm timer reify 1783301978586
+33 silly unfinished npm timer reify:loadTrees 1783301978587
+34 silly unfinished npm timer idealTree:buildDeps 1783301978712
+35 silly unfinished npm timer idealTree:#root 1783301978712
+36 verbose cwd /Users/Harry/Documents/Game Shell
+37 verbose os Darwin 25.5.0
+38 verbose node v24.11.1
+39 verbose npm  v11.6.2
+40 verbose exit 1
+41 verbose code 1
+42 error A complete log of this run can be found in: /Users/Harry/Documents/Game Shell/.npm-cache/_logs/2026-07-06T01_39_38_502Z-debug-0.log

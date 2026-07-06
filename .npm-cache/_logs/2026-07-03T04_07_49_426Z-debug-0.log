@@ -1,0 +1,71 @@
+0 verbose cli /usr/local/bin/node /usr/local/bin/npm
+1 info using npm@11.6.2
+2 info using node@v24.11.1
+3 silly config load:file:/usr/local/lib/node_modules/npm/npmrc
+4 silly config load:file:/Users/Harry/Documents/Game Shell/.npmrc
+5 silly config load:file:/Users/Harry/.npmrc
+6 silly config load:file:/usr/local/etc/npmrc
+7 verbose title npm install /Users/Harry/Documents/Design System/joker-design-system-0.1.18.tgz
+8 verbose argv "install" "/Users/Harry/Documents/Design System/joker-design-system-0.1.18.tgz" "--cache" "./.npm-cache"
+9 verbose logfile logs-max:10 dir:/Users/Harry/Documents/Game Shell/.npm-cache/_logs/2026-07-03T04_07_49_426Z-
+10 verbose logfile /Users/Harry/Documents/Game Shell/.npm-cache/_logs/2026-07-03T04_07_49_426Z-debug-0.log
+11 silly logfile done cleaning log files
+12 http fetch GET https://registry.npmjs.org/npm attempt 1 failed with ENOTFOUND
+13 silly packumentCache heap:4496293888 maxSize:1124073472 maxEntrySize:562036736
+14 verbose shrinkwrap failed to load node_modules/.package-lock.json out of date, updated: node_modules
+15 silly idealTree buildDeps
+16 silly fetch manifest @joker/design-system@file:../Design System/joker-design-system-0.1.18.tgz
+17 silly fetch manifest react@^18.3.1
+18 silly packumentCache full:https://registry.npmjs.org/react cache-miss
+19 http fetch GET https://registry.npmjs.org/react attempt 1 failed with ENOTFOUND
+20 http fetch GET https://registry.npmjs.org/npm attempt 2 failed with ENOTFOUND
+21 http fetch GET https://registry.npmjs.org/react attempt 2 failed with ENOTFOUND
+22 http fetch GET https://registry.npmjs.org/npm attempt 3 failed with ENOTFOUND
+23 http fetch GET https://registry.npmjs.org/react attempt 3 failed with ENOTFOUND
+24 silly fetch manifest react@>=18
+25 silly packumentCache full:https://registry.npmjs.org/react cache-miss
+26 http fetch GET https://registry.npmjs.org/react attempt 1 failed with ENOTFOUND
+27 http fetch GET https://registry.npmjs.org/react attempt 2 failed with ENOTFOUND
+28 http fetch GET https://registry.npmjs.org/react attempt 3 failed with ENOTFOUND
+29 verbose stack Error: unable to resolve dependency tree
+29 verbose stack     at #failPeerConflict (/usr/local/lib/node_modules/npm/node_modules/@npmcli/arborist/lib/arborist/build-ideal-tree.js:1420:25)
+29 verbose stack     at #loadPeerSet (/usr/local/lib/node_modules/npm/node_modules/@npmcli/arborist/lib/arborist/build-ideal-tree.js:1386:33)
+29 verbose stack     at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+29 verbose stack     at async #buildDepStep (/usr/local/lib/node_modules/npm/node_modules/@npmcli/arborist/lib/arborist/build-ideal-tree.js:929:11)
+29 verbose stack     at async Arborist.buildIdealTree (/usr/local/lib/node_modules/npm/node_modules/@npmcli/arborist/lib/arborist/build-ideal-tree.js:182:7)
+29 verbose stack     at async Promise.all (index 1)
+29 verbose stack     at async Arborist.reify (/usr/local/lib/node_modules/npm/node_modules/@npmcli/arborist/lib/arborist/reify.js:114:5)
+29 verbose stack     at async Install.exec (/usr/local/lib/node_modules/npm/lib/commands/install.js:150:5)
+29 verbose stack     at async Npm.exec (/usr/local/lib/node_modules/npm/lib/npm.js:208:9)
+29 verbose stack     at async module.exports (/usr/local/lib/node_modules/npm/lib/cli/entry.js:67:5)
+30 error code ERESOLVE
+31 error ERESOLVE unable to resolve dependency tree
+32 error
+33 error While resolving: game-shell@0.1.0
+33 error Found: react@undefined
+33 error node_modules/react
+33 error   react@"^18.3.1" from the root project
+33 error
+33 error Could not resolve dependency:
+33 error peer react@">=18" from @joker/design-system@0.1.18
+33 error node_modules/@joker/design-system
+33 error   @joker/design-system@"file:../Design System/joker-design-system-0.1.18.tgz" from the root project
+33 error
+33 error Fix the upstream dependency conflict, or retry
+33 error this command with --force or --legacy-peer-deps
+33 error to accept an incorrect (and potentially broken) dependency resolution.
+34 error
+34 error
+34 error For a full report see:
+34 error /Users/Harry/Documents/Game Shell/.npm-cache/_logs/2026-07-03T04_07_49_426Z-eresolve-report.txt
+35 silly unfinished npm timer reify 1783051669538
+36 silly unfinished npm timer reify:loadTrees 1783051669539
+37 silly unfinished npm timer idealTree:buildDeps 1783051669674
+38 silly unfinished npm timer idealTree:#root 1783051669674
+39 verbose cwd /Users/Harry/Documents/Game Shell
+40 verbose os Darwin 25.5.0
+41 verbose node v24.11.1
+42 verbose npm  v11.6.2
+43 verbose exit 1
+44 verbose code 1
+45 error A complete log of this run can be found in: /Users/Harry/Documents/Game Shell/.npm-cache/_logs/2026-07-03T04_07_49_426Z-debug-0.log
