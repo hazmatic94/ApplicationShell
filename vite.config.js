@@ -4,7 +4,7 @@ import {defineConfig} from 'vite';
 
 export default defineConfig({
   plugins: [react()],
-  base: '/gameshell/',
+   base: '/showroom/gameshell/',
   resolve: {
     alias: {
       '../EnterBetPrecursor/index.js': fileURLToPath(
@@ -12,4 +12,5 @@ export default defineConfig({
       ),
     },
   },
+
 });
