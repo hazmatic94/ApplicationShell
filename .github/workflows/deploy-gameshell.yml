@@ -25,14 +25,7 @@ jobs:
 
       - name: Configure private repo access
         run: |
-          test -n "${{ secrets.PRIVATE_REPO_TOKEN }}"
-          cat > ~/.netrc <<EOF
-          machine github.com
-          login x-access-token
-          password ${{ secrets.PRIVATE_REPO_TOKEN }}
-          EOF
-          chmod 600 ~/.netrc
-          git config --global url."https://github.com/".insteadOf "git@github.com:"
+          git config --global url."https://x-access-token:${{ secrets.PRIVATE_REPO_TOKEN }}@github.com/".insteadOf "https://github.com/"
 
       - name: Remove lockfile
         run: rm -rf dist node_modules .yarn yarn.lock && rm -f .pnp.cjs .pnp.loader.mjs

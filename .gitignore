@@ -6,6 +6,5 @@ dist/
 npm-debug.log*
 **/.npm-cache/
 .npm-cache/
-yarn.lock
 .yarn/install-state.gz
 ./yarn/*
