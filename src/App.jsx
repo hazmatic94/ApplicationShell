@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import {
   Button,
   CocoHutBettingPanel as JokerCocoHutBettingPanel,
+  CoinFlipBettingPanel as JokerCoinFlipBettingPanel,
   CrashBettingPanel as JokerCrashBettingPanel,
   GameShell,
   HiLoBettingPanel as JokerHiLoBettingPanel,
@@ -9,23 +10,33 @@ import {
   MinesBettingPanel as JokerMinesBettingPanel,
   WinCard,
 } from "@joker/design-system";
-
-const jokerIcon = new URL("../assets/iconJoker.svg", import.meta.url).href;
-const infoIcon = new URL("../assets/info.svg", import.meta.url).href;
-const goldIcon = new URL("../assets/mines-gold-bar.png", import.meta.url).href;
-const dynamiteIcon = new URL("../assets/mines-bomb.png", import.meta.url).href;
-const shieldIcon = new URL("../assets/mines-shield.png", import.meta.url).href;
-const minesBombSound = new URL("../assets/mines-bomb.mp3", import.meta.url).href;
-const minesCashoutSound = new URL("../assets/mines-cashout.mp3", import.meta.url).href;
-const minesClickSound = new URL("../assets/mines-click.mp3", import.meta.url).href;
-const minesPlaceBetSound = new URL("../assets/mines-placebet.mp3", import.meta.url).href;
-const minesLossIcon = new URL("../node_modules/@joker/design-system/assets/win-card-loss.svg", import.meta.url).href;
-const downArrowIcon = new URL("../assets/hilo-down.svg", import.meta.url).href;
-const upArrowIcon = new URL("../assets/hilo-up.svg", import.meta.url).href;
-const clubsIcon = new URL("../assets/clubs-wrapper.svg", import.meta.url).href;
-const diamondsIcon = new URL("../assets/diamonds-wrapper.svg", import.meta.url).href;
-const heartsIcon = new URL("../assets/hearts-wrapper.svg", import.meta.url).href;
-const spadesIcon = new URL("../assets/spades-wrapper.svg", import.meta.url).href;
+import jokerIcon from "../assets/iconJoker.svg?url";
+import infoIcon from "../assets/info.svg?url";
+import goldIcon from "../assets/mines-gold-bar.png?url";
+import dynamiteIcon from "../assets/mines-bomb.png?url";
+import shieldIcon from "../assets/mines-shield.png?url";
+import minesBombSound from "../assets/mines-bomb.mp3?url";
+import minesCashoutSound from "../assets/mines-cashout.mp3?url";
+import minesClickSound from "../assets/mines-click.mp3?url";
+import minesPlaceBetSound from "../assets/mines-placebet.mp3?url";
+import minesLossIcon from "../node_modules/@joker/design-system/assets/win-card-loss.svg?url";
+import downArrowIcon from "../assets/hilo-down.svg?url";
+import upArrowIcon from "../assets/hilo-up.svg?url";
+import clubsIcon from "../assets/clubs-wrapper.svg?url";
+import diamondsIcon from "../assets/diamonds-wrapper.svg?url";
+import heartsIcon from "../assets/hearts-wrapper.svg?url";
+import spadesIcon from "../assets/spades-wrapper.svg?url";
+import coinJokerIcon from "../assets/coin-joker.png?url";
+import coinHeadsIcon from "../assets/coin-heads.png?url";
+import coinTailsIcon from "../assets/coin-tails.png?url";
+import coinFlipCorrectIcon from "../assets/coinflip-correct.png?url";
+import coinFlipFailIcon from "../assets/coinflip-fail.png?url";
+import coinFlipFrame01 from "../assets/coinflip-sprite/flip01.png?url";
+import coinFlipFrame02 from "../assets/coinflip-sprite/flip02.png?url";
+import coinFlipFrame03 from "../assets/coinflip-sprite/flip03.png?url";
+import coinFlipFrame04 from "../assets/coinflip-sprite/flip04.png?url";
+import coinFlipFrame05 from "../assets/coinflip-sprite/flip05.png?url";
+import cocoHutBackground from "../assets/cocohut-bg.png?url";
 const gridTileCount = 25;
 const minTileAmount = 2;
 const maxTileAmount = gridTileCount - 1;
@@ -92,6 +103,12 @@ const crashNavigationPreset = {
   openMenuLabel: "Originals",
   selectedValue: "crash",
 };
+const coinFlipNavigationPreset = {
+  defaultValue: "coin-flip",
+  game: { label: "Coin Flip", icon: "coin-flip" },
+  openMenuLabel: "Originals",
+  selectedValue: "coin-flip",
+};
 const cocoHutNavigationPreset = {
   defaultValue: "coco-hut",
   game: { label: "CocoHut", icon: "coco-hut" },
@@ -100,10 +117,44 @@ const cocoHutNavigationPreset = {
 };
 const gameRouteMap = {
   "coco-hut": "/coco-hut",
+  "coin-flip": "/coin-flip",
   crash: "/crash",
   hilo: "/hilo",
   mines: "/",
 };
+const coinFlipFrames = [
+  coinFlipFrame01,
+  coinFlipFrame02,
+  coinFlipFrame03,
+  coinFlipFrame04,
+  coinFlipFrame05,
+];
+const coinFlipFrameIndexes = {
+  heads: 0,
+  headsAngle: 1,
+  edge: 2,
+  tailsAngle: 3,
+  tails: 4,
+};
+const coinFlipSpinCycle = [
+  "heads",
+  "headsAngle",
+  "edge",
+  "tailsAngle",
+  "tails",
+  "tailsAngle",
+  "edge",
+  "headsAngle",
+];
+const coinFlipEndingSequences = {
+  heads: ["tails", "tailsAngle", "edge", "headsAngle", "heads"],
+  tails: ["heads", "headsAngle", "edge", "tailsAngle", "tails"],
+};
+
+function getCoinFrameIndexForSide(side) {
+  return side === "tails" ? coinFlipFrameIndexes.tails : coinFlipFrameIndexes.heads;
+}
+
 const appBase = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 function normalizePathname(pathname) {
@@ -491,6 +542,15 @@ export function App() {
       <>
         <MobileShellScrollFix />
         <CrashPage onGameChange={navigateToGame} />
+      </>
+    );
+  }
+
+  if (pathname === "/coin-flip") {
+    return (
+      <>
+        <MobileShellScrollFix />
+        <CoinFlipPage onGameChange={navigateToGame} />
       </>
     );
   }
@@ -2304,7 +2364,7 @@ function HiloPage({ onGameChange }) {
             box-sizing: border-box;
             min-width: 0;
             grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: var(--spacing-12);
+            gap: var(--spacing-24);
             padding: var(--spacing-12);
             margin-top: 0;
             border: var(--border-width-default) solid var(--joker-black-300);
@@ -3519,6 +3579,765 @@ function CrashPage({ onGameChange }) {
   );
 }
 
+function CoinFlipPage({ onGameChange }) {
+  const [betAmount, setBetAmount] = useState("");
+  const [balance] = useState(150000);
+  const [selectedSide, setSelectedSide] = useState("heads");
+  const [coinFrameIndex, setCoinFrameIndex] = useState(0);
+  const [isCoinDragging, setIsCoinDragging] = useState(false);
+  const [isCoinFlipping, setIsCoinFlipping] = useState(false);
+  const [coinRoundStatus, setCoinRoundStatus] = useState("idle");
+  const [coinResult, setCoinResult] = useState(null);
+  const [coinHistory, setCoinHistory] = useState([]);
+  const [pullDistance, setPullDistance] = useState(0);
+  const [coinFlightY, setCoinFlightY] = useState(0);
+  const [displayedCoinProfit, setDisplayedCoinProfit] = useState(0);
+  const coinDragStartRef = useRef(0);
+  const coinAnimationFrameRef = useRef(null);
+  const coinProfitAnimationRef = useRef(null);
+  const coinHapticStepRef = useRef(0);
+  const coinPullTriggeredRef = useRef(false);
+  const selectedSideRef = useRef(selectedSide);
+  const hasCoinBetAmount = Number(betAmount) > 0;
+  const hasActiveCoinRound = coinRoundStatus === "active";
+  const settledCoinCount = coinHistory.filter((coin) => coin.didWin).length;
+  const canStartCoinFlip = hasCoinBetAmount && coinHistory.length < 4 && !isCoinFlipping;
+  const canFlipCoin = canStartCoinFlip;
+  const coinFlipPreviewCoins = Array.from({ length: 4 }, (_, index) => {
+    const historyItem = coinHistory[index];
+
+    if (!historyItem) {
+      return { id: `joker-pending-${index}`, coin: coinJokerIcon, isPending: true };
+    }
+
+    return {
+      id: historyItem.id,
+      coin: historyItem.result === "tails" ? coinTailsIcon : coinHeadsIcon,
+      badge: historyItem.didWin ? coinFlipCorrectIcon : coinFlipFailIcon,
+      alt: historyItem.didWin ? "Correct" : "Failed",
+      isSettled: true,
+    };
+  });
+  const currentCoinMultiplier = 1 + settledCoinCount * 0.76;
+  const nextCoinMultiplier = 1 + Math.min(4, settledCoinCount + 1) * 0.76;
+  const currentCoinProfit = Number(betAmount || 0) * currentCoinMultiplier;
+  const nextCoinProfit = Number(betAmount || 0) * nextCoinMultiplier;
+  const coinFlightLift = Math.abs(coinFlightY);
+  const coinMaxTravel = typeof window !== "undefined" && window.matchMedia("(max-width: 760px)").matches ? 74 : 96;
+  const coinFlightRatio = Math.min(1, coinFlightLift / coinMaxTravel);
+
+  useEffect(() => {
+    return () => {
+      if (coinAnimationFrameRef.current) {
+        window.cancelAnimationFrame(coinAnimationFrameRef.current);
+      }
+      if (coinProfitAnimationRef.current) {
+        window.cancelAnimationFrame(coinProfitAnimationRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    selectedSideRef.current = selectedSide;
+  }, [selectedSide]);
+
+  useEffect(() => {
+    const fromProfit = displayedCoinProfit;
+    const toProfit = currentCoinProfit;
+
+    if (coinProfitAnimationRef.current) {
+      window.cancelAnimationFrame(coinProfitAnimationRef.current);
+    }
+
+    if (fromProfit === toProfit) return;
+
+    const startTime = performance.now();
+    const duration = 560;
+
+    function easeOutQuart(value) {
+      return 1 - Math.pow(1 - value, 4);
+    }
+
+    function animateProfit(now) {
+      const progress = Math.min(1, (now - startTime) / duration);
+      const easedProgress = easeOutQuart(progress);
+
+      setDisplayedCoinProfit(fromProfit + (toProfit - fromProfit) * easedProgress);
+
+      if (progress < 1) {
+        coinProfitAnimationRef.current = window.requestAnimationFrame(animateProfit);
+        return;
+      }
+
+      coinProfitAnimationRef.current = null;
+    }
+
+    coinProfitAnimationRef.current = window.requestAnimationFrame(animateProfit);
+  }, [currentCoinProfit]);
+
+  function handleBetAction() {
+    if (!canStartCoinFlip) return;
+
+    setCoinResult(null);
+    if (!hasActiveCoinRound) {
+      setCoinHistory([]);
+      setCoinFrameIndex(getCoinFrameIndexForSide(selectedSideRef.current));
+    }
+    setCoinRoundStatus("active");
+    window.setTimeout(() => runCoinFlipAnimation(120, true), 60);
+  }
+
+  function handleCoinCashout() {
+    if (isCoinFlipping) return;
+
+    setCoinRoundStatus("idle");
+    setCoinResult(null);
+    setCoinHistory([]);
+    setDisplayedCoinProfit(0);
+    setCoinFrameIndex(getCoinFrameIndexForSide(selectedSideRef.current));
+  }
+
+  function handleCoinSideChange(side) {
+    if (isCoinFlipping) return;
+
+    selectedSideRef.current = side;
+    setSelectedSide(side);
+    setCoinResult(null);
+    setCoinFrameIndex(getCoinFrameIndexForSide(side));
+  }
+
+  function handleCoinFlipAgain() {
+    if (!canStartCoinFlip) return;
+
+    if (!hasActiveCoinRound) {
+      setCoinHistory([]);
+      setCoinFrameIndex(getCoinFrameIndexForSide(selectedSideRef.current));
+      setCoinRoundStatus("active");
+      window.setTimeout(() => runCoinFlipAnimation(120, true), 60);
+      return;
+    }
+
+    runCoinFlipAnimation(120);
+  }
+
+  function runCoinFlipAnimation(strength, forceStart = false) {
+    const isAllowedToFlip =
+      hasCoinBetAmount &&
+      coinHistory.length < 4 &&
+      !isCoinFlipping &&
+      (hasActiveCoinRound || forceStart);
+
+    if (!isAllowedToFlip) return;
+
+    if (coinAnimationFrameRef.current) {
+      window.cancelAnimationFrame(coinAnimationFrameRef.current);
+    }
+
+    const activeSelectedSide = selectedSideRef.current;
+    const didWin = Math.random() > 0.42;
+    const result = didWin ? activeSelectedSide : activeSelectedSide === "heads" ? "tails" : "heads";
+    const cycles = Math.max(4, Math.min(8, 4 + Math.floor(Math.random() * 3) + Math.round(strength / 90)));
+    const endingSequence = coinFlipEndingSequences[result];
+    const spinSequence = Array.from({ length: cycles }, () => coinFlipSpinCycle).flat();
+    const endingStartIndex = spinSequence.lastIndexOf(endingSequence[0]);
+    const resolvedSequence = [
+      ...spinSequence.slice(0, Math.max(0, endingStartIndex)),
+      ...endingSequence,
+    ];
+    const duration = 980 + resolvedSequence.length * 58;
+    const maxTravel = window.matchMedia("(max-width: 760px)").matches ? 74 : 96;
+    const startTime = performance.now();
+    setIsCoinFlipping(true);
+    setCoinResult(null);
+    setCoinFlightY(0);
+
+    function easeOutCubic(value) {
+      return 1 - Math.pow(1 - value, 3);
+    }
+
+    function easeInCubic(value) {
+      return value * value * value;
+    }
+
+    function animateFrame(now) {
+      const progress = Math.min(1, (now - startTime) / duration);
+      const spriteProgress = 1 - Math.pow(1 - progress, 2.3);
+      const frameProgress = Math.min(
+        resolvedSequence.length - 1,
+        Math.floor(spriteProgress * resolvedSequence.length)
+      );
+      const frameName = resolvedSequence[frameProgress];
+      const flightY =
+        progress < 0.44
+          ? -maxTravel * easeOutCubic(progress / 0.44)
+          : -maxTravel * (1 - easeInCubic((progress - 0.44) / 0.56));
+
+      setCoinFlightY(progress === 1 ? 0 : flightY);
+      setCoinFrameIndex(coinFlipFrameIndexes[frameName]);
+
+      if (progress < 1) {
+        coinAnimationFrameRef.current = window.requestAnimationFrame(animateFrame);
+        return;
+      }
+
+      coinAnimationFrameRef.current = null;
+      setIsCoinFlipping(false);
+      setCoinFlightY(0);
+      setCoinResult(didWin ? "win" : "loss");
+      setCoinHistory((currentHistory) => [
+        ...currentHistory.slice(0, 3),
+        {
+          id: `${result}-${Date.now()}`,
+          didWin,
+          result,
+        },
+      ]);
+
+      if (!didWin) {
+        window.setTimeout(() => {
+          setCoinRoundStatus("idle");
+          setCoinHistory([]);
+          setCoinResult(null);
+          setDisplayedCoinProfit(0);
+          setCoinFrameIndex(getCoinFrameIndexForSide(selectedSideRef.current));
+        }, 1400);
+      }
+    }
+
+    coinAnimationFrameRef.current = window.requestAnimationFrame(animateFrame);
+  }
+
+  function handleCoinPointerDown(event) {
+    if (!canFlipCoin) return;
+
+    if (coinAnimationFrameRef.current) {
+      window.cancelAnimationFrame(coinAnimationFrameRef.current);
+      coinAnimationFrameRef.current = null;
+    }
+
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+    coinDragStartRef.current = event.clientY;
+    coinHapticStepRef.current = 0;
+    coinPullTriggeredRef.current = false;
+    setIsCoinDragging(true);
+    setCoinResult(null);
+    setPullDistance(0);
+  }
+
+  function handleCoinPointerMove(event) {
+    if (!isCoinDragging || coinPullTriggeredRef.current) return;
+
+    const rawPullDistance = Math.max(0, event.clientY - coinDragStartRef.current);
+    const nextPullDistance = Math.min(180, rawPullDistance / (1 + rawPullDistance / 360));
+    const nextHapticStep = Math.floor(nextPullDistance / 52);
+
+    if (nextHapticStep > coinHapticStepRef.current && navigator.vibrate) {
+      navigator.vibrate(8);
+      coinHapticStepRef.current = nextHapticStep;
+    }
+
+    setPullDistance(nextPullDistance);
+    setCoinFrameIndex(Math.min(coinFlipFrames.length - 1, Math.floor(nextPullDistance / 45)));
+
+    if (nextPullDistance >= 92) {
+      triggerCoinFlipFromPull(event, nextPullDistance);
+    }
+  }
+
+  function triggerCoinFlipFromPull(event, finalPullDistance) {
+    if (!isCoinDragging || coinPullTriggeredRef.current) return;
+
+    coinPullTriggeredRef.current = true;
+    event.currentTarget.releasePointerCapture?.(event.pointerId);
+    setIsCoinDragging(false);
+    setPullDistance(0);
+
+    if (!hasActiveCoinRound) {
+      setCoinHistory([]);
+      setCoinRoundStatus("active");
+      window.setTimeout(() => runCoinFlipAnimation(finalPullDistance, true), 60);
+      return;
+    }
+
+    runCoinFlipAnimation(finalPullDistance);
+  }
+
+  function releaseCoin(event) {
+    if (!isCoinDragging) return;
+    setIsCoinDragging(false);
+    setPullDistance(0);
+    event.currentTarget.releasePointerCapture?.(event.pointerId);
+  }
+
+  return (
+    <>
+      <style>
+        {`
+          .joker-coin-flip-stage {
+            --coin-pull-scale-x: 1;
+            --coin-pull-scale-y: 1;
+            --coin-shadow-scale: 1;
+            --coin-shadow-opacity: 0.28;
+            position: relative;
+            min-height: 100%;
+            overflow: hidden;
+            padding: var(--spacing-24);
+          }
+
+          .joker-coin-flip-betting-panel.is-coin-flipping {
+            pointer-events: none;
+            opacity: 0.72;
+            transition: opacity 220ms ease;
+          }
+
+          .joker-coin-flip-betting-panel.is-coin-choice-open .joker-betting-main,
+          .joker-coin-flip-betting-panel.is-coin-choice-open .joker-odds-button-group {
+            position: relative;
+            z-index: 4;
+            pointer-events: auto;
+          }
+
+          .joker-coin-flip-betting-panel.is-coin-choice-open .joker-odds-button-group button {
+            pointer-events: auto;
+          }
+
+          .joker-coin-flip-history {
+            position: absolute;
+            top: 42px;
+            left: 42px;
+            display: flex;
+            align-items: flex-start;
+            gap: var(--spacing-12);
+            margin: 0;
+            padding: 0;
+            list-style: none;
+          }
+
+          .joker-coin-flip-history__coin {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: var(--spacing-8);
+            width: 84px;
+            min-height: 116px;
+          }
+
+          .joker-coin-flip-history__coin.is-pending {
+            opacity: 0.2;
+          }
+
+          .joker-coin-flip-history__coin:not(:last-child)::after {
+            position: absolute;
+            top: 42px;
+            right: -9px;
+            width: 8px;
+            height: 4px;
+            border-radius: 999px;
+            content: "";
+            background: var(--joker-gold-400);
+            opacity: 0.92;
+          }
+
+          .joker-coin-flip-history__image {
+            display: block;
+            width: auto;
+            height: 84px;
+            object-fit: contain;
+          }
+
+          .joker-coin-flip-history__badge {
+            position: absolute;
+            top: -6px;
+            right: -6px;
+            width: 32px;
+            height: 32px;
+            object-fit: contain;
+            z-index: 1;
+          }
+
+          .joker-coin-flip-history__multiplier {
+            color: var(--joker-gold-400);
+            font-size: var(--text-body-14);
+            font-weight: var(--text-body-weight);
+            line-height: var(--text-body-line-height);
+            letter-spacing: 0;
+            white-space: nowrap;
+          }
+
+          .joker-coin-flip-main {
+            position: absolute;
+            left: 50%;
+            bottom: 112px;
+            display: grid;
+            place-items: center;
+            width: 346px;
+            height: 336px;
+            padding: 0;
+            border: 0;
+            background: transparent;
+            cursor: grab;
+            touch-action: none;
+            transform: translate(-50%, calc(var(--coin-pull, 0px) + var(--coin-flight, 0px))) scaleX(var(--coin-pull-scale-x)) scaleY(var(--coin-pull-scale-y));
+            transition:
+              filter 220ms ease,
+              transform 520ms cubic-bezier(0.18, 0.92, 0.22, 1.18);
+            user-select: none;
+            animation: joker-coin-idle-float 4.8s ease-in-out infinite;
+          }
+
+          .joker-coin-flip-main:disabled {
+            opacity: 1;
+            cursor: not-allowed;
+          }
+
+          .joker-coin-flip-main::after {
+            position: absolute;
+            left: 50%;
+            bottom: -4px;
+            width: 72%;
+            height: 30px;
+            border-radius: 999px;
+            pointer-events: none;
+            content: "";
+            background:
+              radial-gradient(
+                ellipse at center,
+                rgba(0, 0, 0, 0.82) 0%,
+                rgba(0, 0, 0, 0.58) 44%,
+                transparent 76%
+              );
+            filter: blur(var(--coin-shadow-blur, 16px));
+            opacity: min(0.56, var(--coin-shadow-opacity));
+            transform: translateX(-50%) scale(var(--coin-shadow-scale), 0.34);
+            transition:
+              opacity 320ms ease,
+              transform 420ms cubic-bezier(0.18, 0.92, 0.22, 1.18);
+            z-index: 0;
+          }
+
+          .joker-coin-flip-main.is-dragging {
+            cursor: grabbing;
+            animation-play-state: paused;
+            transition: none;
+          }
+
+          .joker-coin-flip-main.is-locked {
+            cursor: not-allowed;
+            filter: saturate(0.88);
+          }
+
+          .joker-coin-flip-main.is-flipping {
+            cursor: wait;
+            animation: none;
+            filter: blur(0.4px);
+          }
+
+          .joker-coin-flip-main.is-landed {
+            animation: joker-coin-land 580ms cubic-bezier(0.18, 0.92, 0.22, 1.18) both;
+          }
+
+          .joker-coin-flip-main.is-loss {
+            animation: joker-coin-loss-shake 420ms ease both;
+          }
+
+          .joker-coin-flip-main::before {
+            position: absolute;
+            inset: 12%;
+            border: 1px solid color-mix(in srgb, var(--joker-gold-400) 58%, transparent);
+            border-radius: 999px;
+            pointer-events: none;
+            content: "";
+            opacity: 0;
+            transform: scale(0.72);
+            z-index: 3;
+          }
+
+          .joker-coin-flip-main.is-landed::before,
+          .joker-coin-flip-main.is-loss::before {
+            animation: joker-coin-impact-ring 620ms ease-out both;
+          }
+
+          .joker-coin-flip-main.is-landed::after,
+          .joker-coin-flip-main.is-loss::after {
+            animation: joker-coin-shadow-impact 520ms cubic-bezier(0.18, 0.92, 0.22, 1.18) both;
+          }
+
+          .joker-coin-flip-main__image {
+            position: relative;
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            pointer-events: none;
+            transform: translateZ(0);
+            z-index: 1;
+          }
+
+          .joker-coin-flip-result-badge {
+            position: absolute;
+            top: 11%;
+            right: 12%;
+            width: 54px;
+            height: 54px;
+            object-fit: contain;
+            pointer-events: none;
+            transform: scale(0.72);
+            opacity: 0;
+            z-index: 4;
+          }
+
+          .joker-coin-flip-result-badge.is-visible {
+            animation: joker-coin-result-pop 520ms cubic-bezier(0.18, 0.92, 0.22, 1.18) both;
+          }
+
+          .joker-coin-flip-hint {
+            position: absolute;
+            left: 50%;
+            bottom: 76px;
+            display: inline-flex;
+            align-items: center;
+            gap: var(--spacing-8);
+            color: var(--joker-gold-400);
+            font-size: var(--text-body-14);
+            font-weight: var(--text-body-weight);
+            line-height: var(--text-body-line-height);
+            letter-spacing: 0;
+            pointer-events: none;
+            transform: translateX(-50%);
+            opacity: 0.96;
+          }
+
+          @keyframes joker-coin-idle-float {
+            0%,
+            100% {
+              translate: 0 0;
+            }
+
+            50% {
+              translate: 0 -3px;
+            }
+          }
+
+          @keyframes joker-coin-land {
+            0% {
+              filter: drop-shadow(0 0 0 rgba(255, 219, 150, 0));
+              translate: 0 -7px;
+            }
+
+            54% {
+              filter: drop-shadow(0 0 16px rgba(255, 219, 150, 0.3));
+              translate: 0 3px;
+            }
+
+            100% {
+              filter: drop-shadow(0 0 0 rgba(255, 219, 150, 0));
+              translate: 0 0;
+            }
+          }
+
+          @keyframes joker-coin-impact-ring {
+            0% {
+              opacity: 0.46;
+              transform: scale(0.72);
+            }
+
+            100% {
+              opacity: 0;
+              transform: scale(1.16);
+            }
+          }
+
+          @keyframes joker-coin-shadow-impact {
+            0% {
+              opacity: 0.14;
+              filter: blur(28px);
+              transform: translateX(-50%) scale(1.9, 0.78);
+            }
+
+            48% {
+              opacity: 0.5;
+              filter: blur(10px);
+              transform: translateX(-50%) scale(0.82, 0.54);
+            }
+
+            100% {
+              opacity: 0.28;
+              filter: blur(16px);
+              transform: translateX(-50%) scale(1);
+            }
+          }
+
+          @keyframes joker-coin-result-pop {
+            0% {
+              opacity: 0;
+              transform: scale(0.62) translateY(6px);
+            }
+
+            58% {
+              opacity: 1;
+              transform: scale(1.08) translateY(-2px);
+            }
+
+            100% {
+              opacity: 1;
+              transform: scale(1) translateY(0);
+            }
+          }
+
+          @keyframes joker-coin-loss-shake {
+            0%,
+            100% {
+              translate: 0 0;
+            }
+
+            25% {
+              translate: -4px 0;
+            }
+
+            50% {
+              translate: 4px 0;
+            }
+
+            75% {
+              translate: -2px 0;
+            }
+          }
+
+          @media (max-width: 760px) {
+            .joker-coin-flip-history {
+              top: var(--spacing-24);
+              left: var(--spacing-24);
+              gap: var(--spacing-12);
+            }
+
+            .joker-coin-flip-history__coin,
+            .joker-coin-flip-history__image {
+              height: 64px;
+            }
+
+            .joker-coin-flip-history__coin {
+              width: 64px;
+            }
+
+            .joker-coin-flip-history__badge {
+              top: -6px;
+              right: -6px;
+              width: 32px;
+              height: 32px;
+            }
+
+            .joker-coin-flip-history__coin:not(:last-child)::after {
+              top: 32px;
+              right: -9px;
+            }
+
+            .joker-coin-flip-main {
+              bottom: 88px;
+              width: min(62vw, 240px);
+              height: min(60vw, 234px);
+            }
+
+            .joker-coin-flip-result-badge {
+              width: 42px;
+              height: 42px;
+            }
+
+            .joker-coin-flip-hint {
+              bottom: 56px;
+            }
+          }
+        `}
+      </style>
+      <GameShell
+        balance={formatBalance(balance)}
+        className="joker-game-shell--coin-flip"
+        defaultValue={coinFlipNavigationPreset.defaultValue}
+        game={coinFlipNavigationPreset.game}
+        onValueChange={onGameChange}
+        value={coinFlipNavigationPreset.selectedValue}
+        bettingPanel={
+          <PackagedCoinFlipBettingPanel
+            betAmount={betAmount}
+            currentProfit={formatCurrency(displayedCoinProfit)}
+            currentMultiplier={`${currentCoinMultiplier.toFixed(2)}x`}
+            inGame={hasActiveCoinRound}
+            isFlipping={isCoinFlipping}
+            nextMultiplier={`${nextCoinMultiplier.toFixed(2)}x`}
+            nextProfit={formatCurrency(nextCoinProfit)}
+            onBetAmountChange={setBetAmount}
+            onCashout={handleCoinCashout}
+            onFlipAgain={handleCoinFlipAgain}
+            onPlaceBet={handleBetAction}
+            onSideChange={handleCoinSideChange}
+            selectedSide={selectedSide}
+            submitLabel="Flip Coin"
+          />
+        }
+      >
+        <section className="joker-coin-flip-stage" aria-label="Coin Flip game area">
+          <ol className="joker-coin-flip-history" aria-label="Coin Flip preview history">
+            {coinFlipPreviewCoins.map((coin, index) => (
+              <li
+                className={`joker-coin-flip-history__coin${coin.isPending ? " is-pending" : ""}`}
+                key={coin.id}
+              >
+                <img
+                  className="joker-coin-flip-history__image"
+                  src={coin.coin}
+                  alt=""
+                  aria-hidden="true"
+                />
+                {coin.badge ? (
+                  <img className="joker-coin-flip-history__badge" src={coin.badge} alt={coin.alt} />
+                ) : null}
+                <span className="joker-coin-flip-history__multiplier">
+                  {(1 + (index + 1) * 0.76).toFixed(2)}x
+                </span>
+              </li>
+            ))}
+          </ol>
+          <button
+            className={[
+              "joker-coin-flip-main",
+              isCoinDragging ? "is-dragging" : "",
+              isCoinFlipping ? "is-flipping" : "",
+              !canFlipCoin ? "is-locked" : "",
+              coinResult === "win" ? "is-landed" : "",
+              coinResult === "loss" ? "is-loss" : "",
+            ]
+              .filter(Boolean)
+              .join(" ")}
+            style={{
+              "--coin-pull": `${pullDistance * 0.34}px`,
+              "--coin-flight": `${coinFlightY}px`,
+              "--coin-pull-scale-x": `${1 + pullDistance / 1800}`,
+              "--coin-pull-scale-y": `${1 - pullDistance / 2400}`,
+              "--coin-shadow-scale": `${1 + pullDistance / 160 + coinFlightRatio * 1.1}`,
+              "--coin-shadow-opacity": `${Math.max(0.12, 0.28 + pullDistance / 520 - coinFlightRatio * 0.16)}`,
+              "--coin-shadow-blur": `${16 + coinFlightRatio * 18}px`,
+            }}
+            type="button"
+            aria-label="Tap to flip coin"
+            disabled={!canFlipCoin}
+            onClick={handleCoinFlipAgain}
+          >
+            <img
+              className="joker-coin-flip-main__image"
+              src={coinFlipFrames[coinFrameIndex]}
+              alt=""
+              aria-hidden="true"
+            />
+          </button>
+          <div className="joker-coin-flip-hint" aria-hidden="true">
+            <span>Tap to flip</span>
+          </div>
+        </section>
+      </GameShell>
+    </>
+  );
+}
+
 function CocoHutPage({ onGameChange }) {
   const [betAmount, setBetAmount] = useState("");
   const [balance] = useState(150000);
@@ -3533,9 +4352,10 @@ function CocoHutPage({ onGameChange }) {
       <style>
         {`
           .joker-coco-hut-stage {
-            display: grid;
             min-height: 100%;
-            padding: var(--spacing-24);
+            background:
+              linear-gradient(180deg, rgba(0, 0, 0, 0.08), rgba(0, 0, 0, 0.16)),
+              url("${cocoHutBackground}") center / cover no-repeat;
           }
         `}
       </style>
@@ -4067,6 +4887,80 @@ function PackagedCrashBettingPanel({
       onBetAmountChange={handleBetAmountChange}
       numberOfBets={numberOfBets}
       onNumberOfBetsChange={handleNumberOfBetsChange}
+      disablePlaceBetUntilBetAmount
+    />
+  );
+}
+
+function PackagedCoinFlipBettingPanel({
+  betAmount,
+  currentMultiplier,
+  currentProfit,
+  inGame,
+  isFlipping,
+  nextMultiplier,
+  nextProfit,
+  onBetAmountChange,
+  onCashout,
+  onFlipAgain,
+  onPlaceBet,
+  onSideChange,
+  selectedSide,
+  submitLabel = "Place Bet",
+}) {
+  function handleBetAmountChange(event) {
+    onBetAmountChange(event.currentTarget.value.replace(/[^\d.]/g, ""));
+  }
+
+  function handleOddsValueChange(value, option) {
+    if (isFlipping) return;
+
+    onSideChange(value, option);
+  }
+
+  function handlePlaceBet(event) {
+    if (isFlipping) return;
+
+    onPlaceBet(event);
+  }
+
+  function handleFlipAgain(event) {
+    if (isFlipping) return;
+
+    onFlipAgain?.(event);
+  }
+
+  function handleCashout(event) {
+    if (isFlipping) return;
+
+    onCashout(event);
+  }
+
+  return (
+    <JokerCoinFlipBettingPanel
+      className={[
+        isFlipping ? "is-coin-flipping" : "",
+        inGame && !isFlipping ? "is-coin-choice-open" : "",
+      ]
+        .filter(Boolean)
+        .join(" ")}
+      betAmount={betAmount}
+      cashoutLabel="Cashout"
+      selectedOddsValue={selectedSide}
+      defaultSelectedOddsValue="heads"
+      inGame={inGame}
+      inGameCardProps={{
+        currentProfit,
+        nextValue: nextProfit,
+        currentMultiplier,
+        nextMultiplier,
+      }}
+      onBetAmountChange={handleBetAmountChange}
+      onCashout={handleCashout}
+      onFlipAgain={handleFlipAgain}
+      onOddsValueChange={handleOddsValueChange}
+      onPlaceBet={handlePlaceBet}
+      submitLabel={submitLabel}
       disablePlaceBetUntilBetAmount
     />
   );
