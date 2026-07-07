@@ -35,7 +35,7 @@ jobs:
           git config --global url."https://github.com/".insteadOf "git@github.com:"
 
       - name: Remove lockfile
-        run: rm -f yarn.lock
+        run: rm -rf dist node_modules .yarn yarn.lock && rm -f .pnp.cjs .pnp.loader.mjs
 
       - name: Install dependencies
         run: yarn install --no-immutable
