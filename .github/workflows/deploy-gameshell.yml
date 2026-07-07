@@ -27,9 +27,6 @@ jobs:
         run: |
           git config --global url."https://x-access-token:${{ secrets.PRIVATE_REPO_TOKEN }}@github.com/".insteadOf "https://github.com/"
 
-      - name: Remove lockfile
-        run: rm -rf dist node_modules .yarn yarn.lock && rm -f .pnp.cjs .pnp.loader.mjs
-
       - name: Install dependencies
         run: yarn install --no-immutable
 
