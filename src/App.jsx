@@ -41,6 +41,8 @@ const gridTileCount = 25;
 const minTileAmount = 2;
 const maxTileAmount = gridTileCount - 1;
 
+// comments
+
 const gameOptions = [
   ...Array.from({ length: maxTileAmount }, (_, index) => {
     const count = index + 1;
