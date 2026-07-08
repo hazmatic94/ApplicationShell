@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Button,
   CocoHutBettingPanel as JokerCocoHutBettingPanel,
@@ -6,9 +6,8 @@ import {
   CrashBettingPanel as JokerCrashBettingPanel,
   GameShell,
   HiLoBettingPanel as JokerHiLoBettingPanel,
-  LossCard,
-  MinesBettingPanel as JokerMinesBettingPanel,
-  WinCard,
+  MinesBettingPanel,
+  WinModalCard,
 } from "@joker/design-system";
 import jokerIcon from "../assets/iconJoker.svg?url";
 import infoIcon from "../assets/info.svg?url";
@@ -19,7 +18,6 @@ import minesBombSound from "../assets/mines-bomb.mp3?url";
 import minesCashoutSound from "../assets/mines-cashout.mp3?url";
 import minesClickSound from "../assets/mines-click.mp3?url";
 import minesPlaceBetSound from "../assets/mines-placebet.mp3?url";
-import minesLossIcon from "../node_modules/@joker/design-system/assets/win-card-loss.svg?url";
 import downArrowIcon from "../assets/hilo-down.svg?url";
 import upArrowIcon from "../assets/hilo-up.svg?url";
 import clubsIcon from "../assets/clubs-wrapper.svg?url";
@@ -37,21 +35,29 @@ import coinFlipFrame03 from "../assets/coinflip-sprite/flip03.png?url";
 import coinFlipFrame04 from "../assets/coinflip-sprite/flip04.png?url";
 import coinFlipFrame05 from "../assets/coinflip-sprite/flip05.png?url";
 import cocoHutBackground from "../assets/cocohut-bg.png?url";
-const gridTileCount = 25;
 const minTileAmount = 2;
-const maxTileAmount = gridTileCount - 1;
+const desktopMinesGrid = { columns: 5, rows: 5 };
+const mobileMinesGrid = { columns: 3, rows: 5 };
 
-// comments
+function createMinesAmountOptions(maxTileAmount) {
+  return Array.from({ length: maxTileAmount - minTileAmount + 1 }, (_, index) => {
+    const count = minTileAmount + index;
 
-const gameOptions = [
-  ...Array.from({ length: maxTileAmount }, (_, index) => {
-    const count = index + 1;
-    return count >= minTileAmount
-      ? { value: String(count), label: `${count} ${count === 1 ? "Mine" : "Mines"}` }
-      : null;
-  }).filter(Boolean),
-];
-const mineTiles = Array.from({ length: 25 }, (_, index) => index + 1);
+    return {
+      value: String(count),
+      label: (
+        <span className="joker-mines-dynamite-option">
+          <img src={dynamiteIcon} alt="" />
+          <span>{count} Dynamite</span>
+        </span>
+      ),
+    };
+  });
+}
+
+function createMineTiles(tileCount) {
+  return Array.from({ length: tileCount }, (_, index) => index + 1);
+}
 const tileStateAssets = {
   default: { label: "Joker", src: jokerIcon },
   joker: { label: "Joker", src: jokerIcon },
@@ -158,6 +164,7 @@ function getCoinFrameIndexForSide(side) {
 }
 
 const appBase = import.meta.env.BASE_URL.replace(/\/$/, "");
+const gameShellMobilePanelQuery = "(max-width: 1023px)";
 
 function normalizePathname(pathname) {
   if (!appBase) return pathname;
@@ -168,7 +175,36 @@ function withBase(path) {
   return `${appBase}${path}`;
 }
 
-function clampTileAmount(value) {
+function useGameShellBettingPanelLayout() {
+  const [layout, setLayout] = useState(() => {
+    if (typeof window === "undefined" || !window.matchMedia) return "desktop";
+
+    return window.matchMedia(gameShellMobilePanelQuery).matches ? "mobile" : "desktop";
+  });
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.matchMedia) return undefined;
+
+    const mediaQuery = window.matchMedia(gameShellMobilePanelQuery);
+    const handleChange = () => setLayout(mediaQuery.matches ? "mobile" : "desktop");
+
+    handleChange();
+
+    if (mediaQuery.addEventListener) {
+      mediaQuery.addEventListener("change", handleChange);
+
+      return () => mediaQuery.removeEventListener("change", handleChange);
+    }
+
+    mediaQuery.addListener(handleChange);
+
+    return () => mediaQuery.removeListener(handleChange);
+  }, []);
+
+  return layout;
+}
+
+function clampTileAmount(value, maxTileAmount) {
   const numericValue = Number(value);
 
   if (!Number.isFinite(numericValue)) {
@@ -184,7 +220,7 @@ function calculateMultiplier(mines, revealedCount) {
   return 1 + mines * 0.25 + revealedCount * 0.16;
 }
 
-function createRoundBoard(minesCount) {
+function createRoundBoard(minesCount, mineTiles) {
   const tileIndexes = mineTiles.map((tile) => tile - 1);
   const shuffledIndexes = [...tileIndexes];
 
@@ -575,6 +611,15 @@ export function App() {
 }
 
 function MinesPage({ onGameChange }) {
+  const bettingPanelLayout = useGameShellBettingPanelLayout();
+  const minesGrid = bettingPanelLayout === "mobile" ? mobileMinesGrid : desktopMinesGrid;
+  const minesTileCount = minesGrid.columns * minesGrid.rows;
+  const maxTileAmount = minesTileCount - 1;
+  const mineTiles = useMemo(() => createMineTiles(minesTileCount), [minesTileCount]);
+  const minesAmountOptions = useMemo(
+    () => createMinesAmountOptions(maxTileAmount),
+    [maxTileAmount]
+  );
   const [bettingMode, setBettingMode] = useState("manual");
   const [betAmount, setBetAmount] = useState("");
   const [balance, setBalance] = useState(150000);
@@ -590,7 +635,7 @@ function MinesPage({ onGameChange }) {
   const [lossResult, setLossResult] = useState(false);
   const resultResetTimeout = useRef(null);
 
-  const activeMineCount = clampTileAmount(mines);
+  const activeMineCount = clampTileAmount(mines, maxTileAmount);
   const safeRevealedCount = countSafeReveals(board, revealedTiles);
   const gameInPlay = roundStatus === "active";
   const multiplier = calculateMultiplier(activeMineCount, safeRevealedCount);
@@ -631,6 +676,19 @@ function MinesPage({ onGameChange }) {
       }
     };
   }, []);
+
+  useEffect(() => {
+    setMines((currentMines) => String(clampTileAmount(currentMines, maxTileAmount)));
+    setBoard([]);
+    setRevealedTiles([]);
+    setFreshRevealedTiles([]);
+    setRoundStatus("idle");
+    setShieldActive(false);
+    setShieldUsed(false);
+    setCashoutResult(null);
+    setLossResult(false);
+    setMessage("");
+  }, [maxTileAmount]);
 
   function clearResultTimer() {
     if (resultResetTimeout.current) {
@@ -740,7 +798,7 @@ function MinesPage({ onGameChange }) {
       return;
     }
 
-    const nextBoard = createRoundBoard(activeMineCount);
+    const nextBoard = createRoundBoard(activeMineCount, mineTiles);
     playSound(minesPlaceBetSound);
 
     clearResultTimer();
@@ -805,14 +863,37 @@ function MinesPage({ onGameChange }) {
             }
           }
 
+          .joker-mines-dynamite-option {
+            display: inline-flex;
+            min-width: 0;
+            align-items: center;
+            gap: var(--spacing-8);
+            line-height: var(--text-body-line-height);
+          }
+
+          .joker-mines-dynamite-option > span {
+            display: inline-flex;
+            min-width: 0;
+            align-items: center;
+          }
+
+          .joker-mines-dynamite-option img {
+            display: block;
+            align-self: center;
+            flex: 0 0 var(--icon-size-md);
+            width: var(--icon-size-md);
+            height: var(--icon-size-md);
+            object-fit: contain;
+          }
+
           .joker-mines-board-area {
-            --mines-board-edge: calc(var(--spacing-40) + var(--spacing-8));
-            --mines-board-padding: clamp(var(--spacing-16), 3vmin, var(--mines-board-edge));
+            --mines-board-padding: clamp(var(--spacing-16), 3vmin, calc(var(--spacing-40) + var(--spacing-8)));
             position: relative;
             display: grid;
             height: 100%;
             min-height: 0;
-            place-items: center;
+            align-items: stretch;
+            justify-items: stretch;
             padding: var(--mines-board-padding);
             overflow: hidden;
           }
@@ -820,31 +901,35 @@ function MinesPage({ onGameChange }) {
           .joker-mines-grid {
             --mines-grid-gap: clamp(var(--spacing-8), 1.25vw, var(--spacing-12));
             display: grid;
-            width: min(100%, var(--mines-board-size, 760px));
-            aspect-ratio: 1;
-            grid-template-columns: repeat(5, minmax(0, 1fr));
+            width: 100%;
+            height: 100%;
+            min-width: 0;
+            min-height: 0;
+            grid-template-columns: repeat(var(--mines-grid-columns, 5), minmax(0, 1fr));
+            grid-template-rows: repeat(var(--mines-grid-rows, 5), minmax(0, 1fr));
             gap: var(--mines-grid-gap);
             overflow: visible;
           }
 
           .joker-game-shell .joker-navigation-mobile-content .joker-mines-stage {
-            height: auto;
-            min-height: 0;
+            height: 100%;
+            min-height: 100%;
             overflow: visible;
           }
 
           .joker-game-shell .joker-navigation-mobile-content .joker-mines-board-area {
-            min-height: calc(var(--mines-board-size, 320px) + (var(--mines-board-padding) * 2));
+            height: 100%;
+            min-height: 0;
             overflow: visible;
           }
 
           @media (max-width: 767px) {
             .joker-mines-board-area {
-              --mines-board-padding: var(--spacing-12);
+              --mines-board-padding: var(--spacing-8);
             }
 
             .joker-mines-grid {
-              --mines-grid-gap: var(--spacing-8);
+              --mines-grid-gap: var(--spacing-6, 6px);
             }
           }
 
@@ -917,8 +1002,10 @@ function MinesPage({ onGameChange }) {
             appearance: none;
             position: relative;
             display: grid;
+            width: 100%;
+            height: 100%;
             min-width: 0;
-            aspect-ratio: 1;
+            min-height: 0;
             place-items: center;
             overflow: visible;
             border: 0;
@@ -1656,7 +1743,10 @@ function MinesPage({ onGameChange }) {
             bettingMode={bettingMode}
             currentProfit={currentProfit}
             gameInPlay={gameInPlay}
+            layout={bettingPanelLayout}
             mines={mines}
+            maxTileAmount={maxTileAmount}
+            minesAmountOptions={minesAmountOptions}
             multiplier={multiplier}
             nextMultiplier={nextMultiplier}
             nextProfit={nextProfit}
@@ -1673,10 +1763,13 @@ function MinesPage({ onGameChange }) {
           freshRevealedTiles={freshRevealedTiles}
           lossResult={lossResult}
           multiplier={multiplier}
+          columns={minesGrid.columns}
           onResultClose={handleResultClose}
           onTileClick={handleTileClick}
           revealedTiles={revealedTiles}
           roundStatus={roundStatus}
+          rows={minesGrid.rows}
+          tiles={mineTiles}
         />
       </GameShell>
     </>
@@ -1696,6 +1789,7 @@ function HiloPage({ onGameChange }) {
   const [roundStatus, setRoundStatus] = useState("pre-game");
   const [skipAvailable, setSkipAvailable] = useState(true);
 
+  const bettingPanelLayout = useGameShellBettingPanelLayout();
   const numericBetAmount = Number(betAmount) || 0;
   const hasBetAmount = numericBetAmount > 0;
   const gameInPlay = roundStatus === "active";
@@ -2676,6 +2770,7 @@ function HiloPage({ onGameChange }) {
             currentProfit={currentProfit}
             gameInPlay={gameInPlay}
             higherOdds={formatHiloPercent(odds.higherPercent)}
+            layout={bettingPanelLayout}
             lowerOdds={formatHiloPercent(odds.lowerPercent)}
             onBetAmountChange={setBetAmount}
             onPlaceBet={handleBetAction}
@@ -2828,6 +2923,7 @@ function CrashPage({ onGameChange }) {
   }));
   const crashStartRef = useRef(0);
   const crashFrameRef = useRef(null);
+  const bettingPanelLayout = useGameShellBettingPanelLayout();
   const numericBetAmount = Number(betAmount) || 0;
   const hasBetAmount = numericBetAmount > 0;
   const crashGraph = buildCrashGraphPaths(crashRound.elapsedMs, crashRound.crashPoint);
@@ -3443,6 +3539,7 @@ function CrashPage({ onGameChange }) {
             betAmount={betAmount}
             bettingMode={bettingMode}
             gameInPlay={roundStatus === "active"}
+            layout={bettingPanelLayout}
             numberOfBets={numberOfBets}
             onBetAmountChange={setBetAmount}
             onModeChange={setBettingMode}
@@ -3549,28 +3646,17 @@ function CrashPage({ onGameChange }) {
                   </div>
                 </div>
               )}
-              {crashResult && (
+              {crashResult?.type === "win" && (
                 <div className="joker-crash-result-overlay" role="status" aria-live="polite">
-                  {crashResult.type === "win" ? (
-                    <WinCard
-                      className="joker-crash-result-card"
-                      title="Cashout Successful"
-                      amountWon={formatCurrency(crashResult.amount)}
-                      currency={null}
-                      messagePrefix={`Cashed out at ${formatCrashMultiplier(crashResult.multiplier)}.`}
-                      messageSuffix="has been added to your balance."
-                      closeLabel="Close crash cashout card"
-                      onClose={handleCrashResultClose}
-                    />
-                  ) : (
-                    <LossCard
-                      className="joker-crash-result-card"
-                      title="Crashed"
-                      message={`Round ended at ${formatCrashMultiplier(crashResult.multiplier)}. Better luck next round.`}
-                      closeLabel="Close crash loss card"
-                      onClose={handleCrashResultClose}
-                    />
-                  )}
+                  <WinModalCard
+                    className="joker-crash-result-card"
+                    title="Cashout Successful"
+                    amountWon={formatCurrency(crashResult.amount)}
+                    currency={null}
+                    message={`Cashed out at ${formatCrashMultiplier(crashResult.multiplier)}. Added to your balance.`}
+                    closeLabel="Close"
+                    onClose={handleCrashResultClose}
+                  />
                 </div>
               )}
             </div>
@@ -3582,6 +3668,7 @@ function CrashPage({ onGameChange }) {
 }
 
 function CoinFlipPage({ onGameChange }) {
+  const bettingPanelLayout = useGameShellBettingPanelLayout();
   const [betAmount, setBetAmount] = useState("");
   const [balance] = useState(150000);
   const [selectedSide, setSelectedSide] = useState("heads");
@@ -4265,6 +4352,7 @@ function CoinFlipPage({ onGameChange }) {
             currentMultiplier={`${currentCoinMultiplier.toFixed(2)}x`}
             inGame={hasActiveCoinRound}
             isFlipping={isCoinFlipping}
+            layout={bettingPanelLayout}
             nextMultiplier={`${nextCoinMultiplier.toFixed(2)}x`}
             nextProfit={formatCurrency(nextCoinProfit)}
             onBetAmountChange={setBetAmount}
@@ -4344,6 +4432,7 @@ function CocoHutPage({ onGameChange }) {
   const [betAmount, setBetAmount] = useState("");
   const [balance] = useState(150000);
   const [difficulty, setDifficulty] = useState("tourist");
+  const bettingPanelLayout = useGameShellBettingPanelLayout();
 
   function handleBetAction() {
     // Coco Hut gameplay will be wired here without touching the other games.
@@ -4372,6 +4461,7 @@ function CocoHutPage({ onGameChange }) {
           <PackagedCocoHutBettingPanel
             betAmount={betAmount}
             difficulty={difficulty}
+            layout={bettingPanelLayout}
             onBetAmountChange={setBetAmount}
             onDifficultyChange={setDifficulty}
             onPlaceBet={handleBetAction}
@@ -4637,6 +4727,7 @@ function HiloHistoryArrow({ direction }) {
 function MinesGrid({
   board,
   cashoutResult,
+  columns,
   freshRevealedTiles,
   lossResult,
   multiplier,
@@ -4644,54 +4735,24 @@ function MinesGrid({
   onTileClick,
   revealedTiles,
   roundStatus,
+  rows,
+  tiles,
 }) {
   const gameActive = roundStatus === "active";
-  const boardAreaRef = useRef(null);
-  const [boardSize, setBoardSize] = useState(320);
-
-  useEffect(() => {
-    const boardArea = boardAreaRef.current;
-    if (!boardArea) return undefined;
-
-    function measureBoard() {
-      const styles = window.getComputedStyle(boardArea);
-      const horizontalPadding =
-        Number.parseFloat(styles.paddingLeft) + Number.parseFloat(styles.paddingRight);
-      const verticalPadding =
-        Number.parseFloat(styles.paddingTop) + Number.parseFloat(styles.paddingBottom);
-      const availableWidth = boardArea.clientWidth - horizontalPadding;
-      const availableHeight = boardArea.clientHeight - verticalPadding;
-      const isStackedShell = Boolean(boardArea.closest(".joker-navigation-mobile-content"));
-      const heightLimit = availableHeight > 0 ? availableHeight : availableWidth;
-      const fitLimit = isStackedShell ? availableWidth : Math.min(availableWidth, heightLimit);
-      const nextSize = Math.max(240, Math.floor(Math.min(fitLimit, 760)));
-
-      setBoardSize((currentSize) => (currentSize === nextSize ? currentSize : nextSize));
-    }
-
-    measureBoard();
-
-    const resizeObserver = new ResizeObserver(measureBoard);
-    resizeObserver.observe(boardArea);
-    window.addEventListener("resize", measureBoard);
-
-    return () => {
-      resizeObserver.disconnect();
-      window.removeEventListener("resize", measureBoard);
-    };
-  }, []);
 
   return (
     <section className="joker-mines-stage" aria-label="Mines game board">
       <div
         className="joker-mines-board-area"
-        ref={boardAreaRef}
-        style={{ "--mines-board-size": `${boardSize}px` }}
+        style={{
+          "--mines-grid-columns": columns,
+          "--mines-grid-rows": rows,
+        }}
       >
         <div
           className={`joker-mines-grid ${gameActive ? "is-round-active" : ""} ${roundStatus === "lost" ? "is-round-lost" : ""}`.trim()}
         >
-          {mineTiles.map((tile, index) => {
+          {tiles.map((tile, index) => {
             const revealed = revealedTiles.includes(tile);
             const freshReveal = freshRevealedTiles.includes(tile);
             const tileData = board[index];
@@ -4750,16 +4811,14 @@ function MinesGrid({
             );
           })}
         </div>
-        {(cashoutResult || lossResult) && (
+        {cashoutResult && (
           <div className="joker-mines-result-card" role="status" aria-live="polite">
-            <WinCard
-              title={cashoutResult ? "Cashout Successful" : "Round Lost"}
-              amountWon={cashoutResult ? formatCurrency(cashoutResult.profit) : null}
+            <WinModalCard
+              title="Cashout Successful"
+              amountWon={formatCurrency(cashoutResult.profit)}
               currency={null}
-              messagePrefix={cashoutResult ? "You won" : "You hit dynamite."}
-              messageSuffix={cashoutResult ? "from this round." : "Better luck next round."}
-              successIconSrc={cashoutResult ? undefined : minesLossIcon}
-              closeLabel="Close result card"
+              message="Your winnings from this round have been added to your balance."
+              closeLabel="Close"
               onClose={onResultClose}
             />
           </div>
@@ -4774,7 +4833,10 @@ function PackagedMinesBettingPanel({
   bettingMode,
   currentProfit,
   gameInPlay,
+  layout = "desktop",
+  maxTileAmount,
   mines,
+  minesAmountOptions,
   multiplier,
   nextMultiplier,
   nextProfit,
@@ -4790,7 +4852,7 @@ function PackagedMinesBettingPanel({
   }
 
   function handleMinesAmountChange(nextValue) {
-    onMinesChange(String(clampTileAmount(nextValue)));
+    onMinesChange(String(clampTileAmount(nextValue, maxTileAmount)));
   }
 
   function handleNumberOfBetsChange(event) {
@@ -4798,7 +4860,8 @@ function PackagedMinesBettingPanel({
   }
 
   return (
-    <JokerMinesBettingPanel
+    <MinesBettingPanel
+      layout={layout}
       mode={bettingMode}
       onModeChange={onModeChange}
       onPlaceBet={onPlaceBet}
@@ -4814,7 +4877,8 @@ function PackagedMinesBettingPanel({
       betAmount={betAmount}
       onBetAmountChange={handleBetAmountChange}
       disablePlaceBetUntilBetAmount
-      minesAmountOptions={gameOptions}
+      minesAmountOptions={minesAmountOptions}
+      defaultMinesAmount={String(minTileAmount)}
       minesAmount={mines}
       onMinesAmountChange={handleMinesAmountChange}
       numberOfBets={numberOfBets}
@@ -4828,6 +4892,7 @@ function PackagedHiloBettingPanel({
   currentProfit,
   gameInPlay,
   higherOdds,
+  layout = "desktop",
   lowerOdds,
   onBetAmountChange,
   onHigherSame,
@@ -4843,6 +4908,7 @@ function PackagedHiloBettingPanel({
 
   return (
     <JokerHiLoBettingPanel
+      layout={layout}
       betAmount={betAmount}
       className={gameInPlay ? "" : "is-hilo-pre-game"}
       onBetAmountChange={handleBetAmountChange}
@@ -4865,6 +4931,7 @@ function PackagedCrashBettingPanel({
   betAmount,
   bettingMode,
   gameInPlay,
+  layout = "desktop",
   numberOfBets,
   onBetAmountChange,
   onModeChange,
@@ -4881,6 +4948,7 @@ function PackagedCrashBettingPanel({
 
   return (
     <JokerCrashBettingPanel
+      layout={layout}
       className={gameInPlay ? "is-crash-active" : ""}
       mode={bettingMode}
       onModeChange={onModeChange}
@@ -4900,6 +4968,7 @@ function PackagedCoinFlipBettingPanel({
   currentProfit,
   inGame,
   isFlipping,
+  layout = "desktop",
   nextMultiplier,
   nextProfit,
   onBetAmountChange,
@@ -4940,6 +5009,7 @@ function PackagedCoinFlipBettingPanel({
 
   return (
     <JokerCoinFlipBettingPanel
+      layout={layout}
       className={[
         isFlipping ? "is-coin-flipping" : "",
         inGame && !isFlipping ? "is-coin-choice-open" : "",
@@ -4971,6 +5041,7 @@ function PackagedCoinFlipBettingPanel({
 function PackagedCocoHutBettingPanel({
   betAmount,
   difficulty,
+  layout = "desktop",
   onBetAmountChange,
   onDifficultyChange,
   onPlaceBet,
@@ -4981,6 +5052,7 @@ function PackagedCocoHutBettingPanel({
 
   return (
     <JokerCocoHutBettingPanel
+      layout={layout}
       betAmount={betAmount}
       difficulty={difficulty}
       onBetAmountChange={handleBetAmountChange}
