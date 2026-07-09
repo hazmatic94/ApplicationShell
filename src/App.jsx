@@ -4020,13 +4020,6 @@ function CoinFlipPage({ onGameChange }) {
   const nextCoinMultiplier = calculateCoinFlipMultiplier(Math.min(maxRoundsToWin, settledCoinCount + 1));
   const currentCoinProfit = calculateCoinFlipProfit(betAmount, settledCoinCount);
   const nextCoinProfit = calculateCoinFlipProfit(betAmount, Math.min(maxRoundsToWin, settledCoinCount + 1));
-  const coinSubmitLabel = canCashOut ? (
-    <>
-      Cashout <JkcAmount value={currentCoinProfit} tone="inherit" />
-    </>
-  ) : (
-    "Flip Coin"
-  );
   const coinFlightLift = Math.abs(coinFlightY);
   const coinMaxTravel = getCoinMaxTravel();
   const coinFlightRatio = Math.min(1, coinFlightLift / coinMaxTravel);
@@ -4175,20 +4168,6 @@ function CoinFlipPage({ onGameChange }) {
     });
     clearCoinWinModalTimer();
     coinWinModalTimeoutRef.current = window.setTimeout(closeCoinWinModal, 3000);
-  }
-
-  function handleCoinPanelPlaceBet(event) {
-    if (canCashOut) {
-      handleCoinCashout();
-      return;
-    }
-
-    if (hasActiveCoinRound) {
-      handleCoinFlipAgain();
-      return;
-    }
-
-    handleBetAction(event);
   }
 
   function handleCoinWinModalClose() {
@@ -5109,10 +5088,13 @@ function CoinFlipPage({ onGameChange }) {
         bettingPanel={
           <PackagedCoinFlipBettingPanel
             betAmount={betAmount}
+            inGame={hasActiveCoinRound}
             isFlipping={isCoinFlipping}
             layout={bettingPanelLayout}
             onBetAmountChange={setBetAmount}
-            onPlaceBet={handleCoinPanelPlaceBet}
+            onCashout={handleCoinCashout}
+            onFlipCoin={handleCoinFlipAgain}
+            onPlaceBet={handleBetAction}
             onSideChange={handleCoinSideChange}
             onRoundsToWinChange={setRoundsToWin}
             oddsOptions={getCoinFlipOddsOptions(betAmount, roundsToWin)}
@@ -5120,7 +5102,6 @@ function CoinFlipPage({ onGameChange }) {
             roundsToWinValue={roundsToWin}
             defaultRoundsToWinValue="4"
             selectedSide={selectedSide}
-            submitLabel={coinSubmitLabel}
           />
         }
       >
@@ -5740,10 +5721,13 @@ function PackagedCrashBettingPanel({
 
 function PackagedCoinFlipBettingPanel({
   betAmount,
+  inGame = false,
   isFlipping,
   layout = "desktop",
   oddsOptions,
   onBetAmountChange,
+  onCashout,
+  onFlipCoin,
   onPlaceBet,
   onRoundsToWinChange,
   onSideChange,
@@ -5751,7 +5735,6 @@ function PackagedCoinFlipBettingPanel({
   roundsToWinValue,
   defaultRoundsToWinValue = "4",
   selectedSide,
-  submitLabel = "Place Bet",
 }) {
   function handleBetAmountChange(event) {
     if (roundLocked) return;
@@ -5777,6 +5760,18 @@ function PackagedCoinFlipBettingPanel({
     onPlaceBet(event);
   }
 
+  function handleFlipCoin(event) {
+    if (isFlipping) return;
+
+    onFlipCoin(event);
+  }
+
+  function handleCashout(event) {
+    if (isFlipping) return;
+
+    onCashout(event);
+  }
+
   return (
     <JokerCoinFlipBettingPanel
       layout={layout}
@@ -5784,16 +5779,20 @@ function PackagedCoinFlipBettingPanel({
         .filter(Boolean)
         .join(" ")}
       betAmount={betAmount}
+      inGame={inGame}
       selectedOddsValue={selectedSide}
       defaultSelectedOddsValue="heads"
       onBetAmountChange={handleBetAmountChange}
       onOddsValueChange={handleOddsValueChange}
-      onPlaceBet={handlePlaceBet}
+      onPlaceBet={inGame ? handleFlipCoin : handlePlaceBet}
+      onCashout={handleCashout}
       onRoundsToWinChange={handleRoundsToWinChange}
       oddsOptions={oddsOptions}
       roundsToWinValue={roundsToWinValue}
       defaultRoundsToWinValue={defaultRoundsToWinValue}
-      submitLabel={submitLabel}
+      submitLabel="Flip Coin"
+      flipCoinLabel="Flip Coin"
+      cashoutLabel="Cashout"
       disablePlaceBetUntilBetAmount
     />
   );
