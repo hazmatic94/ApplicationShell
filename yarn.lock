@@ -401,11 +401,11 @@ __metadata:
   linkType: hard
 
 "@joker/design-system@https://github.com/mjprod/DesignSystemGames.git#main":
-  version: 0.1.18
-  resolution: "@joker/design-system@https://github.com/mjprod/DesignSystemGames.git#commit=1372c7361017e8192ab77f25688b4527c146563d"
+  version: 0.1.46
+  resolution: "@joker/design-system@https://github.com/mjprod/DesignSystemGames.git#commit=5d13679db03398e665e1b1ba812efa63361bcd99"
   peerDependencies:
     react: ">=18"
-  checksum: 10c0/94ab61078397a71b1392bf0dcb0f77998bc2e53abbdc886f4fb3c898542d878923b8f362e9d7b09ed3662e2d18e800877d5ae7b69e08335d14eb7edf9b6d19ba
+  checksum: 10c0/1aae9f078bdaec83236e98cfcfba6da015ab5fc1acbb7888cfb061fb25fae7466b97b9e3fe1938908b85d8c89bd382b15667a9927fa1aa0132c17f9aab4a54f0
   languageName: node
   linkType: hard
 
@@ -1053,9 +1053,9 @@ __metadata:
   linkType: hard
 
 "node-releases@npm:^2.0.50":
-  version: 2.0.50
-  resolution: "node-releases@npm:2.0.50"
-  checksum: 10c0/ac75ed433864114cfd9862034960bb4f49838343dc9fc31dc7d5be8189ce5f39510ad0bb3a697efe3193d50ab6921e7a3a6ce3aae2a6f8abe62719ffd40a4cac
+  version: 2.0.51
+  resolution: "node-releases@npm:2.0.51"
+  checksum: 10c0/6cf3fe1f9eabe02ce6de67e9db77b73edc9f5625003791e1f8f239f8e2a851450a5aeb1eff2cc43cfb26312e19b26bfe07626bf428479e6a76f56553fc6148da
   languageName: node
   linkType: hard
 
