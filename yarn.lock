@@ -23,16 +23,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-<<<<<<< HEAD
-"@babel/core@^7.0.0", "@babel/core@^7.0.0-0", "@babel/core@^7.28.0":
-  version "7.29.7"
-  resolved "https://registry.npmjs.org/@babel/core/-/core-7.29.7.tgz"
-  integrity sha512-RgHBCvtjbOK2gXSNBNIkNoEc9qoVEtau3hj8gEqKQuL3HZAibKarWFEI3Lfm6EYKkLalOh8eSrj9b+ch9H/VBA==
-=======
 "@babel/core@npm:^7.28.0":
   version: 7.29.7
   resolution: "@babel/core@npm:7.29.7"
->>>>>>> 034cc44bc1b848f01509a9241e2218a9585d5ca8
   dependencies:
     "@babel/code-frame": "npm:^7.29.7"
     "@babel/generator": "npm:^7.29.7"
@@ -223,19 +216,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-<<<<<<< HEAD
-"@joker/design-system@file:../Design System/joker-design-system-0.1.31.tgz":
-  version "0.1.31"
-  resolved "file:../Design System/joker-design-system-0.1.31.tgz"
-  integrity sha512-9+NTsoILA2QScHrR2XCXSui2fEsUNOyBmE6fiW7rCp3RbsWV9d3ZYMHgnxmyhiWqZNvX8Ho/d2xbMHFXJz0+OA==
-=======
 "@esbuild/android-arm64@npm:0.25.12":
   version: 0.25.12
   resolution: "@esbuild/android-arm64@npm:0.25.12"
   conditions: os=android & cpu=arm64
   languageName: node
   linkType: hard
->>>>>>> 034cc44bc1b848f01509a9241e2218a9585d5ca8
 
 "@esbuild/android-arm@npm:0.25.12":
   version: 0.25.12
@@ -697,16 +683,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-<<<<<<< HEAD
-browserslist@^4.24.0, "browserslist@>= 4.21.0":
-  version "4.28.4"
-  resolved "https://registry.npmjs.org/browserslist/-/browserslist-4.28.4.tgz"
-  integrity sha512-MTc8i/x9jBQd1iMw2CFGS+rwMa07eYjLR0CCTLDACl9xhxy+nIs3KeML/biicXtk9JrZ6dnnTatmc7ErPXIxqw==
-=======
 "@vitejs/plugin-react@npm:^4.3.4":
   version: 4.7.0
   resolution: "@vitejs/plugin-react@npm:4.7.0"
->>>>>>> 034cc44bc1b848f01509a9241e2218a9585d5ca8
   dependencies:
     "@babel/core": "npm:^7.28.0"
     "@babel/plugin-transform-react-jsx-self": "npm:^7.27.1"
@@ -913,31 +892,9 @@ browserslist@^4.24.0, "browserslist@>= 4.21.0":
   languageName: node
   linkType: hard
 
-<<<<<<< HEAD
-node-releases@^2.0.48:
-  version "2.0.49"
-  resolved "https://registry.npmjs.org/node-releases/-/node-releases-2.0.49.tgz"
-  integrity sha512-f06bl1D+8ZDkn2oOQQKAh5/otFWqVnM1Q5oerA8Pex7UfT66Tx4IPHIqVVFKqFT3FUtaDstdgkM7yT7JWhqxfw==
-
-picocolors@^1.1.1:
-  version "1.1.1"
-  resolved "https://registry.npmjs.org/picocolors/-/picocolors-1.1.1.tgz"
-  integrity sha512-xceH2snhtb5M9liqDsmEw56le376mTZkEX/jEb/RxNFyegNul7eNslCXP9FDj/Lcu0X8KEyMceP2ntpaHrDEVA==
-
-"picomatch@^3 || ^4", picomatch@^4.0.2, picomatch@^4.0.4:
-  version "4.0.4"
-  resolved "https://registry.npmjs.org/picomatch/-/picomatch-4.0.4.tgz"
-  integrity sha512-QP88BAKvMam/3NxH6vj2o21R6MjxZUAd6nlwAS/pnGvN9IVLocLHxGYIzFhg6fUQ+5th6P4dv4eW9jX3DSIj7A==
-
-postcss@^8.5.3:
-  version "8.5.15"
-  resolved "https://registry.npmjs.org/postcss/-/postcss-8.5.15.tgz"
-  integrity sha512-FfR8sjd4em2T6fb3I2MwAJU7HWVMr9zba+enmQeeWFfCbm+UOC/0X4DS8XtpUTMwWMGbjKYP7xjfNekzyGmB3A==
-=======
 "fsevents@npm:~2.3.2, fsevents@npm:~2.3.3":
   version: 2.3.3
   resolution: "fsevents@npm:2.3.3"
->>>>>>> 034cc44bc1b848f01509a9241e2218a9585d5ca8
   dependencies:
     node-gyp: "npm:latest"
   checksum: 10c0/a1f0c44595123ed717febbc478aa952e47adfc28e2092be66b8ab1635147254ca6cfe1df792a8997f22716d4cbafc73309899ff7bfac2ac3ad8cf2e4ecc3ec60
@@ -954,21 +911,9 @@ postcss@^8.5.3:
   languageName: node
   linkType: hard
 
-<<<<<<< HEAD
-react-refresh@^0.17.0:
-  version "0.17.0"
-  resolved "https://registry.npmjs.org/react-refresh/-/react-refresh-0.17.0.tgz"
-  integrity sha512-z6F7K9bV85EfseRCp2bzrpyQ0Gkw1uLoCel9XBVWPg/TjRj94SkJzUTGfOa4bs7iJvBWtQG0Wq7wnI0syw3EBQ==
-
-"react@^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0-rc", react@^18.3.1, react@>=18:
-  version "18.3.1"
-  resolved "https://registry.npmjs.org/react/-/react-18.3.1.tgz"
-  integrity sha512-wS+hAgJShR0KhEvPJArfuPVN1+Hz1t0Y6n5jLrGQbkb4urgPE/0Rve+1kMB1v/oWgHgm4WIcV+i7F2pTVj+2iQ==
-=======
 "game-shell@workspace:.":
   version: 0.0.0-use.local
   resolution: "game-shell@workspace:."
->>>>>>> 034cc44bc1b848f01509a9241e2218a9585d5ca8
   dependencies:
     "@joker/design-system": "https://github.com/mjprod/DesignSystemGames.git#main"
     "@vitejs/plugin-react": "npm:^4.3.4"
@@ -1107,12 +1052,6 @@ react-refresh@^0.17.0:
   languageName: node
   linkType: hard
 
-<<<<<<< HEAD
-"vite@^4.2.0 || ^5.0.0 || ^6.0.0 || ^7.0.0", vite@^6.0.7:
-  version "6.4.3"
-  resolved "https://registry.npmjs.org/vite/-/vite-6.4.3.tgz"
-  integrity sha512-NTKlcQjlAK7MlQoyb6LgaqHc8sso/pVyUJYWMws3jg21uTJw/LddqIFPcPqP6PzpgbIcZyKI85sFE4HBrQDA8A==
-=======
 "node-releases@npm:^2.0.50":
   version: 2.0.50
   resolution: "node-releases@npm:2.0.50"
@@ -1123,7 +1062,6 @@ react-refresh@^0.17.0:
 "nopt@npm:^10.0.0":
   version: 10.0.1
   resolution: "nopt@npm:10.0.1"
->>>>>>> 034cc44bc1b848f01509a9241e2218a9585d5ca8
   dependencies:
     abbrev: "npm:^5.0.0"
   bin:
