@@ -7,6 +7,8 @@ import {
   GameShell,
   HiLoBettingPanel as JokerHiLoBettingPanel,
   MinesBettingPanel,
+  MobileHiLoOddsGroup,
+  OddsButtonGroup,
   WinModalCard,
 } from "@joker/design-system";
 import jokerIcon from "../assets/iconJoker.svg?url";
@@ -36,6 +38,7 @@ import coinFlipFrame03 from "../assets/coinflip-sprite/flip03.png?url";
 import coinFlipFrame04 from "../assets/coinflip-sprite/flip04.png?url";
 import coinFlipFrame05 from "../assets/coinflip-sprite/flip05.png?url";
 import cocoHutBackground from "../assets/cocohut-bg.png?url";
+import jokerCoinIcon from "../assets/jokerCoin.svg?url";
 const minTileAmount = 2;
 const desktopMinesGrid = { columns: 5, rows: 5 };
 const mobileMinesGrid = { columns: 4, rows: 5 };
@@ -43,7 +46,6 @@ const minesRtp = 0.96;
 const coinFlipRtp = 0.96;
 const coinFlipMaxWins = 4;
 const coinFlipFairProbability = 0.5;
-const coinFlipMultiplierIncrement = 2 * coinFlipRtp - 1;
 
 function createMinesAmountOptions(maxTileAmount) {
   return Array.from({ length: maxTileAmount - minTileAmount + 1 }, (_, index) => {
@@ -173,18 +175,117 @@ function getCoinFrameIndexForSide(side) {
 }
 
 function calculateCoinFlipMultiplier(winCount) {
-  return 1 + winCount * coinFlipMultiplierIncrement;
+  if (winCount <= 0) {
+    return 1;
+  }
+
+  return coinFlipRtp * 2 ** winCount;
+}
+
+function calculateCoinFlipProfit(betAmount, winCount) {
+  const stake = Number(betAmount) || 0;
+
+  if (stake <= 0 || winCount <= 0) {
+    return 0;
+  }
+
+  return Math.round(stake * calculateCoinFlipMultiplier(winCount));
+}
+
+function roundJkcAmount(value) {
+  return Math.round(Number(value) || 0);
+}
+
+function formatJkcAmount(value) {
+  return new Intl.NumberFormat("en-US", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(roundJkcAmount(value));
+}
+
+function JkcAmount({ value, className = "", tone = "default" }) {
+  return (
+    <span className={["joker-jkc-amount", tone === "inherit" && "is-inherit-tone", className]
+      .filter(Boolean)
+      .join(" ")}>
+      {tone === "inherit" ? (
+        <span
+          className="joker-jkc-amount__icon joker-jkc-amount__icon--mask"
+          style={{
+            WebkitMaskImage: `url(${jokerCoinIcon})`,
+            maskImage: `url(${jokerCoinIcon})`,
+          }}
+          aria-hidden="true"
+        />
+      ) : (
+        <img className="joker-jkc-amount__icon" src={jokerCoinIcon} alt="" aria-hidden="true" />
+      )}
+      <span className="joker-jkc-amount__value">{formatJkcAmount(value)}</span>
+    </span>
+  );
+}
+
+function formatCoinFlipMultiplier(multiplier) {
+  return `${multiplier.toFixed(2)}x`;
+}
+
+function getCoinMaxTravel() {
+  if (typeof window === "undefined" || !window.matchMedia) return 96;
+
+  if (window.matchMedia("(max-width: 760px)").matches) return 86;
+  if (window.matchMedia("(max-width: 1023px)").matches) return 96;
+
+  return 96;
 }
 
 function formatProbabilityPercent(probability) {
   return `${(probability * 100).toFixed(2)}%`;
 }
 
-function getCoinFlipOddsOptions() {
+function getCoinFlipOddsOptions(betAmount, roundsToWin = String(coinFlipMaxWins)) {
+  const maxRounds = Number(roundsToWin) || coinFlipMaxWins;
+  const targetMultiplier = calculateCoinFlipMultiplier(maxRounds);
+  const targetProfit = calculateCoinFlipProfit(betAmount, maxRounds);
+  const oddsLabel =
+    Number(betAmount) > 0 ? formatJkcAmount(targetProfit) : formatCoinFlipMultiplier(targetMultiplier);
+
   return [
-    { value: "heads", label: "Bet Heads", sideIcon: "heads" },
-    { value: "tails", label: "Bet Tails", sideIcon: "tails" },
+    { value: "heads", label: "Bet Heads", sideIcon: "heads", odds: oddsLabel },
+    { value: "tails", label: "Bet Tails", sideIcon: "tails", odds: oddsLabel },
   ];
+}
+
+function MobileOddsGroup({
+  options,
+  value,
+  onValueChange,
+  disabled = false,
+  className = "",
+}) {
+  return (
+    <OddsButtonGroup
+      className={["joker-mobile-odds-group", className].filter(Boolean).join(" ")}
+      label={null}
+      layout="inline"
+      showOdds={false}
+      options={options}
+      value={value}
+      onValueChange={onValueChange}
+      disabled={disabled}
+      ariaLabel="Coin flip choice"
+    />
+  );
+}
+
+function HiLoSkipCardButton({ disabled = false, label = "Skip Card", onClick }) {
+  return (
+    <Button className="joker-hilo-main-card-skip" disabled={disabled} onClick={onClick} variant="hi-lo-skip">
+      <span className="joker-hi-lo-skip-label sr-only">{label}</span>
+      <span className="joker-hi-lo-skip-icon" aria-hidden="true">
+        <ChevronRightIcon />
+      </span>
+    </Button>
+  );
 }
 
 const appBase = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -427,6 +528,57 @@ function updateHiloHistory(history, direction, nextEntry) {
   ];
 }
 
+function runHiloPrediction(choice, { currentCard, deck, history, multiplier, odds, stake }) {
+  if (deck.length === 0) {
+    return null;
+  }
+
+  const [nextCard, ...remainingDeck] = deck;
+  const direction = choice === "higher" ? "up" : "down";
+  const correct = resolveHiloPrediction(choice, currentCard, nextCard);
+
+  if (!correct) {
+    return {
+      currentCard: nextCard,
+      deck: remainingDeck,
+      history: updateHiloHistory(
+        history,
+        direction,
+        createHiloHistoryEntry(nextCard, "0.00x", "end")
+      ),
+      multiplier: 0,
+      roundStatus: "loss",
+    };
+  }
+
+  const probability = choice === "higher" ? odds.higherProbability : odds.lowerProbability;
+  const nextMultiplier = calculateProjectedHiloMultiplier(multiplier, probability);
+  const updatedHistory = updateHiloHistory(
+    history,
+    direction,
+    createHiloHistoryEntry(nextCard, `${nextMultiplier.toFixed(2)}x`)
+  );
+
+  if (remainingDeck.length === 0) {
+    return {
+      currentCard: nextCard,
+      deck: remainingDeck,
+      history: updatedHistory,
+      multiplier: nextMultiplier,
+      roundStatus: "win",
+      winProfit: stake * nextMultiplier,
+    };
+  }
+
+  return {
+    currentCard: nextCard,
+    deck: remainingDeck,
+    history: updatedHistory,
+    multiplier: nextMultiplier,
+    roundStatus: "active",
+  };
+}
+
 function MobileShellScrollFix() {
   return (
     <style>
@@ -475,9 +627,7 @@ function MobileShellScrollFix() {
             gap: var(--spacing-16);
           }
 
-          .joker-game-shell--hilo .joker-navigation-mobile-content .joker-hilo-betting-panel .joker-hilo-betting-actions,
-          .joker-game-shell--hilo .joker-navigation-mobile-content .joker-hilo-betting-panel .joker-hilo-betting-main .joker-betting-divider,
-          .joker-game-shell--hilo .joker-navigation-mobile-content .joker-hilo-betting-panel .joker-hilo-betting-main .joker-betting-fields > button {
+          .joker-game-shell--hilo .joker-navigation-mobile-content .joker-hilo-betting-panel .joker-hilo-betting-actions {
             display: none;
           }
 
@@ -1734,6 +1884,7 @@ function HiloPage({ onGameChange }) {
   ]);
   const [multiplier, setMultiplier] = useState(1);
   const [roundStatus, setRoundStatus] = useState("pre-game");
+  const [pendingPrediction, setPendingPrediction] = useState("");
   const [skipAvailable, setSkipAvailable] = useState(true);
   const [hiloWinModal, setHiloWinModal] = useState(null);
   const hiloWinModalTimeoutRef = useRef(null);
@@ -1796,6 +1947,7 @@ function HiloPage({ onGameChange }) {
     setHistory([createHiloHistoryEntry(defaultHiloCard, "Start", "start")]);
     setMultiplier(1);
     setRoundStatus("pre-game");
+    setPendingPrediction("");
     setSkipAvailable(true);
     setHiloWinModal(null);
   }
@@ -1823,14 +1975,14 @@ function HiloPage({ onGameChange }) {
     closeHiloWinModal();
   }
 
-  function handleBetAction() {
-    handleCashout();
-  }
-
   function handlePlaceBet() {
     if (gameInPlay) return;
 
     if (!hasBetAmount || numericBetAmount > balance) {
+      return;
+    }
+
+    if (bettingPanelLayout === "mobile" && !pendingPrediction) {
       return;
     }
 
@@ -1841,21 +1993,52 @@ function HiloPage({ onGameChange }) {
     const nextRound = createHiloRound();
 
     setBalance((currentBalance) => currentBalance - numericBetAmount);
+    setSkipAvailable(true);
+
+    if (bettingPanelLayout === "mobile" && pendingPrediction) {
+      const choice = pendingPrediction;
+      const roundOdds = calculateHiloOdds(nextRound.currentCard, nextRound.deck);
+      const result = runHiloPrediction(choice, {
+        currentCard: nextRound.currentCard,
+        deck: nextRound.deck,
+        history: nextRound.history,
+        multiplier: 1,
+        odds: roundOdds,
+        stake: numericBetAmount,
+      });
+
+      setPendingPrediction("");
+
+      if (result) {
+        setCurrentCard(result.currentCard);
+        setDeck(result.deck);
+        setHistory(result.history);
+        setMultiplier(result.multiplier);
+        setRoundStatus(result.roundStatus);
+
+        if (result.roundStatus === "win") {
+          setBalance((currentBalance) => currentBalance + result.winProfit);
+          playSound(minesCashoutSound);
+          showHiloWinModal({
+            title: "You Won",
+            profit: result.winProfit,
+            resetOnClose: true,
+          });
+        }
+
+        return;
+      }
+    }
+
     setCurrentCard(nextRound.currentCard);
     setDeck(nextRound.deck);
     setHistory(nextRound.history);
     setMultiplier(1);
     setRoundStatus("active");
-    setSkipAvailable(true);
   }
 
   function handleCashout() {
-    if (!gameInPlay) {
-      handlePlaceBet();
-      return;
-    }
-
-    if (currentProfit <= 0) {
+    if (!gameInPlay || currentProfit <= 0) {
       return;
     }
 
@@ -1874,51 +2057,55 @@ function HiloPage({ onGameChange }) {
       return;
     }
 
-    const [nextCard, ...remainingDeck] = deck;
-    const direction = choice === "higher" ? "up" : "down";
-    const correct = resolveHiloPrediction(choice, currentCard, nextCard);
+    const result = runHiloPrediction(choice, {
+      currentCard,
+      deck,
+      history,
+      multiplier,
+      odds,
+      stake: numericBetAmount,
+    });
 
-    if (!correct) {
-      setCurrentCard(nextCard);
-      setDeck(remainingDeck);
-      setHistory((currentHistory) =>
-        updateHiloHistory(
-          currentHistory,
-          direction,
-          createHiloHistoryEntry(nextCard, "0.00x", "end")
-        )
-      );
-      setMultiplier(0);
-      setRoundStatus("loss");
+    if (!result) {
       return;
     }
 
-    const probability =
-      choice === "higher" ? odds.higherProbability : odds.lowerProbability;
-    const nextMultiplier = calculateProjectedHiloMultiplier(multiplier, probability);
+    setCurrentCard(result.currentCard);
+    setDeck(result.deck);
+    setHistory(result.history);
+    setMultiplier(result.multiplier);
+    setRoundStatus(result.roundStatus);
 
-    setCurrentCard(nextCard);
-    setDeck(remainingDeck);
-    setHistory((currentHistory) =>
-      updateHiloHistory(
-        currentHistory,
-        direction,
-        createHiloHistoryEntry(nextCard, `${nextMultiplier.toFixed(2)}x`)
-      )
-    );
-    setMultiplier(nextMultiplier);
-
-    if (remainingDeck.length === 0) {
-      const winProfit = numericBetAmount * nextMultiplier;
-
-      setBalance((currentBalance) => currentBalance + winProfit);
-      setRoundStatus("win");
+    if (result.roundStatus === "win") {
+      setBalance((currentBalance) => currentBalance + result.winProfit);
       playSound(minesCashoutSound);
       showHiloWinModal({
         title: "You Won",
-        profit: winProfit,
+        profit: result.winProfit,
         resetOnClose: true,
       });
+    }
+  }
+
+  function handleMobileLowerSame() {
+    if (gameInPlay) {
+      handlePrediction("lower");
+      return;
+    }
+
+    if (roundStatus === "pre-game") {
+      setPendingPrediction("lower");
+    }
+  }
+
+  function handleMobileHigherSame() {
+    if (gameInPlay) {
+      handlePrediction("higher");
+      return;
+    }
+
+    if (roundStatus === "pre-game") {
+      setPendingPrediction("higher");
     }
   }
 
@@ -1988,6 +2175,15 @@ function HiloPage({ onGameChange }) {
             pointer-events: none;
             cursor: not-allowed;
             opacity: 0.56;
+          }
+
+          @media (max-width: 1023px) {
+            .joker-hilo-betting-panel.is-hilo-pre-game.is-awaiting-hilo-choice .joker-bet-field,
+            .joker-hilo-betting-panel.is-hilo-pre-game.is-awaiting-hilo-choice .joker-betting-submit-group .joker-button {
+              pointer-events: none;
+              cursor: not-allowed;
+              opacity: 0.45;
+            }
           }
 
           .joker-game-shell--hilo .joker-game-inner-canvas {
@@ -2308,7 +2504,7 @@ function HiloPage({ onGameChange }) {
             -webkit-mask: var(--suit-icon) center / contain no-repeat;
           }
 
-          .joker-hilo-main-card-skip {
+          .joker-hilo-main-card-wrap .joker-hilo-main-card-skip {
             position: absolute;
             top: calc(var(--spacing-16) * -1);
             right: calc(var(--spacing-24) * -1);
@@ -2316,40 +2512,54 @@ function HiloPage({ onGameChange }) {
             display: inline-flex;
             width: calc(72px * var(--hilo-scale));
             height: calc(42px * var(--hilo-scale));
+            min-height: calc(42px * var(--hilo-scale));
             align-items: center;
             justify-content: center;
+            padding: 0;
             border: var(--border-width-default) solid var(--joker-gold-400);
             border-radius: 999px;
             background: var(--joker-gold-1000);
             color: var(--joker-white-50);
             box-shadow: 0 var(--spacing-8) var(--spacing-16) rgb(0 0 0 / 0.42);
             cursor: pointer;
-            appearance: none;
             transition:
               background var(--motion-fast) var(--ease-standard),
               border-color var(--motion-fast) var(--ease-standard),
               transform var(--motion-fast) var(--ease-standard);
           }
 
-          .joker-hilo-main-card-skip:hover {
+          .joker-hilo-main-card-wrap .joker-hilo-main-card-skip:not(:disabled):hover {
             border-color: var(--joker-gold-300);
             background: var(--joker-gold-900);
             transform: translateY(calc(var(--spacing-2, 2px) * -1));
           }
 
-          .joker-hilo-main-card-skip-chevrons {
-            display: inline-flex;
-            align-items: center;
+          .joker-hilo-main-card-wrap .joker-hilo-main-card-skip:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+            border-color: var(--joker-gold-400);
+            background: var(--joker-gold-1000);
+            color: var(--joker-white-50);
+            box-shadow: 0 var(--spacing-8) var(--spacing-16) rgb(0 0 0 / 0.42);
           }
 
-          .joker-hilo-main-card-skip-chevron {
+          .joker-hilo-main-card-wrap .joker-hilo-main-card-skip .joker-hi-lo-skip-icon {
+            display: inline-flex;
             width: calc(18px * var(--hilo-scale));
             height: calc(18px * var(--hilo-scale));
             color: var(--joker-white-50);
+            transform: none;
           }
 
-          .joker-hilo-main-card-skip-chevron + .joker-hilo-main-card-skip-chevron {
-            margin-left: -10px;
+          .joker-hilo-main-card-wrap .joker-hilo-main-card-skip:not(:disabled):hover .joker-hi-lo-skip-icon {
+            transform: translateX(var(--spacing-4));
+          }
+
+          .joker-hilo-main-card-wrap .joker-hilo-main-card-skip .joker-hi-lo-skip-icon svg {
+            display: block;
+            width: 100%;
+            height: 100%;
+            stroke-width: 3;
           }
 
           .sr-only {
@@ -2601,9 +2811,14 @@ function HiloPage({ onGameChange }) {
           }
 
           @media (max-width: 1023px) {
+            .joker-game-shell--hilo .joker-game-shell-empty-stage {
+              overflow: visible;
+            }
+
             .joker-hilo-stage {
-              --hilo-board-padding: var(--spacing-16);
-              padding: 0 var(--hilo-board-padding) var(--hilo-board-padding);
+              --hilo-board-padding: 20px;
+              padding: 0 20px calc(var(--spacing-24) + 56px);
+              overflow: visible;
             }
 
             .joker-hilo-main-area {
@@ -2616,10 +2831,11 @@ function HiloPage({ onGameChange }) {
             }
 
             .joker-hilo-history-row {
-              --hilo-history-chip-room: calc((var(--spacing-10) + 20px) * var(--hilo-scale));
+              --hilo-history-chip-room: calc(20px + (14px * var(--hilo-scale)));
               min-height: 0;
               border-bottom: 0;
-              padding: var(--hilo-history-chip-room) 0 0;
+              padding: var(--hilo-history-chip-room) 0 var(--spacing-8);
+              overflow: visible;
             }
 
             .joker-game-shell--hilo .joker-navigation-mobile-content .joker-hilo-stage {
@@ -2635,7 +2851,9 @@ function HiloPage({ onGameChange }) {
             }
 
             .joker-hilo-history-track {
+              padding-left: 0;
               padding-bottom: var(--spacing-4);
+              justify-content: flex-start;
             }
 
             .joker-hilo-game-frame {
@@ -2662,18 +2880,33 @@ function HiloPage({ onGameChange }) {
               padding-bottom: calc(var(--spacing-24) * var(--hilo-scale));
             }
 
-            .joker-hilo-main-card-skip {
+            .joker-hilo-main-card-wrap .joker-hilo-main-card-skip {
               position: relative;
               top: auto;
               right: auto;
               width: calc(40px * var(--hilo-scale));
               height: calc(40px * var(--hilo-scale));
+              min-height: calc(40px * var(--hilo-scale));
               flex: 0 0 auto;
               margin-bottom: calc(var(--spacing-12) * var(--hilo-scale));
             }
 
-            .joker-hilo-main-card-skip:hover {
+            .joker-hilo-main-card-wrap .joker-hilo-main-card-skip:not(:disabled):hover {
               transform: translateY(calc(var(--spacing-2, 2px) * -1));
+            }
+
+            .joker-hilo-mobile-odds {
+              position: absolute;
+              left: var(--spacing-24);
+              right: var(--spacing-24);
+              bottom: var(--spacing-24);
+              z-index: 4;
+              pointer-events: auto;
+            }
+
+            .joker-hilo-mobile-odds .joker-odds-button-group.is-inline {
+              grid-template-columns: repeat(2, minmax(0, 1fr));
+              gap: var(--spacing-8);
             }
           }
         `}
@@ -2687,6 +2920,7 @@ function HiloPage({ onGameChange }) {
         value={hiloNavigationPreset.selectedValue}
         bettingPanel={
           <PackagedHiloBettingPanel
+            awaitingHiloChoice={bettingPanelLayout === "mobile" && !gameInPlay && !pendingPrediction}
             betAmount={betAmount}
             currentProfit={currentProfit}
             gameInPlay={gameInPlay}
@@ -2694,7 +2928,8 @@ function HiloPage({ onGameChange }) {
             layout={bettingPanelLayout}
             lowerOdds={formatHiloPercent(odds.lowerPercent)}
             onBetAmountChange={setBetAmount}
-            onPlaceBet={handleBetAction}
+            onCashout={handleCashout}
+            onPlaceBet={handlePlaceBet}
             onHigherSame={() => handlePrediction("higher")}
             onLowerSame={() => handlePrediction("lower")}
             onSkipCard={handleSkipCard}
@@ -2704,14 +2939,18 @@ function HiloPage({ onGameChange }) {
         }
       >
         <HiloStage
+          bettingPanelLayout={bettingPanelLayout}
           currentCard={currentCard}
           higherMultiplier={higherMultiplier}
+          higherOdds={formatHiloPercent(odds.higherPercent)}
           history={history}
           lowerMultiplier={lowerMultiplier}
-          onHigherSame={() => handlePrediction("higher")}
-          onLowerSame={() => handlePrediction("lower")}
+          lowerOdds={formatHiloPercent(odds.lowerPercent)}
+          onHigherSame={handleMobileHigherSame}
+          onLowerSame={handleMobileLowerSame}
           onSkipCard={handleSkipCard}
           onWinModalClose={handleHiloWinModalClose}
+          pendingPrediction={pendingPrediction}
           roundStatus={roundStatus}
           skipAvailable={skipAvailable}
           winModal={hiloWinModal}
@@ -3746,14 +3985,25 @@ function CoinFlipPage({ onGameChange }) {
   const hasActiveCoinRound = coinRoundStatus === "active";
   const maxRoundsToWin = Number(roundsToWin) || coinFlipMaxWins;
   const settledCoinCount = coinHistory.filter((coin) => coin.didWin).length;
+  const canCashOut =
+    hasActiveCoinRound && settledCoinCount > 0 && !isCoinFlipping && !coinWinModal;
+  const isRoundLocked = hasActiveCoinRound;
   const canStartCoinFlip =
     hasCoinBetAmount && coinHistory.length < maxRoundsToWin && !isCoinFlipping && !coinWinModal;
   const canFlipCoin = canStartCoinFlip;
   const coinFlipPreviewCoins = Array.from({ length: maxRoundsToWin }, (_, index) => {
     const historyItem = coinHistory[index];
+    const stepMultiplier = calculateCoinFlipMultiplier(index + 1);
+    const stepProfit = calculateCoinFlipProfit(betAmount, index + 1);
 
     if (!historyItem) {
-      return { id: `joker-pending-${index}`, coin: coinJokerIcon, isPending: true };
+      return {
+        id: `joker-pending-${index}`,
+        coin: coinJokerIcon,
+        isPending: true,
+        multiplier: stepMultiplier,
+        profit: stepProfit,
+      };
     }
 
     return {
@@ -3762,14 +4012,23 @@ function CoinFlipPage({ onGameChange }) {
       badge: historyItem.didWin ? coinFlipCorrectIcon : coinFlipFailIcon,
       alt: historyItem.didWin ? "Correct" : "Failed",
       isSettled: true,
+      multiplier: stepMultiplier,
+      profit: stepProfit,
     };
   });
   const currentCoinMultiplier = calculateCoinFlipMultiplier(settledCoinCount);
   const nextCoinMultiplier = calculateCoinFlipMultiplier(Math.min(maxRoundsToWin, settledCoinCount + 1));
-  const currentCoinProfit = Number(betAmount || 0) * currentCoinMultiplier;
-  const nextCoinProfit = Number(betAmount || 0) * nextCoinMultiplier;
+  const currentCoinProfit = calculateCoinFlipProfit(betAmount, settledCoinCount);
+  const nextCoinProfit = calculateCoinFlipProfit(betAmount, Math.min(maxRoundsToWin, settledCoinCount + 1));
+  const coinSubmitLabel = canCashOut ? (
+    <>
+      Cashout <JkcAmount value={currentCoinProfit} tone="inherit" />
+    </>
+  ) : (
+    "Flip Coin"
+  );
   const coinFlightLift = Math.abs(coinFlightY);
-  const coinMaxTravel = typeof window !== "undefined" && window.matchMedia("(max-width: 760px)").matches ? 104 : 96;
+  const coinMaxTravel = getCoinMaxTravel();
   const coinFlightRatio = Math.min(1, coinFlightLift / coinMaxTravel);
   const coinFlipStageRef = useRef(null);
 
@@ -3919,6 +4178,11 @@ function CoinFlipPage({ onGameChange }) {
   }
 
   function handleCoinPanelPlaceBet(event) {
+    if (canCashOut) {
+      handleCoinCashout();
+      return;
+    }
+
     if (hasActiveCoinRound) {
       handleCoinFlipAgain();
       return;
@@ -3947,12 +4211,14 @@ function CoinFlipPage({ onGameChange }) {
   }
 
   function handleCoinCashout() {
-    if (isCoinFlipping || !hasActiveCoinRound || currentCoinProfit <= 0) return;
+    if (isCoinFlipping || !hasActiveCoinRound || settledCoinCount <= 0) return;
+
+    const cashoutProfit = calculateCoinFlipProfit(betAmount, settledCoinCount);
 
     playSound(minesCashoutSound);
     showCoinWinModal({
       title: "Cashout Successful",
-      profit: currentCoinProfit,
+      profit: cashoutProfit,
       multiplier: currentCoinMultiplier,
       resetOnClose: true,
     });
@@ -4008,7 +4274,7 @@ function CoinFlipPage({ onGameChange }) {
       ...endingSequence,
     ];
     const duration = 620 + resolvedSequence.length * 34;
-    const maxTravel = window.matchMedia("(max-width: 760px)").matches ? 104 : 96;
+    const maxTravel = getCoinMaxTravel();
     const startTime = performance.now();
     setIsCoinFlipping(true);
     setCoinResult(null);
@@ -4061,7 +4327,7 @@ function CoinFlipPage({ onGameChange }) {
 
         if (nextWinCount >= maxRoundsToWin) {
           const winMultiplier = calculateCoinFlipMultiplier(nextWinCount);
-          const winProfit = Number(betAmount || 0) * winMultiplier;
+          const winProfit = calculateCoinFlipProfit(betAmount, nextWinCount);
 
           playSound(minesCashoutSound);
           showCoinWinModal({
@@ -4381,6 +4647,18 @@ function CoinFlipPage({ onGameChange }) {
             transition: opacity 220ms ease;
           }
 
+          .joker-coin-flip-betting-panel.is-round-locked .joker-rounds-to-win-field,
+          .joker-coin-flip-betting-panel.is-round-locked .joker-bet-field {
+            opacity: 0.45;
+            pointer-events: none;
+            transition: opacity 220ms ease;
+          }
+
+          .joker-coin-flip-betting-panel.is-round-locked .joker-rounds-to-win-option,
+          .joker-coin-flip-betting-panel.is-round-locked .joker-bet-amount-stepper-button {
+            cursor: not-allowed;
+          }
+
           .joker-coin-flip-history {
             position: absolute;
             top: 42px;
@@ -4443,6 +4721,37 @@ function CoinFlipPage({ onGameChange }) {
             line-height: var(--text-body-line-height);
             letter-spacing: 0;
             white-space: nowrap;
+          }
+
+          .joker-jkc-amount {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            vertical-align: middle;
+          }
+
+          .joker-jkc-amount__icon {
+            display: block;
+            width: 14px;
+            height: 14px;
+            flex: 0 0 auto;
+          }
+
+          .joker-jkc-amount__icon--mask {
+            background-color: currentColor;
+            -webkit-mask-size: contain;
+            mask-size: contain;
+            -webkit-mask-repeat: no-repeat;
+            mask-repeat: no-repeat;
+            -webkit-mask-position: center;
+            mask-position: center;
+          }
+
+          .joker-jkc-amount__value {
+            color: inherit;
+            font-size: inherit;
+            font-weight: inherit;
+            line-height: inherit;
           }
 
           .joker-coin-flip-main {
@@ -4689,39 +4998,103 @@ function CoinFlipPage({ onGameChange }) {
             }
           }
 
-          @media (max-width: 760px) {
+          @media (max-width: 1023px) {
+            .joker-game-shell--coin-flip .joker-coin-flip-betting-panel.is-mobile .joker-odds-button-group-field {
+              display: none;
+            }
+
             .joker-coin-flip-stage {
-              --coin-platform-width: min(100%, 448px);
-              --coin-platform-bottom: 12px;
-              --coin-size: min(73vw, 280px);
-              --coin-lift: 67px;
+              --coin-platform-width: min(89vw, 398px);
+              --coin-platform-bottom: 100px;
+              --coin-size: min(50vw, 245px);
+              --coin-lift: 58px;
+              padding-bottom: calc(var(--spacing-24) + 56px);
+            }
+
+            .joker-coin-flip-stage::before {
+              width: min(64%, 336px);
+              height: min(38%, 216px);
+            }
+
+            .joker-coin-flip-energy {
+              width: min(100%, calc(var(--coin-size) + 154px));
+              height: calc(var(--coin-lift) + var(--coin-size) * 0.66);
+            }
+
+            .joker-coin-flip-hint {
+              font-size: var(--text-body-14);
             }
 
             .joker-coin-flip-history {
-              top: var(--spacing-24);
-              left: var(--spacing-24);
-              gap: var(--spacing-12);
-            }
-
-            .joker-coin-flip-history__coin,
-            .joker-coin-flip-history__image {
-              height: 64px;
+              top: 20px;
+              left: 20px;
+              right: auto;
+              gap: var(--spacing-8);
+              justify-content: flex-start;
+              align-items: flex-start;
             }
 
             .joker-coin-flip-history__coin {
-              width: 64px;
+              width: 62px;
+              min-height: 88px;
+              align-items: center;
+            }
+
+            .joker-coin-flip-history__image {
+              height: 62px;
             }
 
             .joker-coin-flip-history__badge {
-              top: -6px;
-              right: -6px;
-              width: 32px;
-              height: 32px;
+              top: -4px;
+              right: -4px;
+              width: 24px;
+              height: 24px;
             }
 
             .joker-coin-flip-history__coin:not(:last-child)::after {
-              top: 32px;
-              right: -9px;
+              top: 31px;
+              right: -7px;
+              width: 7px;
+              height: 3px;
+            }
+
+            .joker-coin-flip-history__multiplier {
+              width: 100%;
+              font-size: var(--text-body-14);
+              text-align: center;
+            }
+
+            .joker-coin-flip-mobile-odds {
+              position: absolute;
+              left: var(--spacing-24);
+              right: var(--spacing-24);
+              bottom: var(--spacing-24);
+              z-index: 4;
+              pointer-events: auto;
+            }
+
+            .joker-coin-flip-mobile-odds .joker-odds-button-group.is-inline {
+              grid-template-columns: repeat(2, minmax(0, 1fr));
+              gap: var(--spacing-8);
+            }
+          }
+
+          @media (max-width: 760px) {
+            .joker-coin-flip-stage {
+              --coin-platform-width: min(96vw, 350px);
+              --coin-platform-bottom: 96px;
+              --coin-size: min(58vw, 211px);
+              --coin-lift: 48px;
+            }
+
+            .joker-coin-flip-stage::before {
+              width: min(70%, 288px);
+              height: min(34%, 180px);
+            }
+
+            .joker-coin-flip-energy {
+              width: min(100%, calc(var(--coin-size) + 115px));
+              height: calc(var(--coin-lift) + var(--coin-size) * 0.62);
             }
           }
         `}
@@ -4742,11 +5115,12 @@ function CoinFlipPage({ onGameChange }) {
             onPlaceBet={handleCoinPanelPlaceBet}
             onSideChange={handleCoinSideChange}
             onRoundsToWinChange={setRoundsToWin}
-            oddsOptions={getCoinFlipOddsOptions()}
+            oddsOptions={getCoinFlipOddsOptions(betAmount, roundsToWin)}
+            roundLocked={isRoundLocked}
             roundsToWinValue={roundsToWin}
             defaultRoundsToWinValue="4"
             selectedSide={selectedSide}
-            submitLabel="Flip Coin"
+            submitLabel={coinSubmitLabel}
           />
         }
       >
@@ -4771,7 +5145,7 @@ function CoinFlipPage({ onGameChange }) {
                   <img className="joker-coin-flip-history__badge" src={coin.badge} alt={coin.alt} />
                 ) : null}
                 <span className="joker-coin-flip-history__multiplier">
-                  {calculateCoinFlipMultiplier(index + 1).toFixed(2)}x
+                  {formatCoinFlipMultiplier(coin.multiplier)}
                 </span>
               </li>
             ))}
@@ -4824,11 +5198,21 @@ function CoinFlipPage({ onGameChange }) {
                 />
               </button>
           </div>
+          {bettingPanelLayout === "mobile" && (
+            <div className="joker-coin-flip-mobile-odds">
+              <MobileOddsGroup
+                options={getCoinFlipOddsOptions(betAmount, roundsToWin)}
+                value={hasCoinBetAmount ? selectedSide : ""}
+                onValueChange={(value) => handleCoinSideChange(value)}
+                disabled={!hasCoinBetAmount || isCoinFlipping}
+              />
+            </div>
+          )}
           {coinWinModal && (
             <div className="joker-coin-flip-result-card" role="status" aria-live="polite">
               <WinModalCard
                 title={coinWinModal.title}
-                amountWon={formatCurrency(coinWinModal.profit)}
+                amountWon={`+${formatJkcAmount(coinWinModal.profit)}`}
                 currency={null}
                 message="Your winnings from this round have been added to your balance."
                 closeLabel="Close"
@@ -4889,14 +5273,18 @@ function CocoHutPage({ onGameChange }) {
 }
 
 function HiloStage({
+  bettingPanelLayout = "desktop",
   currentCard,
   higherMultiplier,
+  higherOdds,
   history,
   lowerMultiplier,
+  lowerOdds,
   onHigherSame,
   onLowerSame,
   onSkipCard,
   onWinModalClose,
+  pendingPrediction,
   roundStatus,
   skipAvailable,
   winModal,
@@ -4946,7 +5334,10 @@ function HiloStage({
             card={currentCard}
             key={currentCard.id}
             onSkipCard={onSkipCard}
-            skipAvailable={roundStatus === "active" && skipAvailable}
+            showSkipButton={
+              bettingPanelLayout === "mobile" || (roundStatus === "active" && skipAvailable)
+            }
+            skipDisabled={roundStatus !== "active" || !skipAvailable}
           />
           <HiloPredictionCard
             direction="up"
@@ -4965,6 +5356,18 @@ function HiloStage({
           />
         </div>
       </div>
+      {bettingPanelLayout === "mobile" && (
+        <div className="joker-hilo-mobile-odds">
+          <MobileHiLoOddsGroup
+            disabled={roundStatus !== "active" && roundStatus !== "pre-game"}
+            lowerOdds={lowerOdds}
+            higherOdds={higherOdds}
+            onLowerSame={onLowerSame}
+            onHigherSame={onHigherSame}
+            value={roundStatus === "pre-game" ? pendingPrediction : undefined}
+          />
+        </div>
+      )}
       {winModal && (
         <div className="joker-hilo-result-card" role="status" aria-live="polite">
           <WinModalCard
@@ -4981,17 +5384,11 @@ function HiloStage({
   );
 }
 
-function HiloMainCard({ card, onSkipCard, skipAvailable }) {
+function HiloMainCard({ card, onSkipCard, showSkipButton, skipDisabled }) {
   return (
     <div className="joker-hilo-main-card-wrap">
-      {skipAvailable && (
-        <button className="joker-hilo-main-card-skip" onClick={onSkipCard} type="button">
-          <span className="joker-hilo-main-card-skip-chevrons" aria-hidden="true">
-            <ChevronRightIcon className="joker-hilo-main-card-skip-chevron" />
-            <ChevronRightIcon className="joker-hilo-main-card-skip-chevron" />
-          </span>
-          <span className="sr-only">Skip card</span>
-        </button>
+      {showSkipButton && (
+        <HiLoSkipCardButton disabled={skipDisabled} onClick={onSkipCard} />
       )}
       <div className="joker-hilo-main-card-stack" aria-hidden="true">
         {Array.from({ length: 4 }, (_, index) => (
@@ -5258,6 +5655,7 @@ function PackagedMinesBettingPanel({
 }
 
 function PackagedHiloBettingPanel({
+  awaitingHiloChoice = false,
   betAmount,
   currentProfit,
   gameInPlay,
@@ -5265,6 +5663,7 @@ function PackagedHiloBettingPanel({
   layout = "desktop",
   lowerOdds,
   onBetAmountChange,
+  onCashout,
   onHigherSame,
   onLowerSame,
   onPlaceBet,
@@ -5276,14 +5675,21 @@ function PackagedHiloBettingPanel({
     onBetAmountChange(event.currentTarget.value.replace(/[^\d.]/g, ""));
   }
 
+  const panelClassName = [
+    gameInPlay ? "" : "is-hilo-pre-game",
+    awaitingHiloChoice ? "is-awaiting-hilo-choice" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
   return (
     <JokerHiLoBettingPanel
       layout={layout}
       betAmount={betAmount}
-      className={gameInPlay ? "" : "is-hilo-pre-game"}
+      className={panelClassName}
       onBetAmountChange={handleBetAmountChange}
       onPlaceBet={onPlaceBet}
-      onCashout={onPlaceBet}
+      onCashout={onCashout}
       onLowerSame={gameInPlay ? onLowerSame : undefined}
       onHigherSame={gameInPlay ? onHigherSame : undefined}
       onSkipCard={gameInPlay && skipAvailable ? onSkipCard : undefined}
@@ -5341,19 +5747,28 @@ function PackagedCoinFlipBettingPanel({
   onPlaceBet,
   onRoundsToWinChange,
   onSideChange,
+  roundLocked = false,
   roundsToWinValue,
   defaultRoundsToWinValue = "4",
   selectedSide,
   submitLabel = "Place Bet",
 }) {
   function handleBetAmountChange(event) {
-    onBetAmountChange(event.currentTarget.value.replace(/[^\d.]/g, ""));
+    if (roundLocked) return;
+
+    onBetAmountChange(event.currentTarget.value.replace(/\D/g, ""));
   }
 
   function handleOddsValueChange(value, option) {
     if (isFlipping) return;
 
     onSideChange(value, option);
+  }
+
+  function handleRoundsToWinChange(value, option) {
+    if (roundLocked) return;
+
+    onRoundsToWinChange?.(value, option);
   }
 
   function handlePlaceBet(event) {
@@ -5365,14 +5780,16 @@ function PackagedCoinFlipBettingPanel({
   return (
     <JokerCoinFlipBettingPanel
       layout={layout}
-      className={isFlipping ? "is-coin-flipping" : ""}
+      className={[isFlipping ? "is-coin-flipping" : "", roundLocked ? "is-round-locked" : ""]
+        .filter(Boolean)
+        .join(" ")}
       betAmount={betAmount}
       selectedOddsValue={selectedSide}
       defaultSelectedOddsValue="heads"
       onBetAmountChange={handleBetAmountChange}
       onOddsValueChange={handleOddsValueChange}
       onPlaceBet={handlePlaceBet}
-      onRoundsToWinChange={onRoundsToWinChange}
+      onRoundsToWinChange={handleRoundsToWinChange}
       oddsOptions={oddsOptions}
       roundsToWinValue={roundsToWinValue}
       defaultRoundsToWinValue={defaultRoundsToWinValue}
