@@ -18,6 +18,7 @@ import minesBombSound from "../assets/mines-bomb.mp3?url";
 import minesCashoutSound from "../assets/mines-cashout.mp3?url";
 import minesClickSound from "../assets/mines-click.mp3?url";
 import minesPlaceBetSound from "../assets/mines-placebet.mp3?url";
+import coinFlipSound from "../assets/coin-flip.mp3?url";
 import downArrowIcon from "../assets/hilo-down.svg?url";
 import upArrowIcon from "../assets/hilo-up.svg?url";
 import clubsIcon from "../assets/clubs-wrapper.svg?url";
@@ -3917,6 +3918,15 @@ function CoinFlipPage({ onGameChange }) {
     coinWinModalTimeoutRef.current = window.setTimeout(closeCoinWinModal, 3000);
   }
 
+  function handleCoinPanelPlaceBet(event) {
+    if (hasActiveCoinRound) {
+      handleCoinFlipAgain();
+      return;
+    }
+
+    handleBetAction(event);
+  }
+
   function handleCoinWinModalClose() {
     closeCoinWinModal();
   }
@@ -3979,6 +3989,8 @@ function CoinFlipPage({ onGameChange }) {
       (hasActiveCoinRound || forceStart);
 
     if (!isAllowedToFlip) return;
+
+    playSound(coinFlipSound);
 
     if (coinAnimationFrameRef.current) {
       window.cancelAnimationFrame(coinAnimationFrameRef.current);
@@ -4369,17 +4381,6 @@ function CoinFlipPage({ onGameChange }) {
             transition: opacity 220ms ease;
           }
 
-          .joker-coin-flip-betting-panel.is-coin-choice-open .joker-betting-main,
-          .joker-coin-flip-betting-panel.is-coin-choice-open .joker-odds-button-group {
-            position: relative;
-            z-index: 4;
-            pointer-events: auto;
-          }
-
-          .joker-coin-flip-betting-panel.is-coin-choice-open .joker-odds-button-group button {
-            pointer-events: auto;
-          }
-
           .joker-coin-flip-history {
             position: absolute;
             top: 42px;
@@ -4735,17 +4736,10 @@ function CoinFlipPage({ onGameChange }) {
         bettingPanel={
           <PackagedCoinFlipBettingPanel
             betAmount={betAmount}
-            currentProfit={formatCurrency(displayedCoinProfit)}
-            currentMultiplier={`${currentCoinMultiplier.toFixed(2)}x`}
-            inGame={hasActiveCoinRound}
             isFlipping={isCoinFlipping}
             layout={bettingPanelLayout}
-            nextMultiplier={`${nextCoinMultiplier.toFixed(2)}x`}
-            nextProfit={formatCurrency(nextCoinProfit)}
             onBetAmountChange={setBetAmount}
-            onCashout={handleCoinCashout}
-            onFlipAgain={handleCoinFlipAgain}
-            onPlaceBet={handleBetAction}
+            onPlaceBet={handleCoinPanelPlaceBet}
             onSideChange={handleCoinSideChange}
             onRoundsToWinChange={setRoundsToWin}
             oddsOptions={getCoinFlipOddsOptions()}
@@ -5340,17 +5334,10 @@ function PackagedCrashBettingPanel({
 
 function PackagedCoinFlipBettingPanel({
   betAmount,
-  currentMultiplier,
-  currentProfit,
-  inGame,
   isFlipping,
   layout = "desktop",
-  nextMultiplier,
-  nextProfit,
   oddsOptions,
   onBetAmountChange,
-  onCashout,
-  onFlipAgain,
   onPlaceBet,
   onRoundsToWinChange,
   onSideChange,
@@ -5375,41 +5362,14 @@ function PackagedCoinFlipBettingPanel({
     onPlaceBet(event);
   }
 
-  function handleFlipAgain(event) {
-    if (isFlipping) return;
-
-    onFlipAgain?.(event);
-  }
-
-  function handleCashout(event) {
-    if (isFlipping) return;
-
-    onCashout(event);
-  }
-
   return (
     <JokerCoinFlipBettingPanel
       layout={layout}
-      className={[
-        isFlipping ? "is-coin-flipping" : "",
-        inGame && !isFlipping ? "is-coin-choice-open" : "",
-      ]
-        .filter(Boolean)
-        .join(" ")}
+      className={isFlipping ? "is-coin-flipping" : ""}
       betAmount={betAmount}
-      cashoutLabel="Cashout"
       selectedOddsValue={selectedSide}
       defaultSelectedOddsValue="heads"
-      inGame={inGame}
-      inGameCardProps={{
-        currentProfit,
-        nextValue: nextProfit,
-        currentMultiplier,
-        nextMultiplier,
-      }}
       onBetAmountChange={handleBetAmountChange}
-      onCashout={handleCashout}
-      onFlipAgain={handleFlipAgain}
       onOddsValueChange={handleOddsValueChange}
       onPlaceBet={handlePlaceBet}
       onRoundsToWinChange={onRoundsToWinChange}
