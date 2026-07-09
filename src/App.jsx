@@ -2173,7 +2173,12 @@ function HiloPage({ onGameChange }) {
             --hilo-main-card-height: calc(260px * var(--hilo-scale));
             --hilo-side-card-width: calc(154px * var(--hilo-scale));
             --hilo-side-card-height: calc(220px * var(--hilo-scale));
-            --hilo-card-gap: clamp(var(--spacing-8), calc(var(--spacing-16) * var(--hilo-scale)), var(--spacing-24));
+            --hilo-card-bottom-inset: calc(var(--spacing-24) * var(--hilo-scale));
+            --hilo-play-bottom-gap: clamp(
+              calc(var(--spacing-32) * var(--hilo-scale)),
+              calc(var(--hilo-board-padding) * 0.72),
+              56px
+            );
             display: flex;
             width: 100%;
             max-width: 100%;
@@ -2181,27 +2186,29 @@ function HiloPage({ onGameChange }) {
             box-sizing: border-box;
             min-width: 0;
             min-height: 0;
-            align-items: flex-start;
-            justify-content: center;
+            align-items: center;
+            justify-content: stretch;
             overflow: visible;
-            padding: var(--hilo-board-padding) 0 0;
+            padding: 0 0 var(--hilo-play-bottom-gap);
           }
 
           .joker-hilo-game-frame {
             position: relative;
             isolation: isolate;
             display: grid;
-            width: min(100%, calc(540px * var(--hilo-scale)));
+            width: 100%;
             height: auto;
+            max-height: 100%;
             box-sizing: border-box;
             min-width: 0;
             min-height: 0;
             overflow: visible;
+            transform: translateY(calc(20px * var(--hilo-scale)));
             grid-template-columns: var(--hilo-side-card-width) var(--hilo-main-card-width) var(--hilo-side-card-width);
             align-items: end;
             justify-items: center;
-            justify-content: center;
-            gap: var(--hilo-card-gap);
+            justify-content: space-evenly;
+            column-gap: 0;
             border: 0;
             border-radius: 0;
             background: transparent;
@@ -2216,10 +2223,15 @@ function HiloPage({ onGameChange }) {
 
           .joker-hilo-main-card-wrap {
             position: relative;
-            display: grid;
-            place-items: center;
+            display: flex;
+            width: 100%;
+            height: auto;
+            box-sizing: border-box;
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: center;
             overflow: visible;
-            padding-bottom: calc(var(--spacing-24) * var(--hilo-scale));
+            padding-bottom: var(--hilo-card-bottom-inset);
           }
 
           .joker-hilo-main-card-stack {
@@ -2354,11 +2366,28 @@ function HiloPage({ onGameChange }) {
           }
 
           .joker-hilo-prediction-group {
-            display: grid;
-            align-content: end;
-            justify-items: center;
+            position: relative;
+            display: flex;
+            width: 100%;
+            height: auto;
+            box-sizing: border-box;
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: center;
             gap: calc(var(--spacing-8) * var(--hilo-scale));
-            transform: translateY(calc((var(--spacing-24) + var(--spacing-8)) * var(--hilo-scale)));
+            padding-bottom: var(--hilo-card-bottom-inset);
+            transform: translateY(calc(20px * var(--hilo-scale)));
+          }
+
+          .joker-hilo-prediction-support {
+            width: var(--hilo-side-card-width);
+            flex: 0 0 auto;
+            color: color-mix(in srgb, var(--joker-black-50) 66%, var(--joker-black-100));
+            font-family: var(--font-body);
+            font-size: clamp(10px, calc(12px * var(--hilo-scale)), 13px);
+            font-weight: var(--text-body-weight);
+            line-height: var(--text-body-line-height);
+            text-align: center;
           }
 
           .joker-hilo-prediction-card {
@@ -2460,16 +2489,6 @@ function HiloPage({ onGameChange }) {
             font-size: calc(20px * var(--hilo-scale));
             font-weight: 500;
             transform: translateY(0.08em);
-          }
-
-          .joker-hilo-prediction-support {
-            width: var(--hilo-side-card-width);
-            color: color-mix(in srgb, var(--joker-black-50) 66%, var(--joker-black-100));
-            font-family: var(--font-body);
-            font-size: clamp(10px, calc(12px * var(--hilo-scale)), 13px);
-            font-weight: var(--text-body-weight);
-            line-height: var(--text-body-line-height);
-            text-align: center;
           }
 
           .joker-hilo-result-card {
@@ -2590,6 +2609,11 @@ function HiloPage({ onGameChange }) {
 
             .joker-hilo-main-area {
               padding-top: var(--hilo-board-padding);
+              padding-bottom: clamp(
+                calc(var(--spacing-24) * var(--hilo-scale)),
+                calc(var(--hilo-board-padding) * 0.72),
+                40px
+              );
             }
 
             .joker-hilo-history-row {
