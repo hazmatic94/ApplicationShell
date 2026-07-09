@@ -396,10 +396,6 @@ function MobileShellScrollFix() {
   return (
     <style>
       {`
-        .joker-game-shell {
-          --game-shell-inner-game-height: clamp(620px, calc(100dvh - 150px), 780px);
-        }
-
         .joker-game-shell .joker-game-shell-empty-stage > * {
           min-height: 100%;
         }
@@ -409,93 +405,13 @@ function MobileShellScrollFix() {
             justify-items: center;
           }
 
-          .joker-game-shell .joker-page-wrapper > .joker-game-inner.joker-game-shell-stage {
+          .joker-game-shell .joker-page-wrapper > .joker-game-inner-frame {
             width: min(100%, 1400px) !important;
             justify-self: center !important;
           }
         }
 
         @media (max-width: 1023px) {
-          html:has(.joker-game-shell),
-          body:has(.joker-game-shell) {
-            min-height: 100%;
-            overflow-y: auto;
-          }
-
-          body:has(.joker-game-shell):not(:has(.app-shell)) {
-            overflow-y: auto;
-          }
-
-          #root:has(.joker-game-shell) {
-            min-height: 100dvh;
-          }
-
-          .joker-game-shell {
-            --game-shell-inner-game-height: clamp(520px, 72dvh, 640px);
-            height: auto;
-            min-height: 100dvh;
-            overflow: visible;
-          }
-
-          .joker-game-shell .joker-game-shell-empty-stage {
-            height: var(--game-shell-inner-game-height);
-            min-height: var(--game-shell-inner-game-height);
-          }
-
-          .joker-game-shell .joker-navigation-shell {
-            min-height: 100dvh;
-            height: auto;
-          }
-
-          .joker-game-shell .joker-navigation-mobile-content {
-            display: block;
-            height: auto;
-            min-height: 0;
-            overflow: visible;
-          }
-
-          .joker-game-shell .joker-navigation-mobile-content .joker-page-wrapper {
-            height: auto;
-            min-height: 0;
-          }
-
-          .joker-game-shell .joker-navigation-mobile-content .joker-page-wrapper > .joker-game-inner,
-          .joker-game-shell .joker-navigation-mobile-content .joker-game-shell-stage {
-            height: auto;
-            min-height: 0;
-            overflow: visible;
-          }
-
-          .joker-game-shell .joker-navigation-mobile-content .joker-game-shell-play-area {
-            display: flex;
-            min-height: 0;
-            flex-direction: column;
-          }
-
-          .joker-game-shell .joker-navigation-mobile-content .joker-game-shell-empty-stage,
-          .joker-game-shell .joker-navigation-mobile-content .joker-game-shell-betting {
-            width: 100%;
-            min-height: var(--game-shell-inner-game-height);
-          }
-
-          .joker-game-shell .joker-navigation-mobile-content .joker-game-shell-empty-stage {
-            height: var(--game-shell-inner-game-height);
-          }
-
-          .joker-game-shell .joker-navigation-mobile-content .joker-game-shell-betting {
-            order: 2;
-            min-height: 0;
-            overflow: visible;
-          }
-
-          .joker-game-shell .joker-navigation-mobile-content .joker-betting-panel {
-            width: 100%;
-            min-width: 0;
-            min-height: auto;
-            border-right: 0;
-            border-top: var(--border-width-default) solid var(--joker-black-300);
-          }
-
           .joker-game-shell--hilo .joker-navigation-mobile-content .joker-hilo-betting-panel {
             display: grid;
             grid-template-rows: auto auto auto;
@@ -847,14 +763,9 @@ function MinesPage({ onGameChange }) {
             max-width: none;
           }
 
-          .joker-game-shell .joker-game-shell-stage {
+          .joker-game-shell .joker-game-inner-frame {
             width: 100%;
             justify-self: stretch;
-          }
-
-          .joker-game-shell .joker-game-shell-betting,
-          .joker-game-shell .joker-game-shell-empty-stage {
-            min-height: 0;
           }
 
           @media (min-width: 1024px) {
@@ -1960,14 +1871,9 @@ function HiloPage({ onGameChange }) {
             max-width: none;
           }
 
-          .joker-game-shell .joker-game-shell-stage {
+          .joker-game-shell .joker-game-inner-frame {
             width: 100%;
             justify-self: stretch;
-          }
-
-          .joker-game-shell .joker-game-shell-betting,
-          .joker-game-shell .joker-game-shell-empty-stage {
-            min-height: 0;
           }
 
           .joker-hilo-betting-panel.is-hilo-pre-game .joker-hilo-betting-actions {
