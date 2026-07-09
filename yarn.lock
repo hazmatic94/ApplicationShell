@@ -165,10 +165,10 @@
   resolved "https://registry.npmjs.org/@esbuild/darwin-arm64/-/darwin-arm64-0.25.12.tgz"
   integrity sha512-N3zl+lxHCifgIlcMUP5016ESkeQjLj/959RxxNYIthIg+CQHInujFuXeWbWMgnTo4cp5XVHqFPmpyu9J65C1Yg==
 
-"@joker/design-system@file:../Design System/joker-design-system-0.1.31.tgz":
-  version "0.1.31"
-  resolved "file:../Design System/joker-design-system-0.1.31.tgz"
-  integrity sha512-9+NTsoILA2QScHrR2XCXSui2fEsUNOyBmE6fiW7rCp3RbsWV9d3ZYMHgnxmyhiWqZNvX8Ho/d2xbMHFXJz0+OA==
+"@joker/design-system@file:../Design System/joker-design-system-0.1.33.tgz":
+  version "0.1.33"
+  resolved "file:../Design System/joker-design-system-0.1.33.tgz"
+  integrity sha512-QwzCCGg/CwM2PzbGRZdSlF9x8kKCSgLQZbW3RCEV4JtxhrG6p1sLSKHzoy/llwkiEQVTH9OtaAsaYD9bEVOOGA==
 
 "@jridgewell/gen-mapping@^0.3.12", "@jridgewell/gen-mapping@^0.3.5":
   version "0.3.13"

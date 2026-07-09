@@ -180,11 +180,9 @@ function formatProbabilityPercent(probability) {
 }
 
 function getCoinFlipOddsOptions() {
-  const probabilityLabel = formatProbabilityPercent(coinFlipFairProbability);
-
   return [
-    { value: "heads", label: "Heads", odds: probabilityLabel, direction: "down" },
-    { value: "tails", label: "Tails", odds: probabilityLabel, direction: "up" },
+    { value: "heads", label: "Bet Heads", sideIcon: "heads" },
+    { value: "tails", label: "Bet Tails", sideIcon: "tails" },
   ];
 }
 
@@ -3724,6 +3722,7 @@ function CoinFlipPage({ onGameChange }) {
   const [betAmount, setBetAmount] = useState("");
   const [balance] = useState(150000);
   const [selectedSide, setSelectedSide] = useState("heads");
+  const [roundsToWin, setRoundsToWin] = useState("4");
   const [coinFrameIndex, setCoinFrameIndex] = useState(0);
   const [isCoinDragging, setIsCoinDragging] = useState(false);
   const [isCoinFlipping, setIsCoinFlipping] = useState(false);
@@ -3744,11 +3743,12 @@ function CoinFlipPage({ onGameChange }) {
   const selectedSideRef = useRef(selectedSide);
   const hasCoinBetAmount = Number(betAmount) > 0;
   const hasActiveCoinRound = coinRoundStatus === "active";
+  const maxRoundsToWin = Number(roundsToWin) || coinFlipMaxWins;
   const settledCoinCount = coinHistory.filter((coin) => coin.didWin).length;
   const canStartCoinFlip =
-    hasCoinBetAmount && coinHistory.length < coinFlipMaxWins && !isCoinFlipping && !coinWinModal;
+    hasCoinBetAmount && coinHistory.length < maxRoundsToWin && !isCoinFlipping && !coinWinModal;
   const canFlipCoin = canStartCoinFlip;
-  const coinFlipPreviewCoins = Array.from({ length: coinFlipMaxWins }, (_, index) => {
+  const coinFlipPreviewCoins = Array.from({ length: maxRoundsToWin }, (_, index) => {
     const historyItem = coinHistory[index];
 
     if (!historyItem) {
@@ -3764,7 +3764,7 @@ function CoinFlipPage({ onGameChange }) {
     };
   });
   const currentCoinMultiplier = calculateCoinFlipMultiplier(settledCoinCount);
-  const nextCoinMultiplier = calculateCoinFlipMultiplier(Math.min(coinFlipMaxWins, settledCoinCount + 1));
+  const nextCoinMultiplier = calculateCoinFlipMultiplier(Math.min(maxRoundsToWin, settledCoinCount + 1));
   const currentCoinProfit = Number(betAmount || 0) * currentCoinMultiplier;
   const nextCoinProfit = Number(betAmount || 0) * nextCoinMultiplier;
   const coinFlightLift = Math.abs(coinFlightY);
@@ -3974,7 +3974,7 @@ function CoinFlipPage({ onGameChange }) {
   function runCoinFlipAnimation(strength, forceStart = false) {
     const isAllowedToFlip =
       hasCoinBetAmount &&
-      coinHistory.length < coinFlipMaxWins &&
+      coinHistory.length < maxRoundsToWin &&
       !isCoinFlipping &&
       (hasActiveCoinRound || forceStart);
 
@@ -4047,7 +4047,7 @@ function CoinFlipPage({ onGameChange }) {
       if (didWin) {
         const nextWinCount = coinHistory.length + 1;
 
-        if (nextWinCount >= coinFlipMaxWins) {
+        if (nextWinCount >= maxRoundsToWin) {
           const winMultiplier = calculateCoinFlipMultiplier(nextWinCount);
           const winProfit = Number(betAmount || 0) * winMultiplier;
 
@@ -4747,7 +4747,10 @@ function CoinFlipPage({ onGameChange }) {
             onFlipAgain={handleCoinFlipAgain}
             onPlaceBet={handleBetAction}
             onSideChange={handleCoinSideChange}
+            onRoundsToWinChange={setRoundsToWin}
             oddsOptions={getCoinFlipOddsOptions()}
+            roundsToWinValue={roundsToWin}
+            defaultRoundsToWinValue="4"
             selectedSide={selectedSide}
             submitLabel="Flip Coin"
           />
@@ -5349,7 +5352,10 @@ function PackagedCoinFlipBettingPanel({
   onCashout,
   onFlipAgain,
   onPlaceBet,
+  onRoundsToWinChange,
   onSideChange,
+  roundsToWinValue,
+  defaultRoundsToWinValue = "4",
   selectedSide,
   submitLabel = "Place Bet",
 }) {
@@ -5406,7 +5412,10 @@ function PackagedCoinFlipBettingPanel({
       onFlipAgain={handleFlipAgain}
       onOddsValueChange={handleOddsValueChange}
       onPlaceBet={handlePlaceBet}
+      onRoundsToWinChange={onRoundsToWinChange}
       oddsOptions={oddsOptions}
+      roundsToWinValue={roundsToWinValue}
+      defaultRoundsToWinValue={defaultRoundsToWinValue}
       submitLabel={submitLabel}
       disablePlaceBetUntilBetAmount
     />
