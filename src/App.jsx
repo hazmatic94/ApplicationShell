@@ -995,7 +995,7 @@ function MinesPage({ onGameChange }) {
           }
 
           .joker-mines-board-area {
-            --mines-board-padding: 62px;
+            --mines-board-padding: 32px;
             position: relative;
             display: grid;
             height: 100%;
@@ -1031,9 +1031,15 @@ function MinesPage({ onGameChange }) {
             overflow: visible;
           }
 
+          @media (max-width: 1279px) and (min-width: 1024px) {
+            .joker-mines-board-area {
+              --mines-board-padding: 24px;
+            }
+          }
+
           @media (max-width: 1023px) {
             .joker-mines-board-area {
-              --mines-board-padding: var(--spacing-16);
+              --mines-board-padding: 8px;
             }
           }
 
@@ -1167,23 +1173,19 @@ function MinesPage({ onGameChange }) {
             inset: 0;
             z-index: 1;
             border-radius: inherit;
-            background: radial-gradient(
-              circle at center,
-              rgb(255 255 255 / 0.025) 0%,
-              transparent 68%
+            background: linear-gradient(
+              180deg,
+              rgb(0 0 0 / 0.04) 0%,
+              rgb(255 255 255 / 0.12) 49%,
+              rgb(0 0 0 / 0.04) 100%
             );
-            opacity: 0;
+            opacity: 0.5;
             pointer-events: none;
-            transition: opacity var(--motion-fast) var(--ease-standard);
           }
 
           .joker-mines-grid.is-round-active .joker-mines-tile--default:not(.joker-mines-tile--revealed) .joker-mines-tile-surface {
             border-color: var(--joker-black-200);
             box-shadow: none;
-          }
-
-          .joker-mines-grid.is-round-active .joker-mines-tile--default:not(.joker-mines-tile--revealed) .joker-mines-tile-surface::before {
-            opacity: 0;
           }
 
           .joker-mines-tile-icon--gold {
@@ -1291,18 +1293,28 @@ function MinesPage({ onGameChange }) {
           .joker-mines-tile--gold.joker-mines-tile--revealed .joker-mines-tile-surface,
           .joker-mines-tile--gold.joker-mines-tile--revealed:hover .joker-mines-tile-surface {
             border-color: color-mix(in srgb, var(--joker-gold-400) 72%, var(--joker-black-400));
-            background:
-              linear-gradient(
-                135deg,
-                rgb(0 0 0 / 0.008) 0%,
-                rgb(255 255 255 / 0.024) 49%,
-                rgb(0 0 0 / 0.008) 100%
-              ),
-              var(--joker-black-700);
+            background: var(--joker-black-700);
             box-shadow:
               0 0 0 var(--border-width-default) color-mix(in srgb, var(--joker-gold-400) 10%, transparent),
               inset 0 0 var(--spacing-24) color-mix(in srgb, var(--joker-gold-400) 6%, transparent);
             filter: drop-shadow(0 0 var(--spacing-12) color-mix(in srgb, var(--joker-gold-400) 24%, transparent));
+          }
+
+          .joker-mines-tile--gold.joker-mines-tile--revealed .joker-mines-tile-surface::before,
+          .joker-mines-tile--gold.joker-mines-tile--revealed:hover .joker-mines-tile-surface::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            z-index: 1;
+            border-radius: inherit;
+            background: linear-gradient(
+              180deg,
+              rgb(0 0 0 / 0.04) 0%,
+              rgb(148 139 16 / 0.12) 49%,
+              rgb(0 0 0 / 0.04) 100%
+            );
+            opacity: 0.5;
+            pointer-events: none;
           }
 
           .joker-mines-tile--fresh-reveal {
@@ -1555,10 +1567,10 @@ function MinesPage({ onGameChange }) {
             bottom: 0;
             left: 50%;
             min-width: calc(var(--spacing-64) + var(--spacing-8));
-            border: calc(var(--border-width-default) + var(--border-width-default)) solid var(--joker-green-400);
+            border: 1px solid var(--joker-green-400);
             border-radius: var(--radius-pill);
             background: color-mix(in srgb, var(--joker-green-900) 78%, var(--joker-black-800));
-            box-shadow: 0 0 0 var(--border-width-default) color-mix(in srgb, var(--joker-green-400) 18%, transparent);
+            box-shadow: none;
             color: var(--joker-green-400);
             font-family: var(--font-display);
             font-size: 20px;
@@ -3022,15 +3034,17 @@ const crashGrowthRate = 0.3;
 const crashGraphBottom = 620;
 const crashGraphTop = 52;
 const crashResetDurationMs = 5000;
+const crashRtp = 0.96;
+const crashMaxMultiplier = 100;
 const crashSocialEvents = [
-  { name: "James", multiplier: 1.42 },
-  { name: "Mia", multiplier: 1.86 },
-  { name: "Noah", multiplier: 2.42 },
-  { name: "Michael", multiplier: 3.18 },
-  { name: "Sofia", multiplier: 4.87 },
-  { name: "Alex", multiplier: 6.31 },
-  { name: "Kai", multiplier: 8.31 },
-  { name: "Lena", multiplier: 10.12 },
+  { name: "James", multiplier: 1.62 },
+  { name: "Mia", multiplier: 2.24 },
+  { name: "Noah", multiplier: 3.08 },
+  { name: "Michael", multiplier: 4.42 },
+  { name: "Sofia", multiplier: 6.15 },
+  { name: "Alex", multiplier: 8.74 },
+  { name: "Kai", multiplier: 12.36 },
+  { name: "Lena", multiplier: 18.52 },
 ];
 const crashParticles = Array.from({ length: 16 }, (_, index) => ({
   delay: `${index * 190}ms`,
@@ -3042,20 +3056,12 @@ const crashParticles = Array.from({ length: 16 }, (_, index) => ({
 
 function createCrashRound() {
   const random = Math.random();
-  const crashPoint = Number(
-    (
-      random < 0.58
-        ? 1.18 + Math.random() * 1.08
-        : random < 0.84
-          ? 2.32 + Math.random() * 3.08
-          : random < 0.96
-            ? 5.62 + Math.random() * 3.56
-            : 9.48 + Math.random() * 1.22
-    ).toFixed(2)
-  );
+  const rawCrash = crashRtp / (1 - random);
+  const crashPoint = Number(Math.min(crashMaxMultiplier, Math.max(1, rawCrash)).toFixed(2));
+  const calculatedCrashTimeMs = (Math.log(Math.max(crashPoint, 1.0001)) / crashGrowthRate) * 1000;
   const crashTimeMs = Math.min(
     crashGraphDurationSeconds * 1000,
-    (Math.log(crashPoint) / crashGrowthRate) * 1000,
+    Math.max(crashPoint <= 1.01 ? 720 : 0, calculatedCrashTimeMs),
   );
 
   return {
@@ -3095,6 +3101,14 @@ function getCrashGraphPoint(elapsedMs, crashPoint) {
   const y = crashGraphBottom - normalizedMultiplier * (crashGraphBottom - crashGraphTop);
 
   return { x, y };
+}
+
+function getCrashRocketAngle(elapsedMs, crashPoint) {
+  const current = getCrashGraphPoint(elapsedMs, crashPoint);
+  const previous = getCrashGraphPoint(Math.max(0, elapsedMs - 48), crashPoint);
+  const dx = current.x - previous.x || 1;
+  const dy = current.y - previous.y;
+  return (Math.atan2(dy, dx) * 180) / Math.PI;
 }
 
 function buildCrashGraphPaths(elapsedMs, crashPoint) {
@@ -3163,12 +3177,15 @@ function CrashPage({ onGameChange }) {
     "--crash-line-width": `${(4 + crashSpeedIntensity * 1.4).toFixed(2)}px`,
   };
   const crashMultiplierTick = Math.floor(crashRound.multiplier * 100);
-  const crashEndpointStyle = {
+  const crashRocketAngle = getCrashRocketAngle(crashRound.elapsedMs, crashRound.crashPoint);
+  const crashRocketStyle = {
     left: `${(crashGraph.endPoint.x / crashGraphWidth) * 100}%`,
     top: `${(crashGraph.endPoint.y / crashGraphHeight) * 100}%`,
-    "--crash-endpoint-scale": (1 + crashSpeedIntensity * 0.46).toFixed(2),
-    "--crash-endpoint-trail-opacity": (0.04 + crashSpeedIntensity * 0.18).toFixed(2),
-    "--crash-endpoint-trail-width": `${Math.round(14 + crashSpeedIntensity * 52)}px`,
+    "--crash-rocket-angle": `${crashRocketAngle}deg`,
+    "--crash-rocket-scale": (1 + crashSpeedIntensity * 0.22).toFixed(2),
+    "--crash-rocket-pulse-duration": `${Math.round(520 - crashSpeedIntensity * 260)}ms`,
+    "--crash-flame-scale": (0.72 + crashSpeedIntensity * 0.56).toFixed(2),
+    "--crash-rocket-glow-opacity": (0.18 + crashSpeedIntensity * 0.42).toFixed(2),
   };
   const crashMultiplierStyle = {
     "--crash-multiplier-pulse-duration": `${Math.round(280 - crashSpeedIntensity * 120)}ms`,
@@ -3482,31 +3499,83 @@ function CrashPage({ onGameChange }) {
             color: var(--joker-red-500, #e24a4a);
           }
 
-          .joker-crash-endpoint {
+          .joker-crash-rocket {
             position: absolute;
-            width: 14px;
-            height: 14px;
-            border-radius: 9999px;
-            background: #E6D0A4;
-            transform: translate(-50%, -50%) scale(var(--crash-endpoint-scale, 1));
+            width: 56px;
+            height: 56px;
+            transform:
+              translate(-50%, -50%)
+              rotate(var(--crash-rocket-angle, -32deg))
+              scale(var(--crash-rocket-scale, 1));
             transform-origin: center;
             pointer-events: none;
-            transition: background 180ms var(--ease-standard);
+            z-index: 2;
           }
 
-          .joker-crash-endpoint::before {
+          .joker-crash-rocket-body {
+            position: relative;
+            display: grid;
+            place-items: center;
+            width: 100%;
+            height: 100%;
+            animation: joker-crash-rocket-pulse var(--crash-rocket-pulse-duration, 520ms) ease-in-out infinite;
+          }
+
+          .joker-crash-rocket-body svg {
+            display: block;
+            width: 100%;
+            height: 100%;
+            filter: drop-shadow(0 0 10px rgb(230 208 164 / 0.42));
+          }
+
+          .joker-crash-rocket-glow {
             position: absolute;
-            top: 50%;
-            right: 50%;
-            width: var(--crash-endpoint-trail-width, 14px);
-            height: 10px;
+            inset: -18px;
             border-radius: 9999px;
-            background: linear-gradient(90deg, transparent, rgba(230, 208, 164, 0.72));
-            content: "";
-            opacity: var(--crash-endpoint-trail-opacity, 0);
-            transform: translateY(-50%) translateX(3px) rotate(-18deg);
-            filter: blur(2px);
+            background: radial-gradient(circle, rgb(230 208 164 / 0.34) 0%, transparent 72%);
+            opacity: var(--crash-rocket-glow-opacity, 0.24);
+            animation: joker-crash-rocket-glow var(--crash-rocket-pulse-duration, 520ms) ease-in-out infinite;
             pointer-events: none;
+          }
+
+          .joker-crash-rocket-flame {
+            position: absolute;
+            top: 58%;
+            left: 8%;
+            width: 18px;
+            height: 10px;
+            border-radius: 9999px 0 9999px 9999px;
+            background: linear-gradient(90deg, #ff8a3d, #ffd56a 58%, transparent);
+            opacity: calc(0.55 + var(--crash-atmosphere, 0) * 0.45);
+            transform:
+              translateY(-50%)
+              rotate(calc(var(--crash-rocket-angle, -32deg) * -1 + 188deg))
+              scaleX(var(--crash-flame-scale, 1));
+            transform-origin: right center;
+            filter: blur(0.4px);
+            animation: joker-crash-rocket-flame var(--crash-rocket-pulse-duration, 520ms) ease-in-out infinite;
+          }
+
+          .joker-crash-chart.is-crashed .joker-crash-rocket-body svg {
+            filter: drop-shadow(0 0 12px rgb(226 74 74 / 0.5));
+          }
+
+          .joker-crash-chart.is-crashed .joker-crash-rocket-body svg .joker-crash-rocket-fill {
+            fill: var(--joker-red-500, #e24a4a);
+          }
+
+          .joker-crash-chart.is-crashed .joker-crash-rocket-body svg .joker-crash-rocket-window {
+            fill: color-mix(in srgb, var(--joker-red-500, #e24a4a) 72%, #fff);
+          }
+
+          .joker-crash-chart.is-crashed .joker-crash-rocket-flame {
+            background: linear-gradient(90deg, #ff4d4d, #ff9b7a 58%, transparent);
+            animation: joker-crash-rocket-burst 420ms var(--ease-standard) both;
+          }
+
+          .joker-crash-chart.is-crashed .joker-crash-rocket-glow {
+            background: radial-gradient(circle, rgb(226 74 74 / 0.42) 0%, transparent 72%);
+            animation: joker-crash-rocket-burst 420ms var(--ease-standard) both;
           }
 
           .joker-crash-particles {
@@ -3583,14 +3652,6 @@ function CrashPage({ onGameChange }) {
 
           .joker-crash-chart.is-crashed .joker-crash-graph-fill {
             fill: url("#joker-crash-fill-red");
-          }
-
-          .joker-crash-chart.is-crashed .joker-crash-endpoint {
-            background: var(--joker-red-500, #e24a4a);
-          }
-
-          .joker-crash-chart.is-crashed .joker-crash-endpoint::before {
-            background: linear-gradient(90deg, transparent, rgba(226, 74, 74, 0.72));
           }
 
           .joker-crash-chart.is-crashed .joker-crash-camera {
@@ -3698,6 +3759,52 @@ function CrashPage({ onGameChange }) {
 
             100% {
               transform: translateY(var(--crash-multiplier-drift, 0)) scale(1);
+            }
+          }
+
+          @keyframes joker-crash-rocket-pulse {
+            0%, 100% {
+              transform: scale(1);
+            }
+
+            50% {
+              transform: scale(1.12);
+            }
+          }
+
+          @keyframes joker-crash-rocket-glow {
+            0%, 100% {
+              opacity: calc(var(--crash-rocket-glow-opacity, 0.24) * 0.72);
+              transform: scale(0.92);
+            }
+
+            50% {
+              opacity: var(--crash-rocket-glow-opacity, 0.24);
+              transform: scale(1.08);
+            }
+          }
+
+          @keyframes joker-crash-rocket-flame {
+            0%, 100% {
+              opacity: calc(0.5 + var(--crash-atmosphere, 0) * 0.35);
+              transform: translateY(-50%) rotate(calc(var(--crash-rocket-angle, -32deg) * -1 + 188deg)) scaleX(calc(var(--crash-flame-scale, 1) * 0.88));
+            }
+
+            50% {
+              opacity: calc(0.72 + var(--crash-atmosphere, 0) * 0.28);
+              transform: translateY(-50%) rotate(calc(var(--crash-rocket-angle, -32deg) * -1 + 188deg)) scaleX(calc(var(--crash-flame-scale, 1) * 1.18));
+            }
+          }
+
+          @keyframes joker-crash-rocket-burst {
+            0% {
+              opacity: 1;
+              transform: scale(1);
+            }
+
+            100% {
+              opacity: 0;
+              transform: scale(2.4);
             }
           }
 
@@ -3818,7 +3925,34 @@ function CrashPage({ onGameChange }) {
                       d={crashGraph.linePath}
                     />
                   </svg>
-                  <span className="joker-crash-endpoint" style={crashEndpointStyle} aria-hidden="true" />
+                  <span
+                    className={`joker-crash-rocket ${crashRound.status === "crashed" ? "is-crashed" : ""}`.trim()}
+                    style={crashRocketStyle}
+                    aria-hidden="true"
+                  >
+                    <span className="joker-crash-rocket-glow" />
+                    <span className="joker-crash-rocket-body">
+                      <svg viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+                        <path
+                          className="joker-crash-rocket-fill"
+                          d="M16 3.5 21.5 14.5 16 12 10.5 14.5Z"
+                          fill="#E6D0A4"
+                        />
+                        <path
+                          className="joker-crash-rocket-fill"
+                          d="M10.5 14.5 8 22 16 17.5 24 22 21.5 14.5Z"
+                          fill="#E6D0A4"
+                        />
+                        <circle className="joker-crash-rocket-window" cx="16" cy="11.5" r="2.2" fill="#1a1a1a" />
+                        <path
+                          className="joker-crash-rocket-fill"
+                          d="M13.5 22 16 28.5 18.5 22Z"
+                          fill="#c9b48a"
+                        />
+                      </svg>
+                    </span>
+                    <span className="joker-crash-rocket-flame" />
+                  </span>
                   <div
                     className={`joker-crash-multiplier ${crashRound.status === "crashed" ? "is-crashed" : ""}`.trim()}
                     style={crashMultiplierStyle}
@@ -5681,7 +5815,7 @@ function PackagedMinesBettingPanel({
       onPlaceBet={onPlaceBet}
       onCashout={onPlaceBet}
       inGame={gameInPlay}
-      cashoutLabel={`Cashout ${formatCurrency(currentProfit)}`}
+      cashoutLabel="Cashout"
       inGameCardProps={{
         currentProfit: formatCurrency(currentProfit),
         nextValue: formatCurrency(nextProfit),
