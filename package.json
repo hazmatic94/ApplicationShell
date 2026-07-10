@@ -6,10 +6,11 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "clean": "rm -rf dist node_modules .yarn yarn.lock && rm -f .pnp.cjs .pnp.loader.mjs"
   },
   "dependencies": {
-    "@joker/design-system": "file:../DesignSystemGames/joker-design-system-0.1.46.tgz",
+    "@joker/design-system": "https://github.com/mjprod/DesignSystemGames.git#main",
     "@vitejs/plugin-react": "^4.3.4",
     "lucide-react": "^0.468.0",
     "react": "^18.3.1",
