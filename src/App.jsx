@@ -4,11 +4,18 @@ import {
   CocoHutBettingPanel as JokerCocoHutBettingPanel,
   CoinFlipBettingPanel as JokerCoinFlipBettingPanel,
   CrashBettingPanel as JokerCrashBettingPanel,
+  GameCardFace,
+  GameCardMini,
+  GameCardMiniFace,
+  GameCardStack,
   GameShell,
+  HigherCard,
   HiLoBettingPanel as JokerHiLoBettingPanel,
+  LowerCard,
   MinesBettingPanel,
   MobileHiLoOddsGroup,
   OddsButtonGroup,
+  SkipButton,
   WinModalCard,
 } from "@joker/design-system";
 import jokerIcon from "../assets/iconJoker.svg?url";
@@ -23,10 +30,6 @@ import minesPlaceBetSound from "../assets/mines-placebet.mp3?url";
 import coinFlipSound from "../assets/coin-flip.mp3?url";
 import downArrowIcon from "../assets/hilo-down.svg?url";
 import upArrowIcon from "../assets/hilo-up.svg?url";
-import clubsIcon from "../assets/clubs-wrapper.svg?url";
-import diamondsIcon from "../assets/diamonds-wrapper.svg?url";
-import heartsIcon from "../assets/hearts-wrapper.svg?url";
-import spadesIcon from "../assets/spades-wrapper.svg?url";
 import coinJokerIcon from "../assets/coin-joker.png?url";
 import coinHeadsIcon from "../assets/coin-heads.png?url";
 import coinTailsIcon from "../assets/coin-tails.png?url";
@@ -88,13 +91,12 @@ const hiloRanks = [
   { rank: "K", value: 13 },
 ];
 const hiloSuits = [
-  { suit: "hearts", icon: heartsIcon, tone: "red" },
-  { suit: "diamonds", icon: diamondsIcon, tone: "red" },
-  { suit: "clubs", icon: clubsIcon, tone: "black" },
-  { suit: "spades", icon: spadesIcon, tone: "black" },
+  { suit: "hearts", tone: "red" },
+  { suit: "diamonds", tone: "red" },
+  { suit: "clubs", tone: "black" },
+  { suit: "spades", tone: "black" },
 ];
 const defaultHiloCard = {
-  icon: spadesIcon,
   id: "spades-10-preview",
   rank: "10",
   suit: "spades",
@@ -274,17 +276,6 @@ function MobileOddsGroup({
       disabled={disabled}
       ariaLabel="Coin flip choice"
     />
-  );
-}
-
-function HiLoSkipCardButton({ disabled = false, label = "Skip Card", onClick }) {
-  return (
-    <Button className="joker-hilo-main-card-skip" disabled={disabled} onClick={onClick} variant="hi-lo-skip">
-      <span className="joker-hi-lo-skip-label sr-only">{label}</span>
-      <span className="joker-hi-lo-skip-icon" aria-hidden="true">
-        <ChevronRightIcon />
-      </span>
-    </Button>
   );
 }
 
@@ -601,12 +592,7 @@ function MobileShellScrollFix() {
 
         @media (min-width: 1024px) {
           .joker-game-shell .joker-page-wrapper {
-            justify-items: center;
-          }
-
-          .joker-game-shell .joker-page-wrapper > .joker-game-inner-frame {
-            width: min(100%, 1400px) !important;
-            justify-self: center !important;
+            justify-items: stretch;
           }
         }
 
@@ -2218,6 +2204,15 @@ function HiloPage({ onGameChange }) {
             height: 100%;
           }
 
+          .joker-game-shell--hilo .joker-game-shell-empty-stage {
+            min-height: 0;
+            overflow: hidden;
+          }
+
+          .joker-game-shell--hilo .joker-game-shell-empty-stage > .joker-hilo-stage {
+            min-height: 0;
+          }
+
           .joker-hilo-stage {
             container-type: size;
             position: relative;
@@ -2227,30 +2222,65 @@ function HiloPage({ onGameChange }) {
             min-height: 0;
             box-sizing: border-box;
             --hilo-board-padding: 62px;
-            --hilo-scale: clamp(0.76, min(100cqw / 540px, 100cqh / 420px), 1.32);
-            --hilo-stack-step: calc(6px * var(--hilo-scale));
+            --hilo-main-native-width: 296px;
+            --hilo-main-native-height: 398.5px;
+            --hilo-side-native-width: 164px;
+            --hilo-side-to-main-ratio: 0.6;
+            --hilo-play-gap: 24px;
+            --hilo-play-scale-bias: 0.74;
+            --hilo-play-scale-max: 0.92;
+            --hilo-mini-scale-factor: 0.58;
+            --hilo-mini-native-width: 110px;
+            --hilo-mini-native-height: 76px;
+            --hilo-row-content-native-width: calc(
+              var(--hilo-main-native-width) * (1 + (2 * var(--hilo-side-to-main-ratio)))
+            );
+            --hilo-history-band-height: calc(
+              (var(--spacing-8) + 18px) * var(--hilo-play-scale-bias) + 76px * 0.58 * var(--hilo-play-scale-bias) +
+                var(--spacing-16)
+            );
+            --hilo-play-scale: min(
+              (100cqw - (2 * var(--hilo-play-gap))) / var(--hilo-row-content-native-width),
+              (100cqh - var(--hilo-history-band-height)) /
+                calc(var(--hilo-main-native-height) + (var(--hilo-main-native-height) * 0.18)),
+              var(--hilo-play-scale-max)
+            );
+            --hilo-play-scale: max(0.4, calc(var(--hilo-play-scale) * var(--hilo-play-scale-bias)));
+            --hilo-side-scale: calc(
+              var(--hilo-play-scale) * var(--hilo-side-to-main-ratio) * var(--hilo-main-native-width) /
+                var(--hilo-side-native-width)
+            );
+            --hilo-main-slot-width: calc(var(--hilo-main-native-width) * var(--hilo-play-scale));
+            --hilo-main-slot-height: calc(var(--hilo-main-native-height) * var(--hilo-play-scale));
+            --hilo-side-slot-width: calc(
+              var(--hilo-main-native-width) * var(--hilo-side-to-main-ratio) * var(--hilo-play-scale)
+            );
+            --hilo-side-slot-height: calc(
+              var(--hilo-main-native-height) * var(--hilo-side-to-main-ratio) * var(--hilo-play-scale)
+            );
+            --hilo-mini-scale: calc(
+              var(--hilo-play-scale) * var(--hilo-mini-native-width) / var(--hilo-main-native-width) *
+                var(--hilo-mini-scale-factor)
+            );
+            --hilo-mini-card-width: calc(var(--hilo-mini-native-width) * var(--hilo-mini-scale));
+            --hilo-mini-card-height: calc(var(--hilo-mini-native-height) * var(--hilo-mini-scale));
             padding: 0 var(--hilo-board-padding) var(--hilo-board-padding);
-            grid-template-rows: auto minmax(0, 1fr);
-            overflow-x: hidden;
-            overflow-y: auto;
+            grid-template-rows: minmax(0, auto) minmax(0, 1fr);
+            overflow: hidden;
             background:
               radial-gradient(circle at 50% 48%, color-mix(in srgb, var(--joker-gold-400) 3%, transparent), transparent 42%),
               color-mix(in srgb, var(--color-bg-sidebar) 92%, var(--joker-gold-1000));
           }
 
           .joker-hilo-history-row {
-            --hilo-history-chip-room: calc((var(--spacing-12) + 24px) * var(--hilo-scale));
-            display: grid;
+            --hilo-history-chip-room: calc((var(--spacing-8) + 18px) * var(--hilo-play-scale));
+            display: flex;
             min-width: 0;
+            min-height: 0;
             align-items: center;
             margin-inline: calc(var(--hilo-board-padding) * -1);
             padding-inline: var(--hilo-board-padding);
-            overflow-x: auto;
-            overflow-y: visible;
-            overscroll-behavior-x: contain;
-            scroll-behavior: smooth;
-            scroll-padding-inline: var(--hilo-board-padding);
-            scrollbar-width: none;
+            overflow: hidden;
             background:
               linear-gradient(180deg, color-mix(in srgb, var(--joker-black-700) 38%, transparent), transparent),
               color-mix(in srgb, var(--color-bg-sidebar) 96%, var(--joker-gold-1000));
@@ -2264,10 +2294,12 @@ function HiloPage({ onGameChange }) {
 
           .joker-hilo-history-track {
             display: flex;
-            width: max-content;
+            width: 100%;
+            min-width: 0;
             align-items: center;
-            justify-content: flex-start;
+            justify-content: flex-end;
             padding: 0 0 var(--spacing-8);
+            overflow: hidden;
           }
 
           .joker-hilo-history-item {
@@ -2275,46 +2307,49 @@ function HiloPage({ onGameChange }) {
             display: grid;
             flex: 0 0 auto;
             place-items: center;
-            margin-right: calc(var(--spacing-12) * var(--hilo-scale));
+            margin-right: calc(var(--spacing-8) * var(--hilo-play-scale));
           }
 
           .joker-hilo-history-item:last-child {
             margin-right: 0;
           }
 
-          .joker-hilo-mini-card {
+          .joker-hilo-mini-card-slot {
             position: relative;
             z-index: 1;
-            display: inline-flex;
-            width: calc(82px * var(--hilo-scale));
-            height: calc(52px * var(--hilo-scale));
+            display: flex;
+            width: var(--hilo-mini-card-width);
+            height: var(--hilo-mini-card-height);
             flex: 0 0 auto;
-            align-items: center;
             justify-content: center;
-            gap: calc(var(--spacing-4) * var(--hilo-scale));
-            border: 0;
-            border-radius: var(--radius-xs, var(--radius-sm));
-            background: var(--joker-white-50);
-            box-shadow:
-              0 var(--spacing-4) var(--spacing-12) rgb(0 0 0 / 0.18),
-              inset 0 0 0 var(--border-width-default) color-mix(in srgb, var(--joker-black-900) 10%, transparent);
+            align-items: center;
+            overflow: visible;
+          }
+
+          .joker-hilo-mini-card-scale {
+            transform: scale(var(--hilo-mini-scale));
+            transform-origin: center center;
+          }
+
+          .joker-hilo-mini-card-slot .joker-hilo-mini-card {
+            flex: 0 0 auto;
           }
 
           .joker-hilo-history-chip {
             position: absolute;
-            top: calc(var(--spacing-12) * var(--hilo-scale) * -1);
+            top: calc(var(--spacing-12) * var(--hilo-play-scale) * -1);
             left: 50%;
             z-index: 4;
             display: inline-grid;
-            width: calc(56px * var(--hilo-scale));
-            height: calc(24px * var(--hilo-scale));
+            width: calc(48px * var(--hilo-play-scale));
+            height: calc(20px * var(--hilo-play-scale));
             place-items: center;
             border: 2px solid var(--joker-black-800);
             border-radius: 999px;
             background: var(--joker-green-600);
             color: var(--joker-white-50);
             font-family: var(--font-body);
-            font-size: calc(12px * var(--hilo-scale));
+            font-size: calc(10px * var(--hilo-play-scale));
             font-weight: 600;
             line-height: 1;
             transform: translateX(-50%);
@@ -2357,55 +2392,32 @@ function HiloPage({ onGameChange }) {
             rotate: 90deg;
           }
 
-          .joker-hilo-mini-card-icon {
-            display: block;
-            width: calc(20px * var(--hilo-scale));
-            height: calc(20px * var(--hilo-scale));
-            background: currentColor;
-            mask: var(--suit-icon) center / contain no-repeat;
-            -webkit-mask: var(--suit-icon) center / contain no-repeat;
-          }
-
-          .joker-hilo-mini-card-rank {
-            display: inline-block;
-            font-family: "Teko", var(--font-display);
-            font-size: calc(30px * var(--hilo-scale));
-            font-weight: 500;
-            line-height: 1;
-            transform: translateY(0.06em);
-          }
-
-          .joker-hilo-mini-card--red .joker-hilo-mini-card-rank {
-            color: #df3d3f;
-          }
-
-          .joker-hilo-mini-card--black .joker-hilo-mini-card-rank {
-            color: var(--joker-black-900);
-          }
-
-          .joker-hilo-mini-card--red {
-            color: #df3d3f;
-          }
-
-          .joker-hilo-mini-card--black {
-            color: var(--joker-black-900);
-          }
-
           .joker-hilo-history-item.is-latest {
             animation: joker-hilo-history-enter var(--motion-slow) var(--ease-out) both;
           }
 
           .joker-hilo-main-area {
-            --hilo-main-card-width: calc(184px * var(--hilo-scale));
-            --hilo-main-card-height: calc(260px * var(--hilo-scale));
-            --hilo-side-card-width: calc(154px * var(--hilo-scale));
-            --hilo-side-card-height: calc(220px * var(--hilo-scale));
-            --hilo-card-bottom-inset: calc(var(--spacing-24) * var(--hilo-scale));
-            --hilo-play-bottom-gap: clamp(
-              calc(var(--spacing-32) * var(--hilo-scale)),
-              calc(var(--hilo-board-padding) * 0.72),
-              56px
+            container-type: size;
+            --hilo-play-scale: min(
+              (100cqw - (2 * var(--hilo-play-gap))) / var(--hilo-row-content-native-width),
+              100cqh / calc(var(--hilo-main-native-height) * 1.08),
+              var(--hilo-play-scale-max)
             );
+            --hilo-play-scale: max(0.35, calc(var(--hilo-play-scale) * var(--hilo-play-scale-bias)));
+            --hilo-side-scale: calc(
+              var(--hilo-play-scale) * var(--hilo-side-to-main-ratio) * var(--hilo-main-native-width) /
+                var(--hilo-side-native-width)
+            );
+            --hilo-main-slot-width: calc(var(--hilo-main-native-width) * var(--hilo-play-scale));
+            --hilo-main-slot-height: calc(var(--hilo-main-native-height) * var(--hilo-play-scale));
+            --hilo-side-slot-width: calc(
+              var(--hilo-main-native-width) * var(--hilo-side-to-main-ratio) * var(--hilo-play-scale)
+            );
+            --hilo-side-slot-height: calc(
+              var(--hilo-main-native-height) * var(--hilo-side-to-main-ratio) * var(--hilo-play-scale)
+            );
+            --hilo-card-bottom-inset: calc(var(--spacing-12) * var(--hilo-play-scale));
+            --hilo-play-bottom-gap: calc(var(--spacing-8) * var(--hilo-play-scale));
             display: flex;
             width: 100%;
             max-width: 100%;
@@ -2414,33 +2426,34 @@ function HiloPage({ onGameChange }) {
             min-width: 0;
             min-height: 0;
             align-items: center;
-            justify-content: stretch;
-            overflow: visible;
-            padding: 0 0 var(--hilo-play-bottom-gap);
+            justify-content: center;
+            overflow: hidden;
+            padding: 0;
           }
 
           .joker-hilo-game-frame {
             position: relative;
             isolation: isolate;
-            display: grid;
+            display: flex;
             width: 100%;
-            height: auto;
-            max-height: 100%;
+            max-width: 100%;
+            height: 100%;
             box-sizing: border-box;
             min-width: 0;
             min-height: 0;
-            overflow: visible;
-            transform: translateY(calc(20px * var(--hilo-scale)));
-            grid-template-columns: var(--hilo-side-card-width) var(--hilo-main-card-width) var(--hilo-side-card-width);
-            align-items: end;
-            justify-items: center;
-            justify-content: space-evenly;
-            column-gap: 0;
-            border: 0;
-            border-radius: 0;
-            background: transparent;
-            box-shadow: none;
+            flex-wrap: nowrap;
+            align-items: flex-end;
+            justify-content: center;
+            gap: var(--hilo-play-gap);
+            overflow: hidden;
             padding: 0;
+            margin-inline: auto;
+          }
+
+          .joker-hilo-game-frame > .joker-hilo-prediction-group,
+          .joker-hilo-game-frame > .joker-hilo-main-card-wrap {
+            flex: 0 0 auto;
+            min-width: 0;
           }
 
           .joker-hilo-game-frame::before {
@@ -2448,10 +2461,18 @@ function HiloPage({ onGameChange }) {
             content: none;
           }
 
+          .joker-hilo-game-frame .joker-game-card-stack,
+          .joker-hilo-game-frame .joker-higher-card,
+          .joker-hilo-game-frame .joker-lower-card {
+            flex: 0 0 auto;
+            max-width: none;
+          }
+
           .joker-hilo-main-card-wrap {
             position: relative;
             display: flex;
-            width: 100%;
+            width: fit-content;
+            max-width: 100%;
             height: auto;
             box-sizing: border-box;
             flex-direction: column;
@@ -2461,137 +2482,52 @@ function HiloPage({ onGameChange }) {
             padding-bottom: var(--hilo-card-bottom-inset);
           }
 
-          .joker-hilo-main-card-stack {
-            position: absolute;
-            left: 50%;
-            bottom: 0;
-            z-index: 1;
-            display: block;
-            width: var(--hilo-main-card-width);
-            height: calc(32px * var(--hilo-scale));
-            justify-items: stretch;
-            transform: translateX(-50%);
-          }
-
-          .joker-hilo-main-card-stack-line {
-            display: block;
-            position: absolute;
-            right: 0;
-            bottom: calc(var(--stack-index, 0) * var(--hilo-stack-step));
-            left: 0;
-            height: calc(18px * var(--hilo-scale));
-            border: 2px solid color-mix(in srgb, var(--joker-black-50) 70%, var(--joker-white-50));
-            border-top: 0;
-            border-radius: 0 0 var(--radius-sm) var(--radius-sm);
-            background: var(--joker-white-50);
-            box-shadow: 0 1px 0 color-mix(in srgb, var(--joker-black-50) 72%, var(--joker-white-50));
-          }
-
-          .joker-hilo-main-card {
+          .joker-hilo-main-card-wrap .joker-hilo-main-card-stack-slot {
             position: relative;
             z-index: 2;
-            display: grid;
-            width: var(--hilo-main-card-width);
-            height: var(--hilo-main-card-height);
-            place-items: center;
+            display: flex;
+            width: var(--hilo-main-slot-width);
+            height: var(--hilo-main-slot-height);
+            justify-content: center;
+            align-items: flex-end;
             overflow: visible;
-            border: 2px solid color-mix(in srgb, var(--joker-black-50) 72%, var(--joker-white-50));
-            border-radius: var(--radius-sm);
-            background: var(--joker-white-50);
-            box-shadow:
-              0 var(--spacing-20) calc(var(--spacing-64) + var(--spacing-16)) rgb(0 0 0 / 0.44),
-              0 0 0 var(--border-width-default) rgb(255 255 255 / 0.18);
+          }
+
+          .joker-hilo-main-card-scale {
+            transform: scale(var(--hilo-play-scale));
+            transform-origin: center bottom;
+          }
+
+          .joker-hilo-main-card-wrap .joker-hilo-main-card-stack {
+            flex: 0 0 auto;
+          }
+
+          .joker-hilo-main-card-wrap .joker-hilo-main-card-stack .joker-game-card-stack__layer--front .joker-game-card {
             animation: joker-hilo-card-draw var(--motion-slow) var(--ease-out) both;
           }
 
-          .joker-hilo-main-card-face {
-            display: grid;
-            justify-items: center;
-            gap: calc(var(--spacing-20) * var(--hilo-scale));
-            color: var(--joker-red-400);
-          }
-
-          .joker-hilo-main-card--black .joker-hilo-main-card-face {
-            color: var(--joker-black-900);
-          }
-
-          .joker-hilo-main-card--red .joker-hilo-main-card-face {
-            color: var(--joker-red-400);
-          }
-
-          .joker-hilo-main-card-rank {
-            font-family: "Teko", var(--font-display);
-            font-size: calc(84px * var(--hilo-scale));
-            font-weight: 500;
-            line-height: 0.86;
-            transform: translateY(0.06em);
-          }
-
-          .joker-hilo-main-card-suit {
-            display: block;
-            width: calc(66px * var(--hilo-scale));
-            height: calc(66px * var(--hilo-scale));
-            background: currentColor;
-            mask: var(--suit-icon) center / contain no-repeat;
-            -webkit-mask: var(--suit-icon) center / contain no-repeat;
-          }
-
-          .joker-hilo-main-card-wrap .joker-hilo-main-card-skip {
+          .joker-hilo-main-card-skip-slot {
             position: absolute;
             top: calc(var(--spacing-16) * -1);
             right: calc(var(--spacing-24) * -1);
             z-index: 6;
-            display: inline-flex;
-            width: calc(72px * var(--hilo-scale));
-            height: calc(42px * var(--hilo-scale));
-            min-height: calc(42px * var(--hilo-scale));
+            display: flex;
+            width: calc(58px * var(--hilo-play-scale));
+            height: calc(32px * var(--hilo-play-scale));
             align-items: center;
             justify-content: center;
-            padding: 0;
-            border: var(--border-width-default) solid var(--joker-gold-400);
-            border-radius: 999px;
-            background: var(--joker-gold-1000);
-            color: var(--joker-white-50);
-            box-shadow: 0 var(--spacing-8) var(--spacing-16) rgb(0 0 0 / 0.42);
-            cursor: pointer;
-            transition:
-              background var(--motion-fast) var(--ease-standard),
-              border-color var(--motion-fast) var(--ease-standard),
-              transform var(--motion-fast) var(--ease-standard);
+            overflow: visible;
+            pointer-events: none;
           }
 
-          .joker-hilo-main-card-wrap .joker-hilo-main-card-skip:not(:disabled):hover {
-            border-color: var(--joker-gold-300);
-            background: var(--joker-gold-900);
-            transform: translateY(calc(var(--spacing-2, 2px) * -1));
+          .joker-hilo-main-card-skip-scale {
+            transform: scale(var(--hilo-play-scale));
+            transform-origin: center center;
+            pointer-events: auto;
           }
 
-          .joker-hilo-main-card-wrap .joker-hilo-main-card-skip:disabled {
-            opacity: 0.45;
-            cursor: not-allowed;
-            border-color: var(--joker-gold-400);
-            background: var(--joker-gold-1000);
-            color: var(--joker-white-50);
-            box-shadow: 0 var(--spacing-8) var(--spacing-16) rgb(0 0 0 / 0.42);
-          }
-
-          .joker-hilo-main-card-wrap .joker-hilo-main-card-skip .joker-hi-lo-skip-icon {
-            display: inline-flex;
-            width: calc(18px * var(--hilo-scale));
-            height: calc(18px * var(--hilo-scale));
-            color: var(--joker-white-50);
-            transform: none;
-          }
-
-          .joker-hilo-main-card-wrap .joker-hilo-main-card-skip:not(:disabled):hover .joker-hi-lo-skip-icon {
-            transform: translateX(var(--spacing-4));
-          }
-
-          .joker-hilo-main-card-wrap .joker-hilo-main-card-skip .joker-hi-lo-skip-icon svg {
-            display: block;
-            width: 100%;
-            height: 100%;
-            stroke-width: 3;
+          .joker-hilo-main-card-wrap .joker-hilo-main-card-skip {
+            flex: 0 0 auto;
           }
 
           .sr-only {
@@ -2609,127 +2545,51 @@ function HiloPage({ onGameChange }) {
           .joker-hilo-prediction-group {
             position: relative;
             display: flex;
-            width: 100%;
+            width: fit-content;
             height: auto;
             box-sizing: border-box;
+            flex: 0 0 auto;
             flex-direction: column;
             justify-content: flex-end;
             align-items: center;
-            gap: calc(var(--spacing-8) * var(--hilo-scale));
-            padding-bottom: var(--hilo-card-bottom-inset);
-            transform: translateY(calc(20px * var(--hilo-scale)));
+            gap: calc(var(--spacing-8) * var(--hilo-play-scale));
+            padding-bottom: 0;
           }
 
-          .joker-hilo-prediction-support {
-            width: var(--hilo-side-card-width);
+          .joker-hilo-prediction-card-slot {
+            display: flex;
+            width: var(--hilo-side-slot-width);
+            height: var(--hilo-side-slot-height);
+            justify-content: center;
+            align-items: flex-end;
+            overflow: visible;
+          }
+
+          .joker-hilo-prediction-card-scale {
+            transform: scale(var(--hilo-side-scale));
+            transform-origin: center bottom;
+          }
+
+          .joker-hilo-prediction-card-slot .joker-hilo-prediction-card {
             flex: 0 0 auto;
-            color: color-mix(in srgb, var(--joker-black-50) 66%, var(--joker-black-100));
-            font-family: var(--font-body);
-            font-size: clamp(10px, calc(12px * var(--hilo-scale)), 13px);
-            font-weight: var(--text-body-weight);
-            line-height: var(--text-body-line-height);
-            text-align: center;
           }
 
-          .joker-hilo-prediction-card {
-            position: relative;
-            display: grid;
-            width: var(--hilo-side-card-width);
-            height: var(--hilo-side-card-height);
-            grid-template-rows: minmax(0, 1fr) calc(40px * var(--hilo-scale));
-            justify-items: center;
-            border: var(--border-width-default) solid var(--joker-black-200);
-            border-radius: var(--radius-sm);
-            background: var(--button-hi-lo-bg, var(--joker-black-400));
-            box-shadow:
-              0 var(--spacing-8) var(--spacing-24) rgb(0 0 0 / 0.24);
-            padding: calc(var(--spacing-24) * var(--hilo-scale)) calc(var(--spacing-8) * var(--hilo-scale)) calc(var(--spacing-8) * var(--hilo-scale));
-            opacity: 0.86;
-            cursor: pointer;
-            transition:
-              border-color var(--motion-fast) var(--ease-standard),
-              opacity var(--motion-fast) var(--ease-standard),
-              transform var(--motion-fast) var(--ease-standard);
-          }
-
-          .joker-hilo-prediction-card:disabled {
-            cursor: default;
+          .joker-hilo-prediction-card-slot .joker-hilo-prediction-card.is-disabled {
             opacity: 0.62;
-          }
-
-          .joker-hilo-prediction-card:not(:disabled):hover {
-            border-color: var(--joker-black-200);
-            opacity: 1;
-            transform: translateY(calc(var(--spacing-4) * -1));
-          }
-
-          .joker-hilo-prediction-main {
-            display: grid;
-            align-content: start;
-            justify-items: center;
-            gap: calc(var(--spacing-16) * var(--hilo-scale));
-          }
-
-          .joker-hilo-prediction-icon {
-            display: block;
-            width: calc(32px * var(--hilo-scale));
-            height: calc(32px * var(--hilo-scale));
-            object-fit: contain;
-            opacity: 0.88;
-          }
-
-          .joker-hilo-prediction-copy {
-            display: grid;
-            grid-template-rows: calc(24px * var(--hilo-scale)) var(--border-width-default) calc(24px * var(--hilo-scale));
-            align-items: center;
-            justify-items: center;
-            gap: var(--spacing-4);
-            color: var(--joker-white-50);
-            font-family: var(--font-body);
-            font-size: clamp(11px, calc(14px * var(--hilo-scale)), 16px);
-            font-weight: var(--text-body-weight);
-            line-height: var(--text-body-line-height);
-            text-transform: none;
-          }
-
-          .joker-hilo-prediction-label {
-            display: block;
-            height: calc(24px * var(--hilo-scale));
-            line-height: var(--text-body-line-height);
+            cursor: default;
+            pointer-events: none;
             transform: none;
           }
 
-          .joker-hilo-prediction-divider {
-            width: calc(64px * var(--hilo-scale));
-            height: var(--border-width-default);
-            background: var(--joker-black-200);
-          }
-
-          .joker-hilo-prediction-multiplier {
-            display: inline-flex;
-            width: 100%;
-            height: calc(40px * var(--hilo-scale));
-            align-items: center;
-            justify-content: center;
-            gap: var(--spacing-4);
-            border: var(--border-width-default) solid var(--joker-black-400);
-            border-radius: var(--radius-xs, var(--radius-sm));
-            background: var(--joker-black-600);
-            color: var(--joker-white-50);
-            font-family: "Teko", var(--font-display);
-            line-height: 1;
-          }
-
-          .joker-hilo-prediction-x {
-            font-size: calc(20px * var(--hilo-scale));
-            font-weight: 500;
-            transform: translateY(0.08em);
-          }
-
-          .joker-hilo-prediction-number {
-            font-size: calc(20px * var(--hilo-scale));
-            font-weight: 500;
-            transform: translateY(0.08em);
+          .joker-hilo-prediction-support {
+            width: var(--hilo-side-slot-width);
+            flex: 0 0 auto;
+            color: color-mix(in srgb, var(--joker-black-50) 66%, var(--joker-black-100));
+            font-family: var(--font-body);
+            font-size: clamp(10px, calc(12px * var(--hilo-play-scale)), 13px);
+            font-weight: var(--text-body-weight);
+            line-height: var(--text-body-line-height);
+            text-align: center;
           }
 
           .joker-hilo-result-card {
@@ -2843,6 +2703,15 @@ function HiloPage({ onGameChange }) {
           }
 
           @media (max-width: 1023px) {
+            .joker-hilo-stage {
+              --hilo-play-scale: min(
+                100cqw / var(--hilo-main-native-width),
+                100cqh / 380px,
+                var(--hilo-play-scale-max)
+              );
+              --hilo-play-scale: max(0.4, calc(var(--hilo-play-scale) * var(--hilo-play-scale-bias)));
+            }
+
             .joker-game-shell--hilo .joker-game-shell-empty-stage {
               overflow: visible;
             }
@@ -2856,20 +2725,19 @@ function HiloPage({ onGameChange }) {
             .joker-hilo-main-area {
               padding-top: var(--hilo-board-padding);
               padding-bottom: clamp(
-                calc(var(--spacing-24) * var(--hilo-scale)),
+                calc(var(--spacing-24) * var(--hilo-play-scale)),
                 calc(var(--hilo-board-padding) * 0.72),
                 40px
               );
             }
 
             .joker-hilo-history-row {
-              --hilo-history-chip-room: calc(20px + (14px * var(--hilo-scale)));
+              --hilo-history-chip-room: calc(14px + (10px * var(--hilo-play-scale)));
               min-height: 0;
               border-bottom: 0;
               padding-top: var(--hilo-history-chip-room);
               padding-bottom: var(--spacing-8);
-              overflow-x: auto;
-              overflow-y: visible;
+              overflow: hidden;
             }
 
             .joker-game-shell--hilo .joker-navigation-mobile-content .joker-hilo-stage {
@@ -2886,27 +2754,23 @@ function HiloPage({ onGameChange }) {
               min-height: 0;
               padding-top: var(--spacing-8);
               padding-bottom: var(--spacing-16);
-              --hilo-scale: clamp(0.88, min(100cqw / 200px, 100cqh / 260px), 1.28);
             }
 
             .joker-hilo-history-track {
               padding-bottom: var(--spacing-4);
-              justify-content: flex-start;
+              justify-content: flex-end;
             }
 
             .joker-hilo-game-frame {
-              display: grid;
+              display: flex;
               width: 100%;
-              max-width: none;
+              max-width: 100%;
               height: 100%;
               min-height: 0;
-              grid-template-columns: minmax(0, 1fr);
-              grid-template-rows: minmax(0, 1fr);
+              flex-wrap: nowrap;
               align-items: center;
-              justify-items: center;
-              align-content: center;
+              justify-content: center;
               gap: 0;
-              transform: none;
             }
 
             .joker-hilo-game-frame > .joker-hilo-prediction-group {
@@ -2922,39 +2786,15 @@ function HiloPage({ onGameChange }) {
               padding-bottom: 0;
             }
 
-            .joker-hilo-main-card-wrap .joker-hilo-main-card-skip {
-              position: absolute;
+            .joker-hilo-main-card-scale {
+              transform-origin: center center;
+            }
+
+            .joker-hilo-main-card-skip-slot {
               top: calc(var(--spacing-8) * -1);
               right: calc(var(--spacing-8) * -1);
-              z-index: 6;
-              width: calc(44px * var(--hilo-scale));
-              height: calc(44px * var(--hilo-scale));
-              min-height: calc(44px * var(--hilo-scale));
-              margin: 0;
-              padding: 0;
-              border: var(--border-width-default) solid var(--joker-gold-400) !important;
-              border-radius: 999px;
-              background: var(--joker-gold-1000) !important;
-              color: var(--joker-white-50) !important;
-              box-shadow: 0 var(--spacing-8) var(--spacing-16) rgb(0 0 0 / 0.42) !important;
-              cursor: pointer;
-            }
-
-            .joker-hilo-main-card-wrap .joker-hilo-main-card-skip:not(:disabled):hover {
-              border-color: var(--joker-gold-400) !important;
-              background: var(--joker-gold-900) !important;
-              color: var(--joker-white-50) !important;
-              transform: translateY(calc(var(--spacing-2, 2px) * -1));
-            }
-
-            .joker-hilo-main-card-wrap .joker-hilo-main-card-skip:disabled,
-            .joker-hilo-main-card-wrap .joker-hilo-main-card-skip[disabled] {
-              opacity: 0.45;
-              border-color: var(--joker-gold-400) !important;
-              background: var(--joker-gold-1000) !important;
-              color: var(--joker-white-50) !important;
-              box-shadow: 0 var(--spacing-8) var(--spacing-16) rgb(0 0 0 / 0.42) !important;
-              cursor: not-allowed;
+              width: calc(58px * var(--hilo-play-scale));
+              height: calc(32px * var(--hilo-play-scale));
             }
 
             .joker-hilo-mobile-odds {
@@ -5459,29 +5299,9 @@ function HiloStage({
   skipAvailable,
   winModal,
 }) {
-  const historyRowRef = useRef(null);
-
-  useLayoutEffect(() => {
-    const historyRow = historyRowRef.current;
-    if (!historyRow) return undefined;
-
-    function scrollHistoryToLatest() {
-      const maxScrollLeft = Math.max(0, historyRow.scrollWidth - historyRow.clientWidth);
-      historyRow.scrollTo({
-        left: maxScrollLeft,
-        behavior: history.length > 1 ? "smooth" : "auto",
-      });
-    }
-
-    scrollHistoryToLatest();
-    const frameId = window.requestAnimationFrame(scrollHistoryToLatest);
-
-    return () => window.cancelAnimationFrame(frameId);
-  }, [history]);
-
   return (
     <section className="joker-hilo-stage" aria-label="Hilo game board">
-      <div className="joker-hilo-history-row" aria-label="Previous cards" ref={historyRowRef}>
+      <div className="joker-hilo-history-row" aria-label="Previous cards">
         <div className="joker-hilo-history-track">
           {history.map((card, index) => (
             <div
@@ -5496,13 +5316,11 @@ function HiloStage({
       </div>
       <div className="joker-hilo-main-area">
         <div className="joker-hilo-game-frame" aria-label="Hilo game area">
-          <HiloPredictionCard
-            direction="down"
+          <HiloChoiceCard
+            Card={LowerCard}
             disabled={roundStatus !== "active"}
+            multiplier={lowerMultiplier}
             onClick={onLowerSame}
-            primaryLabel="Lower"
-            secondaryLabel="Same"
-            multiplier={lowerMultiplier.toFixed(2)}
             support={
               <>
                 Ace being the
@@ -5520,13 +5338,11 @@ function HiloStage({
             }
             skipDisabled={roundStatus !== "active" || !skipAvailable}
           />
-          <HiloPredictionCard
-            direction="up"
+          <HiloChoiceCard
+            Card={HigherCard}
             disabled={roundStatus !== "active"}
+            multiplier={higherMultiplier}
             onClick={onHigherSame}
-            primaryLabel="Higher"
-            secondaryLabel="Same"
-            multiplier={higherMultiplier.toFixed(2)}
             support={
               <>
                 King being the
@@ -5569,72 +5385,60 @@ function HiloMainCard({ card, onSkipCard, showSkipButton, skipDisabled }) {
   return (
     <div className="joker-hilo-main-card-wrap">
       {showSkipButton && (
-        <HiLoSkipCardButton disabled={skipDisabled} onClick={onSkipCard} />
-      )}
-      <div className="joker-hilo-main-card-stack" aria-hidden="true">
-        {Array.from({ length: 4 }, (_, index) => (
-          <span className="joker-hilo-main-card-stack-line" key={index} style={{ "--stack-index": index }} />
-        ))}
-      </div>
-      <div className={`joker-hilo-main-card joker-hilo-main-card--${card.tone}`} aria-label={`${card.rank} of ${card.suit}`}>
-        <div className="joker-hilo-main-card-face">
-          <span className="joker-hilo-main-card-rank">{card.rank}</span>
-          <SuitIcon className="joker-hilo-main-card-suit" icon={card.icon} />
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function HiloPredictionCard({
-  disabled,
-  direction,
-  onClick,
-  primaryLabel,
-  secondaryLabel,
-  multiplier,
-  support,
-}) {
-  const icon = direction === "down" ? downArrowIcon : upArrowIcon;
-
-  return (
-    <div className="joker-hilo-prediction-group">
-      <button
-        className="joker-hilo-prediction-card"
-        disabled={disabled}
-        onClick={onClick}
-        type="button"
-      >
-        <div className="joker-hilo-prediction-main">
-          <img className="joker-hilo-prediction-icon" src={icon} alt="" aria-hidden="true" />
-          <div className="joker-hilo-prediction-copy">
-            <span className="joker-hilo-prediction-label">{primaryLabel}</span>
-            <span className="joker-hilo-prediction-divider" aria-hidden="true" />
-            <span className="joker-hilo-prediction-label">{secondaryLabel}</span>
+        <div className="joker-hilo-main-card-skip-slot">
+          <div className="joker-hilo-main-card-skip-scale">
+            <SkipButton
+              aria-label="Skip Card"
+              className="joker-hilo-main-card-skip"
+              disabled={skipDisabled}
+              onClick={onSkipCard}
+            />
           </div>
         </div>
-        <div className="joker-hilo-prediction-multiplier" aria-label={`${multiplier} times`}>
-          <span className="joker-hilo-prediction-x">x</span>
-          <span className="joker-hilo-prediction-number">{multiplier}</span>
+      )}
+      <div className="joker-hilo-main-card-stack-slot">
+        <div className="joker-hilo-main-card-scale">
+          <GameCardStack
+            aria-label={`${card.rank} of ${card.suit}`}
+            className="joker-hilo-main-card-stack"
+          >
+            <GameCardFace color={card.tone} rank={card.rank} suit={card.suit} />
+          </GameCardStack>
         </div>
-      </button>
-      <span className="joker-hilo-prediction-support">{support}</span>
+      </div>
     </div>
   );
 }
 
-function ChevronRightIcon({ className }) {
+function formatHiloChoiceMultiplier(value) {
+  return `X${value.toFixed(2)}`;
+}
+
+function HiloChoiceCard({ Card, disabled, multiplier, onClick, support }) {
   return (
-    <svg className={className} viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-      <path
-        d="m9 6 6 6-6 6"
-        fill="none"
-        stroke="currentColor"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth="3"
-      />
-    </svg>
+    <div className="joker-hilo-prediction-group">
+      <div className="joker-hilo-prediction-card-slot">
+        <div className="joker-hilo-prediction-card-scale">
+          <Card
+            aria-disabled={disabled}
+            className={`joker-hilo-prediction-card${disabled ? " is-disabled" : ""}`}
+            multiplier={formatHiloChoiceMultiplier(multiplier)}
+            onClick={disabled ? undefined : onClick}
+            onKeyDown={(event) => {
+              if (disabled || (event.key !== "Enter" && event.key !== " ")) {
+                return;
+              }
+
+              event.preventDefault();
+              onClick?.(event);
+            }}
+            role="button"
+            tabIndex={disabled ? -1 : 0}
+          />
+        </div>
+      </div>
+      <span className="joker-hilo-prediction-support">{support}</span>
+    </div>
   );
 }
 
@@ -5644,21 +5448,17 @@ function HiloMiniCard({ card }) {
       <span className={`joker-hilo-history-chip joker-hilo-history-chip--${card.chipTone}`}>
         {card.chip}
       </span>
-      <div className={`joker-hilo-mini-card joker-hilo-mini-card--${card.tone}`} aria-label={`${card.rank} of ${card.suit}`}>
-        <SuitIcon className="joker-hilo-mini-card-icon" icon={card.icon} />
-        <span className="joker-hilo-mini-card-rank">{card.rank}</span>
+      <div className="joker-hilo-mini-card-slot">
+        <div className="joker-hilo-mini-card-scale">
+          <GameCardMini
+            aria-label={`${card.rank} of ${card.suit}`}
+            className="joker-hilo-mini-card"
+          >
+            <GameCardMiniFace color={card.tone} rank={card.rank} suit={card.suit} />
+          </GameCardMini>
+        </div>
       </div>
     </>
-  );
-}
-
-function SuitIcon({ className, icon }) {
-  return (
-    <span
-      className={className}
-      style={{ "--suit-icon": `url("${icon}")` }}
-      aria-hidden="true"
-    />
   );
 }
 
