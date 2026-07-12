@@ -336,6 +336,26 @@ function useGameShellBettingPanelLayout() {
   return layout;
 }
 
+function useDeferredWinCredit(setBalance) {
+  const pendingWinCreditRef = useRef(0);
+
+  const deferWinCredit = (amount) => {
+    pendingWinCreditRef.current = amount;
+  };
+
+  const applyDeferredWinCredit = () => {
+    const amount = pendingWinCreditRef.current;
+    if (amount <= 0) {
+      return;
+    }
+
+    pendingWinCreditRef.current = 0;
+    setBalance((currentBalance) => currentBalance + amount);
+  };
+
+  return { deferWinCredit, applyDeferredWinCredit };
+}
+
 function clampTileAmount(value, maxTileAmount) {
   const numericValue = Number(value);
 
@@ -420,6 +440,87 @@ function playSound(src, volume = 0.8) {
   const audio = new Audio(src);
   audio.volume = volume;
   audio.play().catch(() => {});
+}
+
+const GAME_ROUND_END_TRANSITION_MS = 300;
+const GAME_ROUND_END_RESET_MS = 2000;
+
+const GAME_ROUND_END_STYLES = `
+  .joker-game-round-end-canvas.is-round-ending {
+    animation: joker-game-round-end-canvas ${GAME_ROUND_END_TRANSITION_MS}ms cubic-bezier(0.4, 0, 0.15, 1) forwards;
+    transform-origin: center center;
+  }
+
+  .joker-game-round-end-dim {
+    position: absolute;
+    inset: 0;
+    z-index: 35;
+    pointer-events: none;
+    background: rgb(0 0 0 / 0.12);
+    opacity: 0;
+    animation: joker-game-round-end-dim ${GAME_ROUND_END_TRANSITION_MS}ms ease-in-out forwards;
+  }
+
+  @keyframes joker-game-round-end-dim {
+    0% {
+      opacity: 0;
+    }
+
+    50% {
+      opacity: 1;
+    }
+
+    100% {
+      opacity: 0;
+    }
+  }
+
+  @keyframes joker-game-round-end-canvas {
+    0% {
+      transform: scale(1) translateY(0);
+    }
+
+    22% {
+      transform: scale(0.99) translateY(-2px);
+    }
+
+    44% {
+      transform: scale(0.99) translateY(2px);
+    }
+
+    66% {
+      transform: scale(0.995) translateY(-1px);
+    }
+
+    100% {
+      transform: scale(1) translateY(0);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .joker-game-round-end-canvas.is-round-ending {
+      animation: none;
+    }
+
+    .joker-game-round-end-dim {
+      animation: none;
+      opacity: 0;
+    }
+  }
+`;
+
+function GameRoundEndTransition({ active, animationKey = "round-end" }) {
+  if (!active) {
+    return null;
+  }
+
+  return (
+    <div
+      key={animationKey}
+      className="joker-game-round-end-dim"
+      aria-hidden="true"
+    />
+  );
 }
 
 function formatCurrency(value) {
@@ -772,6 +873,7 @@ function MinesPage({ onGameChange }) {
   const [bettingMode, setBettingMode] = useState("manual");
   const [betAmount, setBetAmount] = useState("");
   const [balance, setBalance] = useState(150000);
+  const { deferWinCredit, applyDeferredWinCredit } = useDeferredWinCredit(setBalance);
   const [board, setBoard] = useState([]);
   const [message, setMessage] = useState("");
   const [mines, setMines] = useState(String(minTileAmount));
@@ -906,7 +1008,10 @@ function MinesPage({ onGameChange }) {
       setMessage("");
 
       clearResultTimer();
-      resultResetTimeout.current = window.setTimeout(dismissCashoutResult, 3000);
+      resultResetTimeout.current = window.setTimeout(
+        dismissCashoutResult,
+        GAME_ROUND_END_RESET_MS
+      );
     }
 
     window.setTimeout(() => {
@@ -923,7 +1028,7 @@ function MinesPage({ onGameChange }) {
 
     if (gameInPlay) {
       playSound(minesCashoutSound);
-      setBalance((currentBalance) => currentBalance + currentProfit);
+      deferWinCredit(currentProfit);
       setCashoutResult({
         multiplier,
         profit: currentProfit,
@@ -1166,11 +1271,8 @@ function MinesPage({ onGameChange }) {
             height: 100%;
             min-width: 0;
             min-height: 0;
+            overflow: visible;
             place-items: stretch;
-          }
-
-          .joker-mines-grid-cell.is-revealed {
-            z-index: 10;
           }
 
           .joker-mines-grid-tile {
@@ -1290,6 +1392,8 @@ function MinesPage({ onGameChange }) {
               filter: drop-shadow(0 var(--spacing-4) var(--spacing-12) rgb(0 0 0 / 0.42));
             }
           }
+
+          ${GAME_ROUND_END_STYLES}
         `}
       </style>
       <GameShell
@@ -1327,6 +1431,7 @@ function MinesPage({ onGameChange }) {
           multiplier={multiplier}
           columns={minesGrid.columns}
           onResultClose={handleResultClose}
+          onWinCoinsLand={applyDeferredWinCredit}
           onTileClick={handleTileClick}
           revealedTiles={revealedTiles}
           roundStatus={roundStatus}
@@ -1341,6 +1446,7 @@ function MinesPage({ onGameChange }) {
 function HiloPage({ onGameChange }) {
   const [betAmount, setBetAmount] = useState("");
   const [balance, setBalance] = useState(150000);
+  const { deferWinCredit, applyDeferredWinCredit } = useDeferredWinCredit(setBalance);
   const [currentCard, setCurrentCard] = useState(() => getInitialHiloPreview().currentCard);
   const [deck, setDeck] = useState([]);
   const [history, setHistory] = useState(() => getInitialHiloPreview().history);
@@ -1450,7 +1556,7 @@ function HiloPage({ onGameChange }) {
       hiloRoundResetTimeoutRef.current = null;
       clearHiloWinModalTimer();
       resetHiloRound();
-    }, 2000);
+    }, GAME_ROUND_END_RESET_MS);
   }
 
   function closeHiloWinModal() {
@@ -1532,7 +1638,7 @@ function HiloPage({ onGameChange }) {
         setRoundStatus(result.roundStatus);
 
         if (result.roundStatus === "win") {
-          setBalance((currentBalance) => currentBalance + result.winProfit);
+          deferWinCredit(result.winProfit);
           playSound(minesCashoutSound);
           showHiloWinModal({
             title: "You Won",
@@ -1563,7 +1669,7 @@ function HiloPage({ onGameChange }) {
       return;
     }
 
-    setBalance((currentBalance) => currentBalance + currentProfit);
+    deferWinCredit(currentProfit);
     setRoundStatus("cash-out");
     playSound(minesCashoutSound);
     showHiloWinModal({
@@ -1599,7 +1705,7 @@ function HiloPage({ onGameChange }) {
     setRoundStatus(result.roundStatus);
 
     if (result.roundStatus === "win") {
-      setBalance((currentBalance) => currentBalance + result.winProfit);
+      deferWinCredit(result.winProfit);
       playSound(minesCashoutSound);
       showHiloWinModal({
         title: "You Won",
@@ -1643,7 +1749,7 @@ function HiloPage({ onGameChange }) {
     setSkipAvailable(false);
 
     if (remainingDeck.length === 0 && currentProfit > 0) {
-      setBalance((currentBalance) => currentBalance + currentProfit);
+      deferWinCredit(currentProfit);
       setRoundStatus("win");
       playSound(minesCashoutSound);
       showHiloWinModal({
@@ -1936,6 +2042,7 @@ function HiloPage({ onGameChange }) {
           }
 
           .joker-hilo-game-frame {
+            position: relative;
             display: flex;
             width: 100%;
             height: 100%;
@@ -2709,6 +2816,8 @@ function HiloPage({ onGameChange }) {
               gap: var(--spacing-8);
             }
           }
+
+          ${GAME_ROUND_END_STYLES}
         `}
       </style>
       <GameShell
@@ -2752,6 +2861,7 @@ function HiloPage({ onGameChange }) {
           onLowerSame={() => handleHiloChoiceSelection("lower")}
           onSkipCard={handleSkipCard}
           onWinModalClose={handleHiloWinModalClose}
+          onWinCoinsLand={applyDeferredWinCredit}
           pendingPrediction={pendingPrediction}
           roundStatus={roundStatus}
           skipAvailable={skipAvailable}
@@ -2872,6 +2982,7 @@ function CrashPage({ onGameChange }) {
   const [betAmount, setBetAmount] = useState("");
   const [bettingMode, setBettingMode] = useState("manual");
   const [balance, setBalance] = useState(150000);
+  const { deferWinCredit, applyDeferredWinCredit } = useDeferredWinCredit(setBalance);
   const [roundStatus, setRoundStatus] = useState("idle");
   const [numberOfBets, setNumberOfBets] = useState("");
   const [crashResult, setCrashResult] = useState(null);
@@ -3013,7 +3124,7 @@ function CrashPage({ onGameChange }) {
         amount: payout,
         multiplier: crashRound.multiplier,
       });
-      setBalance((currentBalance) => currentBalance + payout);
+      deferWinCredit(payout);
       return;
     }
 
@@ -3737,6 +3848,7 @@ function CrashPage({ onGameChange }) {
                     currency={null}
                     message={`Cashed out at ${formatCrashMultiplier(crashResult.multiplier)}. Added to your balance.`}
                     closeLabel="Close"
+                    onCoinsLand={applyDeferredWinCredit}
                     onClose={handleCrashResultClose}
                   />
                 </div>
@@ -3948,59 +4060,16 @@ function CoinFlipPage({ onGameChange }) {
   const coinMaxTravel = getCoinMaxTravel();
   const coinFlightRatio = Math.min(1, coinFlightLift / coinMaxTravel);
   const coinFlipStageRef = useRef(null);
+  const coinHistoryRailRef = useRef(null);
 
   useLayoutEffect(() => {
-    if (bettingPanelLayout !== "desktop") {
-      coinFlipStageRef.current?.style.removeProperty("--coin-platform-bottom");
-      return undefined;
+    const rail = coinHistoryRailRef.current;
+    if (!rail) {
+      return;
     }
 
-    function syncCoinPlatformAlign() {
-      const stage = coinFlipStageRef.current;
-      const gameArea = document.querySelector(
-        ".joker-game-shell--coin-flip .joker-game-shell-empty-stage"
-      );
-      const alignTarget =
-        document.querySelector(".joker-game-shell--coin-flip .joker-enter-bet-precursor:not([hidden])") ??
-        document.querySelector(".joker-game-shell--coin-flip .joker-betting-submit-group .joker-bet-submit");
-      const platform = stage?.querySelector(".joker-coin-flip-platform");
-
-      if (!stage || !gameArea || !alignTarget || !platform) {
-        return;
-      }
-
-      const gameAreaRect = gameArea.getBoundingClientRect();
-      const alignRect = alignTarget.getBoundingClientRect();
-      const platformHeight = platform.getBoundingClientRect().height;
-      const alignTopFromGameBottom = gameAreaRect.bottom - alignRect.top;
-      const ringEdgeOffset = platformHeight * coinPlatformRingEdgeRatio;
-      const platformBottom = Math.max(
-        12,
-        alignTopFromGameBottom - ringEdgeOffset - coinPlatformBottomPush
-      );
-
-      stage.style.setProperty("--coin-platform-bottom", `${platformBottom}px`);
-    }
-
-    syncCoinPlatformAlign();
-
-    const resizeObserver = new ResizeObserver(syncCoinPlatformAlign);
-    const gameArea = document.querySelector(
-      ".joker-game-shell--coin-flip .joker-game-shell-empty-stage"
-    );
-    const bettingPanel = document.querySelector(
-      ".joker-game-shell--coin-flip .joker-coin-flip-betting-panel"
-    );
-
-    if (gameArea) resizeObserver.observe(gameArea);
-    if (bettingPanel) resizeObserver.observe(bettingPanel);
-    window.addEventListener("resize", syncCoinPlatformAlign);
-
-    return () => {
-      resizeObserver.disconnect();
-      window.removeEventListener("resize", syncCoinPlatformAlign);
-    };
-  }, [bettingPanelLayout, betAmount, hasActiveCoinRound, coinRoundStatus]);
+    rail.scrollLeft = Math.max(0, rail.scrollWidth - rail.clientWidth);
+  }, [coinHistory, maxRoundsToWin]);
 
   useEffect(() => {
     return () => {
@@ -4249,7 +4318,7 @@ function CoinFlipPage({ onGameChange }) {
           setCoinResult(null);
           setDisplayedCoinProfit(0);
           setCoinFrameIndex(getCoinFrameIndexForSide(selectedSideRef.current));
-        }, 900);
+        }, GAME_ROUND_END_RESET_MS);
       }
     }
 
@@ -4324,24 +4393,198 @@ function CoinFlipPage({ onGameChange }) {
         {`
           .joker-game-shell--coin-flip .joker-game-shell-empty-stage {
             position: relative;
+            min-height: 0;
+          }
+
+          .joker-game-shell--coin-flip .joker-game-shell-empty-stage > .joker-coin-flip-stage {
+            min-height: 0;
+            height: 100%;
           }
 
           .joker-coin-flip-stage {
+            container-type: size;
+            position: relative;
+            display: grid;
+            width: 100%;
+            height: 100%;
+            min-height: 0;
+            box-sizing: border-box;
+            --coin-flip-betting-divider-offset: calc(
+              var(--spacing-32) + calc(var(--body-12) * var(--text-body-line-height)) +
+                var(--spacing-8) + var(--input-control-height) + var(--spacing-24)
+            );
+            --coin-flip-history-inset: var(--spacing-24);
+            --coin-flip-sync-history-rail-height: var(--coin-flip-betting-divider-offset);
+            --coin-flip-sync-top-band-height: calc(
+              var(--coin-flip-sync-history-rail-height) + var(--coin-flip-history-inset)
+            );
+            --coin-flip-play-native-width: 548px;
+            --coin-flip-play-native-height: 500px;
             --coin-pull-scale-x: 1;
             --coin-pull-scale-y: 1;
             --coin-shadow-scale: 1;
             --coin-shadow-opacity: 0.28;
+            padding: 0;
+            overflow: visible;
+            background: var(--joker-black-800);
+          }
+
+          .joker-coin-flip-main-area {
+            container-type: size;
+            display: flex;
+            width: 100%;
+            height: 100%;
+            min-width: 0;
+            min-height: 0;
+            align-items: stretch;
+            justify-content: flex-start;
+            overflow: visible;
+          }
+
+          .joker-coin-flip-game-frame {
+            position: relative;
+            display: flex;
+            width: 100%;
+            height: 100%;
+            max-height: 100cqh;
+            box-sizing: border-box;
+            min-width: 0;
+            min-height: 0;
+            flex-direction: column;
+            align-items: stretch;
+            justify-content: flex-start;
+            gap: 0;
+            overflow: visible;
+            padding: 0;
+            margin-inline: auto;
+          }
+
+          .joker-coin-flip-game-frame__top {
+            display: flex;
+            width: 100%;
+            flex: 0 0 auto;
+            flex-direction: column;
+            align-items: stretch;
+            box-sizing: border-box;
+            padding: var(--spacing-16) var(--spacing-24);
+            overflow: visible;
+            background: var(--joker-black-800);
+          }
+
+          @media (min-width: 1024px) {
+            .joker-coin-flip-game-frame__top {
+              position: relative;
+              flex: 0 0 auto;
+              height: var(--coin-flip-sync-top-band-height);
+              min-height: var(--coin-flip-sync-top-band-height);
+              max-height: var(--coin-flip-sync-top-band-height);
+              padding: var(--coin-flip-history-inset) 0 0;
+              justify-content: flex-start;
+            }
+
+            .joker-coin-flip-history-rail {
+              display: flex;
+              height: auto;
+              max-height: none;
+              flex: 0 0 auto;
+              align-items: flex-start;
+              justify-content: flex-start;
+              min-height: 0;
+              padding-block: 0;
+              box-sizing: border-box;
+            }
+
+            .joker-coin-flip-history {
+              align-items: flex-start;
+              padding-inline-start: var(--coin-flip-history-inset);
+            }
+          }
+
+          .joker-coin-flip-history-rail {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            width: 100%;
+            min-width: 0;
+            flex: 0 0 auto;
+            align-items: center;
+            padding-block: var(--spacing-12);
+            padding-inline: 0;
+            overflow-x: auto;
+            overflow-y: visible;
+            scroll-behavior: smooth;
+            scroll-padding-inline-end: var(--spacing-24);
+            scroll-padding-inline-start: var(--spacing-24);
+            scrollbar-width: none;
+          }
+
+          .joker-coin-flip-history-rail::-webkit-scrollbar {
+            display: none;
+          }
+
+          .joker-coin-flip-game-frame__bottom {
+            display: flex;
+            width: 100%;
+            flex: 1 1 auto;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0;
+            min-height: 0;
+            padding-block: var(--spacing-24);
+            padding-inline: var(--spacing-24);
+            box-sizing: border-box;
+          }
+
+          .joker-coin-flip-play-stack {
+            display: flex;
+            width: 100%;
+            flex: 1 1 auto;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 0;
+            container-type: size;
+          }
+
+          .joker-coin-flip-play {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            flex: 0 0 auto;
+            width: 100%;
+            box-sizing: border-box;
+            min-width: 0;
+            align-items: center;
+            justify-content: center;
+            overflow: visible;
+            padding-inline: var(--spacing-12);
+          }
+
+          .joker-coin-flip-play-inner {
+            display: flex;
+            width: var(--coin-flip-play-native-width);
+            height: var(--coin-flip-play-native-height);
+            box-sizing: border-box;
+            flex: 0 0 auto;
+            align-items: center;
+            justify-content: center;
+            transform: scale(min(calc(100cqw / 548px), calc(100cqh / 500px)));
+            transform-origin: center center;
+          }
+
+          .joker-coin-flip-coin-stage {
             --coin-platform-width: 548px;
             --coin-platform-bottom: 20px;
             --coin-size: 282px;
             --coin-lift: 58px;
-            position: absolute;
-            inset: 0;
-            overflow: hidden;
-            padding: var(--spacing-24) var(--spacing-24) 0;
+            position: relative;
+            width: 100%;
+            height: 100%;
+            overflow: visible;
           }
 
-          .joker-coin-flip-stage::before {
+          .joker-coin-flip-coin-stage::before {
             position: absolute;
             left: 50%;
             bottom: calc(var(--coin-platform-bottom) + 20px);
@@ -4400,9 +4643,8 @@ function CoinFlipPage({ onGameChange }) {
           }
 
           .joker-coin-flip-coin-zone {
-            position: static;
-            width: 0;
-            height: 0;
+            position: absolute;
+            inset: 0;
             overflow: visible;
             pointer-events: none;
           }
@@ -4563,15 +4805,16 @@ function CoinFlipPage({ onGameChange }) {
           }
 
           .joker-coin-flip-history {
-            position: absolute;
-            top: 42px;
-            left: 42px;
             display: flex;
+            width: max-content;
+            min-width: 100%;
             align-items: flex-start;
             gap: var(--spacing-12);
             margin: 0;
             padding: 0;
+            padding-inline-start: var(--spacing-24);
             list-style: none;
+            box-sizing: border-box;
           }
 
           .joker-coin-flip-history__coin {
@@ -4789,7 +5032,7 @@ function CoinFlipPage({ onGameChange }) {
           .joker-coin-flip-hint {
             position: absolute;
             left: 50%;
-            bottom: calc(var(--coin-platform-bottom) + var(--coin-lift) + var(--coin-size) + var(--spacing-24));
+            bottom: calc(var(--coin-platform-bottom) + var(--coin-lift) + var(--coin-size) + var(--spacing-16));
             display: inline-flex;
             align-items: center;
             justify-content: center;
@@ -4803,6 +5046,7 @@ function CoinFlipPage({ onGameChange }) {
             pointer-events: none;
             transform: translateX(-50%);
             opacity: 0.96;
+            white-space: nowrap;
           }
 
           @keyframes joker-coin-idle-float {
@@ -4906,15 +5150,21 @@ function CoinFlipPage({ onGameChange }) {
               display: none;
             }
 
-            .joker-coin-flip-stage {
+            .joker-coin-flip-coin-stage {
               --coin-platform-width: min(89vw, 398px);
-              --coin-platform-bottom: 100px;
               --coin-size: min(50vw, 245px);
               --coin-lift: 58px;
-              padding-bottom: calc(var(--spacing-24) + 56px);
             }
 
-            .joker-coin-flip-stage::before {
+            .joker-coin-flip-play-inner {
+              --coin-flip-play-native-width: 398px;
+              --coin-flip-play-native-height: 420px;
+              width: var(--coin-flip-play-native-width);
+              height: var(--coin-flip-play-native-height);
+              transform: scale(min(calc(100cqw / 398px), calc(100cqh / 420px)));
+            }
+
+            .joker-coin-flip-coin-stage::before {
               width: min(64%, 336px);
               height: min(38%, 216px);
             }
@@ -4929,12 +5179,7 @@ function CoinFlipPage({ onGameChange }) {
             }
 
             .joker-coin-flip-history {
-              top: 20px;
-              left: 20px;
-              right: auto;
               gap: var(--spacing-8);
-              justify-content: flex-start;
-              align-items: flex-start;
             }
 
             .joker-coin-flip-history__coin {
@@ -4967,6 +5212,10 @@ function CoinFlipPage({ onGameChange }) {
               text-align: center;
             }
 
+            .joker-coin-flip-game-frame__bottom {
+              padding-bottom: calc(var(--spacing-24) + 56px);
+            }
+
             .joker-coin-flip-mobile-odds {
               position: absolute;
               left: var(--spacing-24);
@@ -4983,14 +5232,21 @@ function CoinFlipPage({ onGameChange }) {
           }
 
           @media (max-width: 760px) {
-            .joker-coin-flip-stage {
+            .joker-coin-flip-coin-stage {
               --coin-platform-width: min(96vw, 350px);
-              --coin-platform-bottom: 96px;
               --coin-size: min(58vw, 211px);
               --coin-lift: 48px;
             }
 
-            .joker-coin-flip-stage::before {
+            .joker-coin-flip-play-inner {
+              --coin-flip-play-native-width: 350px;
+              --coin-flip-play-native-height: 360px;
+              width: var(--coin-flip-play-native-width);
+              height: var(--coin-flip-play-native-height);
+              transform: scale(min(calc(100cqw / 350px), calc(100cqh / 360px)));
+            }
+
+            .joker-coin-flip-coin-stage::before {
               width: min(70%, 288px);
               height: min(34%, 180px);
             }
@@ -5000,6 +5256,8 @@ function CoinFlipPage({ onGameChange }) {
               height: calc(var(--coin-lift) + var(--coin-size) * 0.62);
             }
           }
+
+          ${GAME_ROUND_END_STYLES}
         `}
       </style>
       <GameShell
@@ -5029,102 +5287,134 @@ function CoinFlipPage({ onGameChange }) {
           />
         }
       >
-        <section
-          ref={coinFlipStageRef}
-          className="joker-coin-flip-stage"
-          aria-label="Coin Flip game area"
-        >
-          <ol className="joker-coin-flip-history" aria-label="Coin Flip preview history">
-            {coinFlipPreviewCoins.map((coin, index) => (
-              <li
-                className={`joker-coin-flip-history__coin${coin.isPending ? " is-pending" : ""}`}
-                key={coin.id}
-              >
-                <img
-                  className="joker-coin-flip-history__image"
-                  src={coin.coin}
-                  alt=""
-                  aria-hidden="true"
-                />
-                {coin.badge ? (
-                  <img className="joker-coin-flip-history__badge" src={coin.badge} alt={coin.alt} />
-                ) : null}
-                <span className="joker-coin-flip-history__multiplier">
-                  {formatCoinFlipMultiplier(coin.multiplier)}
-                </span>
-              </li>
-            ))}
-          </ol>
-          <div className="joker-coin-flip-hint" aria-hidden="true">
-            <span>Tap coin to flip</span>
-          </div>
-          <div className="joker-coin-flip-coin-zone">
-            <CoinFlipPlatform />
-            <CoinFlipEnergyParticles />
+        <section className="joker-coin-flip-stage" aria-label="Coin Flip game board">
+          <div className="joker-coin-flip-main-area">
             <div
-              className="joker-coin-flip-coin-cast-shadow"
-              style={{
-                "--coin-pull": `${pullDistance * 0.34}px`,
-                "--coin-flight": `${coinFlightY}px`,
-                "--coin-shadow-scale": `${1 + pullDistance / 160 + coinFlightRatio * 1.1}`,
-                "--coin-shadow-opacity": `${Math.max(0.12, 0.58 + pullDistance / 520 - coinFlightRatio * 0.22)}`,
-              }}
-            />
-            <button
-                className={[
-                  "joker-coin-flip-main",
-                  isCoinDragging ? "is-dragging" : "",
-                  isCoinFlipping ? "is-flipping" : "",
-                  !canFlipCoin ? "is-locked" : "",
-                  coinResult === "win" ? "is-landed" : "",
-                  coinResult === "loss" ? "is-loss" : "",
-                ]
-                  .filter(Boolean)
-                  .join(" ")}
-                style={{
-                  "--coin-pull": `${pullDistance * 0.34}px`,
-                  "--coin-flight": `${coinFlightY}px`,
-                  "--coin-pull-scale-x": `${1 + pullDistance / 1800}`,
-                  "--coin-pull-scale-y": `${1 - pullDistance / 2400}`,
-                  "--coin-shadow-scale": `${1 + pullDistance / 160 + coinFlightRatio * 1.1}`,
-                  "--coin-shadow-opacity": `${Math.max(0.12, 0.28 + pullDistance / 520 - coinFlightRatio * 0.16)}`,
-                  "--coin-shadow-blur": `${16 + coinFlightRatio * 18}px`,
-                }}
-                type="button"
-                aria-label="Tap to flip coin"
-                disabled={!canFlipCoin}
-                onClick={handleCoinFlipAgain}
-              >
-                <img
-                  className="joker-coin-flip-main__image"
-                  src={coinFlipFrames[coinFrameIndex]}
-                  alt=""
-                  aria-hidden="true"
-                />
-              </button>
+              ref={coinFlipStageRef}
+              className={[
+                "joker-coin-flip-game-frame",
+                "joker-game-round-end-canvas",
+                coinResult === "loss" ? "is-round-ending" : "",
+              ]
+                .filter(Boolean)
+                .join(" ")}
+              aria-label="Coin Flip game area"
+            >
+              <div className="joker-coin-flip-game-frame__top">
+                <div
+                  className="joker-coin-flip-history-rail"
+                  aria-label="Coin Flip preview history"
+                  ref={coinHistoryRailRef}
+                >
+                  <ol className="joker-coin-flip-history">
+                    {coinFlipPreviewCoins.map((coin) => (
+                      <li
+                        className={`joker-coin-flip-history__coin${coin.isPending ? " is-pending" : ""}`}
+                        key={coin.id}
+                      >
+                        <img
+                          className="joker-coin-flip-history__image"
+                          src={coin.coin}
+                          alt=""
+                          aria-hidden="true"
+                        />
+                        {coin.badge ? (
+                          <img className="joker-coin-flip-history__badge" src={coin.badge} alt={coin.alt} />
+                        ) : null}
+                        <span className="joker-coin-flip-history__multiplier">
+                          {formatCoinFlipMultiplier(coin.multiplier)}
+                        </span>
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+              </div>
+              <div className="joker-coin-flip-game-frame__bottom">
+                <div className="joker-coin-flip-play-stack">
+                  <div className="joker-coin-flip-play">
+                    <div className="joker-coin-flip-play-inner">
+                      <div className="joker-coin-flip-coin-stage">
+                        <CoinFlipPlatform />
+                        <div className="joker-coin-flip-coin-zone">
+                          <CoinFlipEnergyParticles />
+                          <div
+                            className="joker-coin-flip-coin-cast-shadow"
+                            style={{
+                              "--coin-pull": `${pullDistance * 0.34}px`,
+                              "--coin-flight": `${coinFlightY}px`,
+                              "--coin-shadow-scale": `${1 + pullDistance / 160 + coinFlightRatio * 1.1}`,
+                              "--coin-shadow-opacity": `${Math.max(0.12, 0.58 + pullDistance / 520 - coinFlightRatio * 0.22)}`,
+                            }}
+                          />
+                          <button
+                            className={[
+                              "joker-coin-flip-main",
+                              isCoinDragging ? "is-dragging" : "",
+                              isCoinFlipping ? "is-flipping" : "",
+                              !canFlipCoin ? "is-locked" : "",
+                              coinResult === "win" ? "is-landed" : "",
+                              coinResult === "loss" ? "is-loss" : "",
+                            ]
+                              .filter(Boolean)
+                              .join(" ")}
+                            style={{
+                              "--coin-pull": `${pullDistance * 0.34}px`,
+                              "--coin-flight": `${coinFlightY}px`,
+                              "--coin-pull-scale-x": `${1 + pullDistance / 1800}`,
+                              "--coin-pull-scale-y": `${1 - pullDistance / 2400}`,
+                              "--coin-shadow-scale": `${1 + pullDistance / 160 + coinFlightRatio * 1.1}`,
+                              "--coin-shadow-opacity": `${Math.max(0.12, 0.28 + pullDistance / 520 - coinFlightRatio * 0.16)}`,
+                              "--coin-shadow-blur": `${16 + coinFlightRatio * 18}px`,
+                            }}
+                            type="button"
+                            aria-label="Tap to flip coin"
+                            disabled={!canFlipCoin}
+                            onClick={handleCoinFlipAgain}
+                          >
+                            <img
+                              className="joker-coin-flip-main__image"
+                              src={coinFlipFrames[coinFrameIndex]}
+                              alt=""
+                              aria-hidden="true"
+                            />
+                          </button>
+                        </div>
+                        <div className="joker-coin-flip-hint" aria-hidden="true">
+                          <span>Tap coin to flip</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              {bettingPanelLayout === "mobile" && (
+                <div className="joker-coin-flip-mobile-odds">
+                  <MobileOddsGroup
+                    options={getCoinFlipOddsOptions(betAmount, roundsToWin)}
+                    value={hasCoinBetAmount ? selectedSide : ""}
+                    onValueChange={(value) => handleCoinSideChange(value)}
+                    disabled={!hasCoinBetAmount || isCoinFlipping}
+                  />
+                </div>
+              )}
+              <GameRoundEndTransition
+                active={coinResult === "loss"}
+                animationKey={`coin-loss-${coinHistory.length}`}
+              />
+              {coinWinModal && (
+                <div className="joker-coin-flip-result-card" role="status" aria-live="polite">
+                  <WinModalCard
+                    title={coinWinModal.title}
+                    amountWon={`+${formatJkcAmount(coinWinModal.profit)}`}
+                    currency={null}
+                    message="Your winnings from this round have been added to your balance."
+                    closeLabel="Close"
+                    onClose={handleCoinWinModalClose}
+                  />
+                </div>
+              )}
+            </div>
           </div>
-          {bettingPanelLayout === "mobile" && (
-            <div className="joker-coin-flip-mobile-odds">
-              <MobileOddsGroup
-                options={getCoinFlipOddsOptions(betAmount, roundsToWin)}
-                value={hasCoinBetAmount ? selectedSide : ""}
-                onValueChange={(value) => handleCoinSideChange(value)}
-                disabled={!hasCoinBetAmount || isCoinFlipping}
-              />
-            </div>
-          )}
-          {coinWinModal && (
-            <div className="joker-coin-flip-result-card" role="status" aria-live="polite">
-              <WinModalCard
-                title={coinWinModal.title}
-                amountWon={`+${formatJkcAmount(coinWinModal.profit)}`}
-                currency={null}
-                message="Your winnings from this round have been added to your balance."
-                closeLabel="Close"
-                onClose={handleCoinWinModalClose}
-              />
-            </div>
-          )}
         </section>
       </GameShell>
     </>
@@ -5191,6 +5481,7 @@ function HiloStage({
   onLowerSame,
   onSkipCard,
   onWinModalClose,
+  onWinCoinsLand,
   pendingPrediction,
   roundStatus,
   skipAvailable,
@@ -5215,7 +5506,16 @@ function HiloStage({
   return (
     <section className="joker-hilo-stage" aria-label="Hilo game board">
       <div className="joker-hilo-main-area">
-        <div className="joker-hilo-game-frame" aria-label="Hilo game area">
+        <div
+          className={[
+            "joker-hilo-game-frame",
+            "joker-game-round-end-canvas",
+            roundStatus === "loss" ? "is-round-ending" : "",
+          ]
+            .filter(Boolean)
+            .join(" ")}
+          aria-label="Hilo game area"
+        >
           <div className="joker-hilo-game-frame__top">
             <div
               className="joker-hilo-history-rail"
@@ -5290,6 +5590,10 @@ function HiloStage({
               />
             </div>
           )}
+          <GameRoundEndTransition
+            active={roundStatus === "loss"}
+            animationKey={`hilo-loss-${history.length}`}
+          />
         </div>
       </div>
       {winModal && (
@@ -5300,6 +5604,7 @@ function HiloStage({
             currency={null}
             message="Your winnings from this round have been added to your balance."
             closeLabel="Close"
+            onCoinsLand={onWinCoinsLand}
             onClose={onWinModalClose}
           />
         </div>
@@ -5420,6 +5725,7 @@ function MinesBoardTile({
   multiplier,
   onClick,
   revealed,
+  stackIndex,
   tile,
   tileContent,
 }) {
@@ -5463,6 +5769,7 @@ function MinesBoardTile({
           playClickSound={tileContent === "gold"}
           role="button"
           selected={gameActive}
+          stackIndex={stackIndex}
           tabIndex={gameActive ? 0 : -1}
         />
       </div>
@@ -5475,6 +5782,7 @@ function MinesBoardTile({
     className: tileClassName,
     defaultRevealed: false,
     revealed: showRevealed,
+    stackIndex,
   };
 
   let tileNode;
@@ -5511,6 +5819,7 @@ function MinesGrid({
   lossResult,
   multiplier,
   onResultClose,
+  onWinCoinsLand,
   onTileClick,
   revealedTiles,
   roundStatus,
@@ -5522,7 +5831,13 @@ function MinesGrid({
   return (
     <section className="joker-mines-stage" aria-label="Mines game board">
       <div
-        className="joker-mines-board-area"
+        className={[
+          "joker-mines-board-area",
+          "joker-game-round-end-canvas",
+          roundStatus === "lost" ? "is-round-ending" : "",
+        ]
+          .filter(Boolean)
+          .join(" ")}
         style={{
           "--mines-grid-columns": columns,
           "--mines-grid-rows": rows,
@@ -5547,12 +5862,17 @@ function MinesGrid({
                 multiplier={multiplier}
                 onClick={() => onTileClick(tile)}
                 revealed={revealed}
+                stackIndex={tiles.length - index}
                 tile={tile}
                 tileContent={tileContent}
               />
             );
           })}
         </div>
+        <GameRoundEndTransition
+          active={roundStatus === "lost"}
+          animationKey={`mines-loss-${revealedTiles.join("-")}`}
+        />
         {cashoutResult && (
           <div className="joker-mines-result-card" role="status" aria-live="polite">
             <WinModalCard
@@ -5561,6 +5881,7 @@ function MinesGrid({
               currency={null}
               message="Your winnings from this round have been added to your balance."
               closeLabel="Close"
+              onCoinsLand={onWinCoinsLand}
               onClose={onResultClose}
             />
           </div>
