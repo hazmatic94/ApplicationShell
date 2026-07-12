@@ -3809,6 +3809,9 @@ function CrashPage({ onGameChange }) {
   );
 }
 
+const COIN_FLIP_PROGRESSION_RECEIVER_SIZE = 72;
+const COIN_FLIP_PROGRESSION_COIN_SIZE = Math.round(COIN_FLIP_PROGRESSION_RECEIVER_SIZE * 0.76);
+
 function CoinFlipPage({ onGameChange }) {
   const bettingPanelLayout = useGameShellBettingPanelLayout();
   const [betAmount, setBetAmount] = useState("");
@@ -4148,6 +4151,11 @@ function CoinFlipPage({ onGameChange }) {
             );
             --coin-flip-play-native-width: 548px;
             --coin-flip-play-native-height: 500px;
+            --coin-flip-play-scale-bias: 1.08;
+            --coin-flip-play-scale-max: 1.32;
+            --coin-flip-play-gap: var(--spacing-24);
+            --coin-flip-coin-native-size: 256px;
+            --coin-flip-stage-native-size: 400px;
             --coin-pull-scale-x: 1;
             --coin-pull-scale-y: 1;
             --coin-shadow-scale: 1;
@@ -4192,9 +4200,9 @@ function CoinFlipPage({ onGameChange }) {
             width: 100%;
             flex: 0 0 auto;
             flex-direction: column;
-            align-items: stretch;
+            align-items: flex-start;
             box-sizing: border-box;
-            padding: var(--spacing-16) var(--spacing-24);
+            padding: var(--coin-flip-history-inset) 0 0 var(--coin-flip-history-inset);
             overflow: visible;
             background: var(--joker-black-800);
           }
@@ -4206,7 +4214,7 @@ function CoinFlipPage({ onGameChange }) {
               height: var(--coin-flip-sync-top-band-height);
               min-height: var(--coin-flip-sync-top-band-height);
               max-height: var(--coin-flip-sync-top-band-height);
-              padding: var(--coin-flip-history-inset) 0 0;
+              padding: var(--coin-flip-history-inset) 0 0 var(--coin-flip-history-inset);
               justify-content: flex-start;
             }
 
@@ -4218,12 +4226,8 @@ function CoinFlipPage({ onGameChange }) {
               align-items: flex-start;
               justify-content: flex-start;
               min-height: 0;
-              padding-block: 0;
+              padding: 0;
               box-sizing: border-box;
-            }
-
-            .joker-coin-flip-history-rail {
-              padding-inline-start: var(--coin-flip-history-inset);
             }
           }
 
@@ -4234,16 +4238,26 @@ function CoinFlipPage({ onGameChange }) {
             width: 100%;
             min-width: 0;
             flex: 0 0 auto;
-            align-items: center;
+            align-items: flex-start;
             justify-content: flex-start;
-            padding-block: var(--spacing-12);
-            padding-inline: 0;
+            padding: 0;
             overflow-x: auto;
             overflow-y: visible;
             scroll-behavior: smooth;
             scroll-padding-inline-end: var(--spacing-24);
             scroll-padding-inline-start: var(--spacing-24);
             scrollbar-width: none;
+          }
+
+          .joker-coin-flip-history-rail .joker-coin-progression {
+            width: auto;
+          }
+
+          .joker-coin-flip-history-rail .joker-coin-progression__track {
+            align-items: flex-start;
+            justify-content: flex-start;
+            margin: 0;
+            padding: 0;
           }
 
           .joker-coin-flip-history-rail::-webkit-scrollbar {
@@ -4272,7 +4286,9 @@ function CoinFlipPage({ onGameChange }) {
             align-items: center;
             justify-content: center;
             min-height: 0;
+            margin-inline: auto;
             container-type: size;
+            container-name: coin-flip-play;
           }
 
           .joker-coin-flip-play {
@@ -4297,8 +4313,29 @@ function CoinFlipPage({ onGameChange }) {
             flex: 0 0 auto;
             align-items: center;
             justify-content: center;
-            transform: scale(min(calc(100cqw / 548px), calc(100cqh / 500px)));
             transform-origin: center center;
+            --coin-size: var(--coin-flip-coin-native-size);
+            --coin-toss-stage-size: var(--coin-flip-stage-native-size);
+          }
+
+          @media (min-width: 1024px) {
+            .joker-coin-flip-play-stack {
+              width: 100%;
+              max-width: 900px;
+            }
+
+            .joker-coin-flip-play-inner {
+              --coin-flip-play-scale: min(
+                calc((100cqw - (2 * var(--coin-flip-play-gap))) / var(--coin-flip-play-native-width)),
+                calc((100cqh - var(--coin-flip-play-gap)) / var(--coin-flip-play-native-height)),
+                var(--coin-flip-play-scale-max)
+              );
+              --coin-flip-play-scale: max(
+                0.55,
+                calc(var(--coin-flip-play-scale) * var(--coin-flip-play-scale-bias))
+              );
+              transform: scale(var(--coin-flip-play-scale));
+            }
           }
 
           .joker-coin-flip-coin-stage {
@@ -4409,20 +4446,58 @@ function CoinFlipPage({ onGameChange }) {
           }
 
           @media (max-width: 1023px) {
+            .joker-coin-flip-stage {
+              --coin-flip-mobile-odds-reserve: 80px;
+              --coin-flip-mobile-play-scale-bias: 0.9;
+              --coin-flip-play-native-width: 360px;
+              --coin-flip-play-native-height: 400px;
+              --coin-flip-coin-native-size: 208px;
+              --coin-flip-stage-native-size: 320px;
+            }
+
             .joker-game-shell--coin-flip .joker-coin-flip-betting-panel.is-mobile .joker-odds-button-group-field {
               display: none;
             }
 
-            .joker-coin-flip-play-inner {
-              --coin-flip-play-native-width: 398px;
-              --coin-flip-play-native-height: 420px;
-              width: var(--coin-flip-play-native-width);
-              height: var(--coin-flip-play-native-height);
-              transform: scale(min(calc(100cqw / 398px), calc(100cqh / 420px)));
+            .joker-coin-flip-game-frame {
+              position: relative;
+              min-height: 0;
             }
 
             .joker-coin-flip-game-frame__bottom {
-              padding-bottom: calc(var(--spacing-24) + 56px);
+              flex: 1 1 auto;
+              justify-content: flex-start;
+              min-height: 0;
+              padding-block: var(--spacing-12) calc(var(--spacing-24) + var(--coin-flip-mobile-odds-reserve));
+            }
+
+            .joker-coin-flip-play-stack {
+              flex: 1 1 auto;
+              justify-content: center;
+              min-height: 0;
+              padding-bottom: var(--spacing-8);
+            }
+
+            .joker-coin-flip-play {
+              flex: 1 1 auto;
+              min-height: 0;
+              align-items: center;
+              justify-content: center;
+            }
+
+            .joker-coin-flip-play-inner {
+              width: var(--coin-flip-play-native-width);
+              height: var(--coin-flip-play-native-height);
+              --coin-flip-play-scale: min(
+                calc(100cqw / var(--coin-flip-play-native-width)),
+                calc((100cqh - var(--coin-flip-mobile-odds-reserve)) / var(--coin-flip-play-native-height)),
+                1
+              );
+              --coin-flip-play-scale: max(
+                0.48,
+                calc(var(--coin-flip-play-scale) * var(--coin-flip-mobile-play-scale-bias))
+              );
+              transform: scale(var(--coin-flip-play-scale));
             }
 
             .joker-coin-flip-mobile-odds {
@@ -4441,12 +4516,18 @@ function CoinFlipPage({ onGameChange }) {
           }
 
           @media (max-width: 760px) {
-            .joker-coin-flip-play-inner {
-              --coin-flip-play-native-width: 350px;
+            .joker-coin-flip-stage {
+              --coin-flip-mobile-odds-reserve: 84px;
+              --coin-flip-mobile-play-scale-bias: 0.84;
+              --coin-flip-play-native-width: 320px;
               --coin-flip-play-native-height: 360px;
+              --coin-flip-coin-native-size: 184px;
+              --coin-flip-stage-native-size: 288px;
+            }
+
+            .joker-coin-flip-play-inner {
               width: var(--coin-flip-play-native-width);
               height: var(--coin-flip-play-native-height);
-              transform: scale(min(calc(100cqw / 350px), calc(100cqh / 360px)));
             }
           }
 
@@ -4504,12 +4585,17 @@ function CoinFlipPage({ onGameChange }) {
                     activeIndex={progressionActiveIndex}
                     completedThrough={progressionCompletedThrough}
                     lockingIndex={progressionLockingIndex}
-                    receiverSize={72}
+                    receiverSize={COIN_FLIP_PROGRESSION_RECEIVER_SIZE}
                     onLockComplete={handleProgressionLockComplete}
                     renderCoin={(index) => {
                       const historyItem = coinHistory[index];
                       if (!historyItem) return null;
-                      return <Coin side={historyItem.result} />;
+                      return (
+                        <Coin
+                          side={historyItem.result}
+                          style={{ "--coin-size": `${COIN_FLIP_PROGRESSION_COIN_SIZE}px` }}
+                        />
+                      );
                     }}
                   />
                 </div>
@@ -4534,8 +4620,6 @@ function CoinFlipPage({ onGameChange }) {
                               onTossEnd={handleTossEnd}
                               tapHint="tap to flip"
                               tapHintVisible={tapHintVisible && canFlipCoin}
-                              stageSizePx={400}
-                              style={{ "--coin-size": "256px" }}
                             />
                           </button>
                         </div>
