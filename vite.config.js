@@ -7,6 +7,15 @@ export default defineConfig({
   base: '/showroom/gameshell/',
   server: {
     host: true,
+    watch: {
+      ignored: ['!**/DesignSystemGames/**'],
+    },
+    fs: {
+      allow: ['..'],
+    },
+  },
+  optimizeDeps: {
+    exclude: ['@joker/design-system'],
   },
   resolve: {
     alias: {

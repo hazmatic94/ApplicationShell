@@ -14,21 +14,22 @@ import {
   HiLoBettingPanel as JokerHiLoBettingPanel,
   HiLoEllipseButton,
   HiloMainCardGlow,
+  LossTile,
   LowerCard,
   MinesBettingPanel,
+  MinesTile,
   MobileHiLoOddsGroup,
   OddsButtonGroup,
+  SafeTile,
   SkipButton,
   WinModalCard,
+  WinTile,
 } from "@joker/design-system";
-import jokerIcon from "../assets/iconJoker.svg?url";
 import infoIcon from "../assets/info.svg?url";
-import goldIcon from "../assets/mines-gold-bar.png?url";
 import dynamiteIcon from "../assets/mines-bomb.png?url";
 import shieldIcon from "../assets/mines-shield.png?url";
 import minesBombSound from "../assets/mines-bomb.mp3?url";
 import minesCashoutSound from "../assets/mines-cashout.mp3?url";
-import minesClickSound from "../assets/mines-click.mp3?url";
 import minesPlaceBetSound from "../assets/mines-placebet.mp3?url";
 import hiloCardDrawSound from "../assets/hilo-card-draw.mp3?url";
 import hiloNextSound from "../assets/hilo-next.mp3?url";
@@ -48,7 +49,7 @@ import jokerCoinIcon from "../assets/jokerCoin.svg?url";
 const minTileAmount = 2;
 const desktopMinesGrid = { columns: 5, rows: 5 };
 const mobileMinesGrid = { columns: 4, rows: 5 };
-const minesRtp = 0.96;
+const minesRtp = 0.96; // 96% RTP applied to fair multipliers
 const coinFlipRtp = 0.96;
 const coinFlipMaxWins = 4;
 const coinFlipFairProbability = 0.5;
@@ -72,12 +73,6 @@ function createMinesAmountOptions(maxTileAmount) {
 function createMineTiles(tileCount) {
   return Array.from({ length: tileCount }, (_, index) => index + 1);
 }
-const tileStateAssets = {
-  default: { label: "Joker", src: jokerIcon },
-  joker: { label: "Joker", src: jokerIcon },
-  gold: { label: "Gold nugget", src: goldIcon },
-  dynamite: { label: "Dynamite", src: dynamiteIcon },
-};
 const hiloRanks = [
   { rank: "A", value: 1 },
   { rank: "2", value: 2 },
@@ -674,7 +669,8 @@ function MobileShellScrollFix() {
             gap: var(--spacing-16);
           }
 
-          .joker-game-shell--hilo .joker-navigation-mobile-content .joker-hilo-betting-panel .joker-betting-fields > .joker-button--hi-lo-skip {
+          .joker-game-shell--hilo .joker-navigation-mobile-content .joker-hilo-betting-panel .joker-betting-fields > .joker-button--hi-lo-skip,
+          .joker-game-shell--hilo .joker-navigation-mobile-content .joker-hilo-betting-panel .joker-betting-fields > .joker-button--secondary {
             display: none;
           }
 
@@ -884,8 +880,6 @@ function MinesPage({ onGameChange }) {
 
     const tileContent = getTileContent(board[tile - 1]);
 
-    playSound(tileContent === "dynamite" ? minesBombSound : minesClickSound);
-
     setRevealedTiles((currentTiles) =>
       currentTiles.includes(tile) ? currentTiles : [...currentTiles, tile]
     );
@@ -1036,6 +1030,7 @@ function MinesPage({ onGameChange }) {
 
           .joker-mines-board-area {
             --mines-board-padding: 32px;
+            --mines-grid-gap: var(--spacing-8);
             position: relative;
             display: grid;
             height: 100%;
@@ -1044,10 +1039,11 @@ function MinesPage({ onGameChange }) {
             justify-items: stretch;
             padding: var(--mines-board-padding);
             overflow: hidden;
+            container-type: size;
+            container-name: mines-board;
           }
 
           .joker-mines-grid {
-            --mines-grid-gap: clamp(var(--spacing-8), 1.25vw, var(--spacing-12));
             display: grid;
             width: 100%;
             height: 100%;
@@ -1071,21 +1067,30 @@ function MinesPage({ onGameChange }) {
             overflow: visible;
           }
 
-          @media (max-width: 1279px) and (min-width: 1024px) {
+          @media (min-width: 1024px) {
             .joker-mines-board-area {
-              --mines-board-padding: 24px;
+              --mines-board-padding: 40px;
+              place-items: center;
+            }
+
+            .joker-mines-grid {
+              --mines-grid-fit: min(100cqw, 100cqh);
+              width: var(--mines-grid-fit);
+              height: var(--mines-grid-fit);
+              max-width: 100%;
+              max-height: 100%;
+            }
+          }
+
+          @media (min-width: 1280px) {
+            .joker-mines-board-area {
+              --mines-board-padding: 48px;
             }
           }
 
           @media (max-width: 1023px) {
             .joker-mines-board-area {
               --mines-board-padding: 8px;
-            }
-          }
-
-          @media (max-width: 767px) {
-            .joker-mines-grid {
-              --mines-grid-gap: var(--spacing-6, 6px);
             }
           }
 
@@ -1154,267 +1159,36 @@ function MinesPage({ onGameChange }) {
             min-width: 0;
           }
 
-          .joker-mines-tile {
-            appearance: none;
+          .joker-mines-grid-cell {
             position: relative;
             display: grid;
             width: 100%;
             height: 100%;
             min-width: 0;
             min-height: 0;
-            place-items: center;
-            overflow: visible;
-            border: 0;
-            border-radius: calc(var(--radius-sm) + var(--radius-sm));
-            background: transparent;
-            box-shadow: none;
-            cursor: default;
-            padding: 0;
-            transition:
-              transform var(--motion-fast) var(--ease-standard);
+            place-items: stretch;
           }
 
-          .joker-mines-grid.is-round-active .joker-mines-tile:not(.joker-mines-tile--revealed) {
-            cursor: pointer;
-          }
-
-          .joker-mines-tile-surface {
-            position: absolute;
-            inset: 0;
-            z-index: 0;
-            display: grid;
-            place-items: center;
-            overflow: hidden;
-            border: var(--border-width-default) solid var(--joker-black-200);
-            border-radius: inherit;
-            background: var(--joker-black-700);
-            box-shadow: none;
-            transition:
-              background-color var(--motion-fast) var(--ease-standard),
-              border-color var(--motion-fast) var(--ease-standard),
-              box-shadow var(--motion-fast) var(--ease-standard),
-              transform var(--motion-fast) var(--ease-standard);
-          }
-
-          .joker-mines-tile-icon {
-            position: relative;
-            z-index: 2;
-            display: block;
-            width: clamp(var(--spacing-24), 36%, var(--spacing-64));
-            height: auto;
-            opacity: 0.9;
-            pointer-events: none;
-            user-select: none;
-          }
-
-          .joker-mines-tile--default:not(.joker-mines-tile--revealed) .joker-mines-tile-surface::before {
-            content: "";
-            position: absolute;
-            inset: 0;
-            z-index: 1;
-            border-radius: inherit;
-            background: linear-gradient(
-              180deg,
-              rgb(0 0 0 / 0.04) 0%,
-              rgb(255 255 255 / 0.12) 49%,
-              rgb(0 0 0 / 0.04) 100%
-            );
-            opacity: 0.5;
-            pointer-events: none;
-          }
-
-          .joker-mines-grid.is-round-active .joker-mines-tile--default:not(.joker-mines-tile--revealed) .joker-mines-tile-surface {
-            border-color: var(--joker-black-200);
-            box-shadow: none;
-          }
-
-          .joker-mines-tile-icon--gold {
-            width: clamp(calc(var(--spacing-64) - var(--spacing-8)), 68%, calc(var(--spacing-64) + var(--spacing-40)));
-            opacity: 1;
-          }
-
-          .joker-mines-tile-icon--joker {
-            width: clamp(calc(var(--spacing-40) + var(--spacing-8)), 44%, calc(var(--spacing-64) + var(--spacing-16)));
-            opacity: 1;
-          }
-
-          .joker-mines-tile-icon--dynamite {
-            width: clamp(var(--spacing-64), 76%, calc(var(--spacing-64) + var(--spacing-64)));
-            opacity: 1;
-          }
-
-          .joker-mines-tile--dynamite {
-            z-index: 1;
-          }
-
-          .joker-mines-tile--dynamite .joker-mines-tile-surface {
-            border-color: rgb(255 70 70 / 0.75);
-            background:
-              linear-gradient(
-                135deg,
-                rgb(234 114 114 / 0.04) 0%,
-                rgb(218 33 33 / 0.12) 49%,
-                rgb(234 114 114 / 0.04) 100%
-              ),
-              var(--joker-black-700);
-            box-shadow:
-              0 0 0 var(--border-width-default) rgb(255 70 70 / 0.2),
-              0 0 var(--spacing-24) rgb(255 70 70 / 0.25),
-              inset 0 0 calc(var(--spacing-16) + var(--spacing-4)) rgb(255 70 70 / 0.08);
-          }
-
-          .joker-mines-tile--dynamite .joker-mines-tile-icon {
-            filter:
-              drop-shadow(calc(var(--spacing-8) * -1) calc(var(--spacing-8) * -1) var(--spacing-12) rgb(255 150 56 / 0.34))
-              drop-shadow(0 var(--spacing-4) var(--spacing-8) rgb(0 0 0 / 0.4));
-          }
-
-          .joker-mines-grid.is-round-active .joker-mines-tile:not(.joker-mines-tile--revealed):hover {
-            transform: translateY(calc(var(--border-width-default) * -1));
-          }
-
-          .joker-mines-grid.is-round-active .joker-mines-tile:not(.joker-mines-tile--revealed):hover .joker-mines-tile-surface {
-            border-color: color-mix(in srgb, var(--joker-gold-400) 38%, var(--joker-black-300));
-            background: color-mix(in srgb, var(--joker-black-700) 88%, var(--joker-gold-1000));
-            box-shadow: none;
-          }
-
-          .joker-mines-grid.is-round-active .joker-mines-tile--dynamite:not(.joker-mines-tile--revealed):hover .joker-mines-tile-surface,
-          .joker-mines-tile--dynamite.joker-mines-tile--fresh-reveal .joker-mines-tile-surface {
-            border-color: rgb(255 70 70 / 0.75);
-            background:
-              linear-gradient(
-                135deg,
-                rgb(234 114 114 / 0.04) 0%,
-                rgb(218 33 33 / 0.12) 49%,
-                rgb(234 114 114 / 0.04) 100%
-              ),
-              var(--joker-black-700);
-          }
-
-          .joker-mines-tile--revealed {
+          .joker-mines-grid-cell.is-revealed {
             z-index: 10;
-            cursor: default;
           }
 
-          .joker-mines-tile--revealed .joker-mines-tile-surface {
-            border-color: color-mix(in srgb, var(--joker-gold-400) 72%, var(--joker-black-400));
-            background: var(--joker-black-700);
-            filter: drop-shadow(0 0 var(--spacing-12) color-mix(in srgb, var(--joker-gold-400) 24%, transparent));
-            transform: translateY(var(--border-width-default));
+          .joker-mines-grid-tile {
+            --game-tile-size: 100%;
+            width: 100%;
+            height: 100%;
+            max-width: 100%;
+            max-height: 100%;
           }
 
-          .joker-mines-tile--revealed:hover {
-            transform: none;
-          }
-
-          .joker-mines-tile--revealed:hover .joker-mines-tile-surface {
-            border-color: color-mix(in srgb, var(--joker-gold-400) 72%, var(--joker-black-400));
-            background: var(--joker-black-700);
-            filter: drop-shadow(0 0 var(--spacing-12) color-mix(in srgb, var(--joker-gold-400) 24%, transparent));
-          }
-
-          .joker-mines-tile--fresh-reveal .joker-mines-tile-surface {
-            border-color: var(--joker-gold-400);
-            filter: drop-shadow(0 0 var(--spacing-16) color-mix(in srgb, var(--joker-gold-400) 34%, transparent));
-            transition: none;
-          }
-
-          .joker-mines-tile--joker.joker-mines-tile--revealed .joker-mines-tile-surface,
-          .joker-mines-tile--joker.joker-mines-tile--revealed:hover .joker-mines-tile-surface {
-            border-color: color-mix(in srgb, var(--joker-gold-400) 76%, var(--joker-black-300));
-            background: var(--joker-black-700);
-            box-shadow:
-              0 0 0 var(--border-width-default) color-mix(in srgb, var(--joker-gold-400) 14%, transparent),
-              inset 0 0 var(--spacing-24) color-mix(in srgb, var(--joker-gold-400) 8%, transparent);
-            filter: drop-shadow(0 0 var(--spacing-12) color-mix(in srgb, var(--joker-gold-400) 24%, transparent));
-          }
-
-          .joker-mines-tile--gold.joker-mines-tile--revealed .joker-mines-tile-surface,
-          .joker-mines-tile--gold.joker-mines-tile--revealed:hover .joker-mines-tile-surface {
-            border-color: color-mix(in srgb, var(--joker-gold-400) 72%, var(--joker-black-400));
-            background: var(--joker-black-700);
-            box-shadow:
-              0 0 0 var(--border-width-default) color-mix(in srgb, var(--joker-gold-400) 10%, transparent),
-              inset 0 0 var(--spacing-24) color-mix(in srgb, var(--joker-gold-400) 6%, transparent);
-            filter: drop-shadow(0 0 var(--spacing-12) color-mix(in srgb, var(--joker-gold-400) 24%, transparent));
-          }
-
-          .joker-mines-tile--gold.joker-mines-tile--revealed .joker-mines-tile-surface::before,
-          .joker-mines-tile--gold.joker-mines-tile--revealed:hover .joker-mines-tile-surface::before {
-            content: "";
-            position: absolute;
-            inset: 0;
-            z-index: 1;
-            border-radius: inherit;
-            background: linear-gradient(
-              180deg,
-              rgb(0 0 0 / 0.04) 0%,
-              rgb(148 139 16 / 0.12) 49%,
-              rgb(0 0 0 / 0.04) 100%
-            );
-            opacity: 0.5;
+          .joker-mines-grid.is-round-lost .joker-mines-grid-cell:not(.is-revealed) .joker-mines-grid-tile {
+            opacity: 0.34;
+            filter: saturate(0.48);
             pointer-events: none;
           }
 
-          .joker-mines-tile--fresh-reveal {
-            animation: joker-mines-tile-press 420ms var(--ease-standard) both;
-          }
-
-          .joker-mines-tile--dynamite.joker-mines-tile--revealed .joker-mines-tile-surface,
-          .joker-mines-tile--dynamite.joker-mines-tile--revealed:hover .joker-mines-tile-surface,
-          .joker-mines-tile--dynamite.joker-mines-tile--revealed:active .joker-mines-tile-surface {
-            border-color: rgb(255 70 70 / 0.75);
-            background:
-              linear-gradient(
-                135deg,
-                rgb(234 114 114 / 0.04) 0%,
-                rgb(218 33 33 / 0.12) 49%,
-                rgb(234 114 114 / 0.04) 100%
-              ),
-              var(--joker-black-700);
-            box-shadow:
-              0 0 0 var(--border-width-default) rgb(255 70 70 / 0.2),
-              0 0 var(--spacing-24) rgb(255 70 70 / 0.25),
-              inset 0 0 calc(var(--spacing-16) + var(--spacing-4)) rgb(255 70 70 / 0.08);
-            filter: none;
-          }
-
-          .joker-mines-tile--dynamite.joker-mines-tile--revealed .joker-mines-tile-icon {
-            filter:
-              drop-shadow(calc(var(--spacing-8) * -1) calc(var(--spacing-8) * -1) var(--spacing-12) rgb(255 150 56 / 0.34))
-              drop-shadow(0 var(--spacing-4) var(--spacing-8) rgb(0 0 0 / 0.4));
-          }
-
-          .joker-mines-tile--dynamite.joker-mines-tile--fresh-reveal {
-            animation: joker-mines-dynamite-impact 300ms var(--ease-standard) both;
-          }
-
-          .joker-mines-tile--dynamite.joker-mines-tile--fresh-reveal .joker-mines-tile-surface {
-            animation: joker-mines-dynamite-surface 420ms var(--ease-standard) both;
-          }
-
-          .joker-mines-tile--dynamite.joker-mines-tile--fresh-reveal .joker-mines-tile-icon--dynamite {
-            animation: joker-mines-dynamite-reveal 250ms var(--ease-standard) both;
-          }
-
-          .joker-mines-tile--shield-blocked {
-            z-index: 18;
-          }
-
-          .joker-mines-tile--shield-blocked .joker-mines-tile-surface {
-            box-shadow:
-              0 0 0 var(--border-width-default) rgb(255 70 70 / 0.2),
-              0 0 var(--spacing-24) rgb(255 70 70 / 0.25),
-              0 0 var(--spacing-32) color-mix(in srgb, var(--joker-gold-400) 18%, transparent),
-              inset 0 0 calc(var(--spacing-16) + var(--spacing-4)) rgb(255 70 70 / 0.08);
-          }
-
-          .joker-mines-tile--shield-blocked .joker-mines-tile-icon--dynamite {
+          .joker-mines-grid-cell.is-shield-blocked .joker-loss-tile-icon {
             opacity: 0.2;
-            filter:
-              drop-shadow(calc(var(--spacing-8) * -1) calc(var(--spacing-8) * -1) var(--spacing-12) rgb(255 150 56 / 0.16))
-              drop-shadow(0 var(--spacing-4) var(--spacing-8) rgb(0 0 0 / 0.28));
           }
 
           .joker-mines-shield-badge {
@@ -1444,22 +1218,10 @@ function MinesPage({ onGameChange }) {
               drop-shadow(0 0 var(--spacing-16) color-mix(in srgb, var(--joker-gold-400) 22%, transparent));
           }
 
-          .joker-mines-tile--shield-blocked.joker-mines-tile--fresh-reveal .joker-mines-shield-badge {
+          .joker-mines-grid-cell.is-shield-blocked.is-fresh-reveal .joker-mines-shield-badge {
             opacity: 0;
             transform: translate(-50%, -50%) scale(0.72);
             animation: joker-mines-shield-block 980ms var(--ease-standard) both;
-          }
-
-          .joker-mines-grid.is-round-lost .joker-mines-tile:not(.joker-mines-tile--revealed) {
-            opacity: 0.34;
-            filter: saturate(0.48);
-            pointer-events: none;
-            transform: none;
-          }
-
-          .joker-mines-grid.is-round-lost .joker-mines-tile:not(.joker-mines-tile--revealed) .joker-mines-tile-surface {
-            border-color: var(--joker-black-300);
-            filter: none;
           }
 
           .joker-mines-result-card {
@@ -1479,170 +1241,7 @@ function MinesPage({ onGameChange }) {
             box-shadow: 0 var(--spacing-24) var(--spacing-64) rgb(0 0 0 / 0.42);
           }
 
-          .joker-mines-tile--gold.joker-mines-tile--fresh-reveal .joker-mines-tile-surface::after,
-          .joker-mines-tile--joker.joker-mines-tile--fresh-reveal .joker-mines-tile-surface::after {
-            content: "";
-            position: absolute;
-            inset: 18%;
-            z-index: 0;
-            border-radius: var(--radius-pill);
-            background: radial-gradient(
-              circle,
-              color-mix(in srgb, var(--joker-gold-400) 34%, transparent) 0%,
-              color-mix(in srgb, var(--joker-gold-400) 16%, transparent) 42%,
-              transparent 72%
-            );
-            opacity: 0;
-            pointer-events: none;
-            animation: joker-mines-gold-flash 720ms var(--ease-standard) both;
-          }
-
-          .joker-mines-tile--revealed .joker-mines-tile-icon {
-            filter: drop-shadow(0 var(--spacing-4) var(--spacing-8) rgb(0 0 0 / 0.34));
-          }
-
-          .joker-mines-tile--fresh-reveal .joker-mines-tile-icon--gold {
-            animation: joker-mines-nugget-reveal 760ms var(--ease-standard) both;
-          }
-
-          .joker-mines-tile--fresh-reveal .joker-mines-tile-icon--joker {
-            animation: joker-mines-joker-reveal 760ms var(--ease-standard) both;
-          }
-
-          .joker-mines-particle {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            z-index: 2;
-            width: calc(var(--spacing-4) + var(--border-width-default));
-            height: calc(var(--spacing-4) + var(--border-width-default));
-            border-radius: var(--radius-pill);
-            background: var(--joker-gold-400);
-            opacity: 0;
-            filter: drop-shadow(0 0 var(--spacing-8) color-mix(in srgb, var(--joker-gold-400) 58%, transparent));
-            pointer-events: none;
-            transform: translate(-50%, -50%) scale(0.36);
-            animation: joker-mines-particle-burst 680ms var(--ease-standard) both;
-          }
-
-          .joker-mines-particle:nth-of-type(1) {
-            --particle-x: calc(var(--spacing-32) * -1);
-            --particle-y: calc(var(--spacing-24) * -1);
-          }
-
-          .joker-mines-particle:nth-of-type(2) {
-            --particle-x: var(--spacing-32);
-            --particle-y: calc(var(--spacing-24) * -1);
-          }
-
-          .joker-mines-particle:nth-of-type(3) {
-            --particle-x: calc(var(--spacing-40) * -1);
-            --particle-y: var(--spacing-8);
-          }
-
-          .joker-mines-particle:nth-of-type(4) {
-            --particle-x: var(--spacing-40);
-            --particle-y: var(--spacing-8);
-          }
-
-          .joker-mines-particle:nth-of-type(5) {
-            --particle-x: calc(var(--spacing-24) * -1);
-            --particle-y: var(--spacing-32);
-          }
-
-          .joker-mines-particle:nth-of-type(6) {
-            --particle-x: var(--spacing-24);
-            --particle-y: var(--spacing-32);
-          }
-
-          .joker-mines-smoke {
-            position: absolute;
-            top: 43%;
-            left: 56%;
-            z-index: 2;
-            width: var(--spacing-12);
-            height: var(--spacing-12);
-            border-radius: var(--radius-pill);
-            background: rgb(255 255 255 / 0.28);
-            opacity: 0;
-            filter: blur(var(--spacing-4));
-            pointer-events: none;
-            transform: translate(-50%, -50%) scale(0.46);
-            animation: joker-mines-smoke-rise 980ms var(--ease-standard) both;
-          }
-
-          .joker-mines-smoke:nth-of-type(1) {
-            --smoke-x: calc(var(--spacing-12) * -1);
-            --smoke-y: calc(var(--spacing-40) * -1);
-            animation-delay: 20ms;
-          }
-
-          .joker-mines-smoke:nth-of-type(2) {
-            --smoke-x: var(--spacing-4);
-            --smoke-y: calc(var(--spacing-48) * -1);
-            animation-delay: 80ms;
-          }
-
-          .joker-mines-smoke:nth-of-type(3) {
-            --smoke-x: var(--spacing-16);
-            --smoke-y: calc(var(--spacing-40) * -1);
-            animation-delay: 140ms;
-          }
-
-          .joker-mines-smoke:nth-of-type(4) {
-            --smoke-x: calc(var(--spacing-8) * -1);
-            --smoke-y: calc(var(--spacing-56) * -1);
-            animation-delay: 200ms;
-          }
-
-          .joker-mines-smoke:nth-of-type(5) {
-            --smoke-x: var(--spacing-24);
-            --smoke-y: calc(var(--spacing-48) * -1);
-            animation-delay: 260ms;
-          }
-
-          .joker-mines-tile-multiplier {
-            position: absolute;
-            z-index: 20;
-            bottom: 0;
-            left: 50%;
-            min-width: calc(var(--spacing-64) + var(--spacing-8));
-            border: 1px solid var(--joker-green-400);
-            border-radius: var(--radius-pill);
-            background: color-mix(in srgb, var(--joker-green-900) 78%, var(--joker-black-800));
-            box-shadow: none;
-            color: var(--joker-green-400);
-            font-family: var(--font-display);
-            font-size: 20px;
-            font-weight: 500;
-            line-height: 1;
-            padding: calc(var(--spacing-8) - var(--border-width-default)) var(--spacing-12) calc(var(--spacing-8) - var(--border-width-default) - var(--border-width-default));
-            transform: translate(-50%, 50%);
-            pointer-events: none;
-          }
-
-          .joker-mines-tile:active {
-            transform: translateY(var(--border-width-default));
-            box-shadow: none;
-          }
-
-          .joker-mines-tile--revealed:active .joker-mines-tile-surface {
-            filter: drop-shadow(0 0 var(--spacing-12) color-mix(in srgb, var(--joker-gold-400) 24%, transparent));
-          }
-
-          @keyframes joker-mines-tile-press {
-            0% {
-              transform: translateY(0) scale(1);
-            }
-
-            34% {
-              transform: translateY(var(--spacing-4)) scale(0.97);
-            }
-
-            100% {
-              transform: translateY(0) scale(1);
-            }
-          }
+          
 
           @keyframes joker-mines-cashout-pop {
             0% {
@@ -1663,78 +1262,6 @@ function MinesPage({ onGameChange }) {
             100% {
               opacity: 1;
               transform: translateY(0) scale(1);
-            }
-          }
-
-          @keyframes joker-mines-gold-flash {
-            0% {
-              opacity: 0;
-              transform: scale(0.44);
-              filter: blur(0);
-            }
-
-            32% {
-              opacity: 1;
-              transform: scale(1);
-              filter: blur(var(--spacing-8));
-            }
-
-            100% {
-              opacity: 0;
-              transform: scale(1.28);
-              filter: blur(var(--spacing-16));
-            }
-          }
-
-          @keyframes joker-mines-nugget-reveal {
-            0% {
-              opacity: 0;
-              transform: scale(0.55) translateY(var(--spacing-12));
-              filter: drop-shadow(0 0 0 transparent);
-            }
-
-            46% {
-              opacity: 1;
-              transform: scale(1.12) translateY(calc(var(--spacing-4) * -1));
-              filter: drop-shadow(0 0 var(--spacing-16) color-mix(in srgb, var(--joker-gold-400) 42%, transparent));
-            }
-
-            72% {
-              opacity: 1;
-              transform: scale(0.96) translateY(var(--border-width-default));
-              filter: drop-shadow(0 0 var(--spacing-12) color-mix(in srgb, var(--joker-gold-400) 30%, transparent));
-            }
-
-            100% {
-              opacity: 1;
-              transform: scale(1) translateY(0);
-              filter: drop-shadow(0 var(--spacing-4) var(--spacing-8) rgb(0 0 0 / 0.34));
-            }
-          }
-
-          @keyframes joker-mines-joker-reveal {
-            0% {
-              opacity: 0;
-              transform: scale(0.58) rotate(-4deg);
-              filter: drop-shadow(0 0 0 transparent);
-            }
-
-            44% {
-              opacity: 1;
-              transform: scale(1.12) rotate(2deg);
-              filter: drop-shadow(0 0 var(--spacing-16) color-mix(in srgb, var(--joker-gold-400) 44%, transparent));
-            }
-
-            72% {
-              opacity: 1;
-              transform: scale(0.96) rotate(0deg);
-              filter: drop-shadow(0 0 var(--spacing-12) color-mix(in srgb, var(--joker-gold-400) 30%, transparent));
-            }
-
-            100% {
-              opacity: 1;
-              transform: scale(1) rotate(0deg);
-              filter: drop-shadow(0 var(--spacing-4) var(--spacing-8) rgb(0 0 0 / 0.34));
             }
           }
 
@@ -1761,133 +1288,6 @@ function MinesPage({ onGameChange }) {
               opacity: 1;
               transform: translate(-50%, -50%) scale(1);
               filter: drop-shadow(0 var(--spacing-4) var(--spacing-12) rgb(0 0 0 / 0.42));
-            }
-          }
-
-          @keyframes joker-mines-particle-burst {
-            0% {
-              opacity: 0;
-              transform: translate(-50%, -50%) scale(0.36);
-              filter: drop-shadow(0 0 0 transparent);
-            }
-
-            18% {
-              opacity: 1;
-              transform: translate(-50%, -50%) scale(1);
-              filter: drop-shadow(0 0 var(--spacing-8) color-mix(in srgb, var(--joker-gold-400) 58%, transparent));
-            }
-
-            100% {
-              opacity: 0;
-              transform: translate(calc(-50% + var(--particle-x)), calc(-50% + var(--particle-y))) scale(0.48);
-              filter: drop-shadow(0 0 var(--spacing-4) color-mix(in srgb, var(--joker-gold-400) 10%, transparent));
-            }
-          }
-
-          @keyframes joker-mines-dynamite-surface {
-            0% {
-              border-color: var(--joker-black-300);
-              background:
-                linear-gradient(
-                  135deg,
-                  rgb(234 114 114 / 0.06) 0%,
-                  rgb(90 0 0 / 0.26) 49%,
-                  rgb(234 114 114 / 0.06) 100%
-                ),
-                var(--joker-black-700);
-              box-shadow: none;
-            }
-
-            24% {
-              border-color: rgb(255 70 70 / 0.95);
-              background:
-                linear-gradient(
-                  135deg,
-                  rgb(234 114 114 / 0.08) 0%,
-                  rgb(218 33 33 / 0.2) 49%,
-                  rgb(234 114 114 / 0.08) 100%
-                ),
-                var(--joker-black-700);
-              box-shadow:
-                0 0 0 var(--border-width-default) rgb(255 70 70 / 0.2),
-                0 0 var(--spacing-24) rgb(255 70 70 / 0.25),
-                inset 0 0 calc(var(--spacing-16) + var(--spacing-4)) rgb(255 70 70 / 0.08);
-            }
-
-            100% {
-              border-color: rgb(255 70 70 / 0.75);
-              background:
-                linear-gradient(
-                  135deg,
-                  rgb(234 114 114 / 0.04) 0%,
-                  rgb(218 33 33 / 0.12) 49%,
-                  rgb(234 114 114 / 0.04) 100%
-                ),
-                var(--joker-black-700);
-              box-shadow:
-                0 0 0 var(--border-width-default) rgb(255 70 70 / 0.2),
-                0 0 var(--spacing-24) rgb(255 70 70 / 0.25),
-                inset 0 0 calc(var(--spacing-16) + var(--spacing-4)) rgb(255 70 70 / 0.08);
-            }
-          }
-
-          @keyframes joker-mines-dynamite-reveal {
-            0% {
-              opacity: 0;
-              transform: scale(0.7);
-            }
-
-            62% {
-              opacity: 1;
-              transform: scale(1.1);
-            }
-
-            100% {
-              opacity: 1;
-              transform: scale(1);
-            }
-          }
-
-          @keyframes joker-mines-dynamite-impact {
-            0% {
-              transform: translateX(0);
-            }
-
-            18% {
-              transform: translateX(calc(var(--spacing-4) * -1 - var(--border-width-default) - var(--border-width-default)));
-            }
-
-            36% {
-              transform: translateX(calc(var(--spacing-4) + var(--border-width-default) + var(--border-width-default)));
-            }
-
-            58% {
-              transform: translateX(calc((var(--spacing-4) + var(--border-width-default)) * -1));
-            }
-
-            78% {
-              transform: translateX(calc(var(--spacing-4) + var(--border-width-default)));
-            }
-
-            100% {
-              transform: translateX(0);
-            }
-          }
-
-          @keyframes joker-mines-smoke-rise {
-            0% {
-              opacity: 0;
-              transform: translate(-50%, -50%) scale(0.46);
-            }
-
-            18% {
-              opacity: 0.46;
-              transform: translate(-50%, -50%) scale(0.72);
-            }
-
-            100% {
-              opacity: 0;
-              transform: translate(calc(-50% + var(--smoke-x)), calc(-50% + var(--smoke-y))) scale(1.28);
             }
           }
         `}
@@ -1952,6 +1352,7 @@ function HiloPage({ onGameChange }) {
   const hiloWinModalTimeoutRef = useRef(null);
   const hiloWinModalResetRef = useRef(false);
   const hiloRoundResetTimeoutRef = useRef(null);
+  const hiloHistoryLengthRef = useRef(history.length);
 
   const bettingPanelLayout = useGameShellBettingPanelLayout();
   const numericBetAmount = Number(betAmount) || 0;
@@ -2001,6 +1402,19 @@ function HiloPage({ onGameChange }) {
       }
     };
   }, []);
+
+  useEffect(() => {
+    if (!gameInPlay) {
+      hiloHistoryLengthRef.current = history.length;
+      return;
+    }
+
+    if (history.length > hiloHistoryLengthRef.current) {
+      setPendingPrediction("");
+    }
+
+    hiloHistoryLengthRef.current = history.length;
+  }, [gameInPlay, history.length]);
 
   function clearHiloRoundResetTimer() {
     if (hiloRoundResetTimeoutRef.current) {
@@ -2067,6 +1481,7 @@ function HiloPage({ onGameChange }) {
 
   function handleHiloChoiceSelection(choice) {
     if (gameInPlay) {
+      setPendingPrediction(choice);
       handlePrediction(choice);
       return;
     }
@@ -2420,6 +1835,8 @@ function HiloPage({ onGameChange }) {
             overflow-x: auto;
             overflow-y: visible;
             scroll-behavior: smooth;
+            scroll-padding-inline-end: var(--spacing-24);
+            scroll-padding-inline-start: var(--spacing-24);
             scrollbar-width: none;
           }
 
@@ -2434,9 +1851,17 @@ function HiloPage({ onGameChange }) {
             align-items: center;
             justify-content: flex-start;
             gap: var(--spacing-8);
-            padding-inline: var(--spacing-24);
+            padding-inline-start: var(--spacing-24);
             overflow: visible;
             box-sizing: border-box;
+          }
+
+          .joker-hilo-history-track::after {
+            content: "";
+            display: block;
+            flex: 0 0 var(--spacing-24);
+            width: var(--spacing-24);
+            height: 1px;
           }
 
           .joker-hilo-history-entry {
@@ -2576,6 +2001,9 @@ function HiloPage({ onGameChange }) {
               min-height: 0;
               align-items: center;
               justify-content: flex-start;
+              gap: var(--spacing-8);
+              padding-inline-start: var(--spacing-24);
+              box-sizing: border-box;
             }
 
             .joker-hilo-game-frame__top > .joker-betting-divider {
@@ -3105,7 +2533,8 @@ function HiloPage({ onGameChange }) {
               justify-content: flex-start;
               margin-inline: 0;
               gap: var(--spacing-4);
-              padding-inline: var(--spacing-24);
+              padding-inline-start: var(--spacing-24);
+              box-sizing: border-box;
             }
 
             .joker-hilo-history-entry .joker-hilo-history-chip {
@@ -3193,6 +2622,10 @@ function HiloPage({ onGameChange }) {
               padding-bottom: 0;
               box-sizing: border-box;
               transform: none;
+            }
+
+            .joker-hilo-main-card-anchor .joker-hilo-game-frame__status {
+              display: none;
             }
 
             .joker-hilo-main-card-wrap .joker-hilo-main-card-glow {
@@ -5811,7 +5244,7 @@ function HiloStage({
                   disabled={!choiceInteractive}
                   multiplier={lowerMultiplier}
                   onClick={onLowerSame}
-                  selected={roundStatus === "pre-game" && pendingPrediction === "lower"}
+                  selected={pendingPrediction === "lower"}
                   support="Ace = lowest"
                 />
                 <div className="joker-hilo-main-card-column">
@@ -5837,7 +5270,7 @@ function HiloStage({
                   disabled={!choiceInteractive}
                   multiplier={higherMultiplier}
                   onClick={onHigherSame}
-                  selected={roundStatus === "pre-game" && pendingPrediction === "higher"}
+                  selected={pendingPrediction === "higher"}
                   support="King = highest"
                 />
                 </div>
@@ -5847,12 +5280,13 @@ function HiloStage({
           {bettingPanelLayout === "mobile" && (
             <div className="joker-hilo-mobile-odds">
               <MobileHiLoOddsGroup
+                key={`hilo-mobile-odds-${history.length}`}
                 disabled={!choiceInteractive}
                 lowerOdds={lowerOdds}
                 higherOdds={higherOdds}
                 onLowerSame={onLowerSame}
                 onHigherSame={onHigherSame}
-                value={roundStatus === "pre-game" ? pendingPrediction : undefined}
+                value={pendingPrediction}
               />
             </div>
           )}
@@ -5979,6 +5413,96 @@ function HiloHistoryEntry({ card, className = "" }) {
   );
 }
 
+function MinesBoardTile({
+  blockedByShield,
+  freshReveal,
+  gameActive,
+  multiplier,
+  onClick,
+  revealed,
+  tile,
+  tileContent,
+}) {
+  const [showRevealed, setShowRevealed] = useState(revealed && !freshReveal);
+
+  useEffect(() => {
+    if (!revealed) {
+      setShowRevealed(false);
+      return;
+    }
+
+    if (freshReveal) {
+      setShowRevealed(false);
+      const frameId = window.requestAnimationFrame(() => {
+        setShowRevealed(true);
+      });
+      return () => window.cancelAnimationFrame(frameId);
+    }
+
+    setShowRevealed(true);
+  }, [freshReveal, revealed]);
+
+  const cellClassName = [
+    "joker-mines-grid-cell",
+    revealed ? "is-revealed" : "",
+    freshReveal ? "is-fresh-reveal" : "",
+    blockedByShield ? "is-shield-blocked" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+  const tileClassName = "joker-mines-grid-tile";
+
+  if (!revealed) {
+    return (
+      <div className={cellClassName}>
+        <MinesTile
+          aria-hidden={false}
+          aria-label={`Reveal tile ${tile}`}
+          className={tileClassName}
+          onClick={gameActive ? onClick : undefined}
+          playClickSound={tileContent === "gold"}
+          role="button"
+          selected={gameActive}
+          tabIndex={gameActive ? 0 : -1}
+        />
+      </div>
+    );
+  }
+
+  const revealProps = {
+    "aria-hidden": false,
+    "aria-label": `Tile ${tile}: ${tileContent}`,
+    className: tileClassName,
+    defaultRevealed: false,
+    revealed: showRevealed,
+  };
+
+  let tileNode;
+  if (tileContent === "gold") {
+    tileNode = (
+      <WinTile
+        {...revealProps}
+        multiplier={freshReveal ? `${multiplier.toFixed(2)}x` : undefined}
+      />
+    );
+  } else if (tileContent === "dynamite") {
+    tileNode = <LossTile {...revealProps} soundOnReveal={!blockedByShield} />;
+  } else {
+    tileNode = <SafeTile {...revealProps} />;
+  }
+
+  return (
+    <div className={cellClassName}>
+      {tileNode}
+      {blockedByShield ? (
+        <span className="joker-mines-shield-badge" aria-hidden="true">
+          <img src={shieldIcon} alt="" />
+        </span>
+      ) : null}
+    </div>
+  );
+}
+
 function MinesGrid({
   board,
   cashoutResult,
@@ -6013,56 +5537,19 @@ function MinesGrid({
             const tileData = board[index];
             const tileContent = getTileContent(tileData);
             const blockedByShield = Boolean(tileData?.blockedByShield);
-            const displayState = revealed ? tileContent : "default";
-            const asset = tileStateAssets[displayState];
 
             return (
-              <button
+              <MinesBoardTile
                 key={tile}
-                className={`joker-mines-tile joker-mines-tile--${displayState} ${revealed ? "joker-mines-tile--revealed" : ""} ${freshReveal ? "joker-mines-tile--fresh-reveal" : ""} ${blockedByShield ? "joker-mines-tile--shield-blocked" : ""}`.trim()}
-                type="button"
-                aria-label={`Tile ${tile}: ${asset.label}`}
-                aria-pressed={revealed}
-                data-selected={revealed || undefined}
-                disabled={!gameActive || revealed}
+                blockedByShield={blockedByShield}
+                freshReveal={freshReveal}
+                gameActive={gameActive}
+                multiplier={multiplier}
                 onClick={() => onTileClick(tile)}
-              >
-                <span className="joker-mines-tile-surface">
-                  <img
-                    className={`joker-mines-tile-icon joker-mines-tile-icon--${displayState}`}
-                    src={asset.src}
-                    alt=""
-                  />
-                  {freshReveal &&
-                    (displayState === "gold" || displayState === "joker") &&
-                    Array.from({ length: 6 }, (_, particleIndex) => (
-                      <span
-                        className="joker-mines-particle"
-                        key={particleIndex}
-                        aria-hidden="true"
-                      />
-                    ))}
-                  {freshReveal &&
-                    displayState === "dynamite" &&
-                    Array.from({ length: 5 }, (_, smokeIndex) => (
-                      <span
-                        className="joker-mines-smoke"
-                        key={smokeIndex}
-                        aria-hidden="true"
-                      />
-                    ))}
-                  {blockedByShield && (
-                    <span className="joker-mines-shield-badge" aria-hidden="true">
-                      <img src={shieldIcon} alt="" />
-                    </span>
-                  )}
-                </span>
-                {freshReveal && displayState === "gold" && (
-                  <span className="joker-mines-tile-multiplier">
-                    {multiplier.toFixed(2)}x
-                  </span>
-                )}
-              </button>
+                revealed={revealed}
+                tile={tile}
+                tileContent={tileContent}
+              />
             );
           })}
         </div>
