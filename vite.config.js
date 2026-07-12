@@ -4,7 +4,19 @@ import {defineConfig} from 'vite';
 
 export default defineConfig({
   plugins: [react()],
-   base: '/showroom/gameshell/',
+  base: '/showroom/gameshell/',
+  server: {
+    host: true,
+    watch: {
+      ignored: ['!**/DesignSystemGames/**'],
+    },
+    fs: {
+      allow: ['..'],
+    },
+  },
+  optimizeDeps: {
+    exclude: ['@joker/design-system'],
+  },
   resolve: {
     alias: {
       '../EnterBetPrecursor/index.js': fileURLToPath(
@@ -12,5 +24,4 @@ export default defineConfig({
       ),
     },
   },
-
 });
