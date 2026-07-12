@@ -29,6 +29,7 @@ import minesClickSound from "../assets/mines-click.mp3?url";
 import minesPlaceBetSound from "../assets/mines-placebet.mp3?url";
 import coinFlipSound from "../assets/coin-flip.mp3?url";
 import downArrowIcon from "../assets/hilo-down.svg?url";
+import hiloFeltBg from "../assets/hilo-felt-bg.jpg?url";
 import upArrowIcon from "../assets/hilo-up.svg?url";
 import coinJokerIcon from "../assets/coin-joker.png?url";
 import coinHeadsIcon from "../assets/coin-heads.png?url";
@@ -2221,14 +2222,27 @@ function HiloPage({ onGameChange }) {
             height: 100%;
             min-height: 0;
             box-sizing: border-box;
-            --hilo-board-padding: 62px;
+            --hilo-board-padding: var(--spacing-24);
             --hilo-main-native-width: 296px;
             --hilo-main-native-height: 398.5px;
             --hilo-side-native-width: 164px;
             --hilo-side-to-main-ratio: 0.6;
             --hilo-play-gap: 24px;
-            --hilo-play-scale-bias: 0.74;
-            --hilo-play-scale-max: 0.92;
+            --hilo-play-scale-max: 1;
+            --hilo-play-scale-bias: 1;
+            --hilo-support-native-height: 42px;
+            --hilo-skip-protrusion-native: 52px;
+            --hilo-play-row-native-width: 699px;
+            --hilo-play-row-native-height: 463px;
+            --hilo-play-fit-native-height: 463px;
+            --hilo-felt-native-width: 780px;
+            --hilo-felt-native-height: 401px;
+            --hilo-felt-aspect-ratio: 1.945;
+            --hilo-felt-inline-padding: var(--spacing-24);
+            --hilo-felt-padding-block-start: 20px;
+            --hilo-felt-padding-block-end: 18px;
+            --hilo-play-to-felt-width-ratio: 0.896;
+            --hilo-play-to-felt-height-ratio: 0.84;
             --hilo-mini-scale-factor: 0.58;
             --hilo-mini-native-width: 110px;
             --hilo-mini-native-height: 76px;
@@ -2267,9 +2281,7 @@ function HiloPage({ onGameChange }) {
             padding: 0 var(--hilo-board-padding) var(--hilo-board-padding);
             grid-template-rows: minmax(0, auto) minmax(0, 1fr);
             overflow: hidden;
-            background:
-              radial-gradient(circle at 50% 48%, color-mix(in srgb, var(--joker-gold-400) 3%, transparent), transparent 42%),
-              color-mix(in srgb, var(--color-bg-sidebar) 92%, var(--joker-gold-1000));
+            background: var(--joker-black-900);
           }
 
           .joker-hilo-history-row {
@@ -2398,26 +2410,6 @@ function HiloPage({ onGameChange }) {
 
           .joker-hilo-main-area {
             container-type: size;
-            --hilo-play-scale: min(
-              (100cqw - (2 * var(--hilo-play-gap))) / var(--hilo-row-content-native-width),
-              100cqh / calc(var(--hilo-main-native-height) * 1.08),
-              var(--hilo-play-scale-max)
-            );
-            --hilo-play-scale: max(0.35, calc(var(--hilo-play-scale) * var(--hilo-play-scale-bias)));
-            --hilo-side-scale: calc(
-              var(--hilo-play-scale) * var(--hilo-side-to-main-ratio) * var(--hilo-main-native-width) /
-                var(--hilo-side-native-width)
-            );
-            --hilo-main-slot-width: calc(var(--hilo-main-native-width) * var(--hilo-play-scale));
-            --hilo-main-slot-height: calc(var(--hilo-main-native-height) * var(--hilo-play-scale));
-            --hilo-side-slot-width: calc(
-              var(--hilo-main-native-width) * var(--hilo-side-to-main-ratio) * var(--hilo-play-scale)
-            );
-            --hilo-side-slot-height: calc(
-              var(--hilo-main-native-height) * var(--hilo-side-to-main-ratio) * var(--hilo-play-scale)
-            );
-            --hilo-card-bottom-inset: calc(var(--spacing-12) * var(--hilo-play-scale));
-            --hilo-play-bottom-gap: calc(var(--spacing-8) * var(--hilo-play-scale));
             display: flex;
             width: 100%;
             max-width: 100%;
@@ -2428,44 +2420,120 @@ function HiloPage({ onGameChange }) {
             align-items: center;
             justify-content: center;
             overflow: hidden;
-            padding: 0;
+            padding: 0 var(--hilo-felt-inline-padding);
           }
 
           .joker-hilo-game-frame {
-            position: relative;
-            isolation: isolate;
             display: flex;
             width: 100%;
-            max-width: 100%;
             height: 100%;
+            max-height: 100cqh;
             box-sizing: border-box;
             min-width: 0;
             min-height: 0;
-            flex-wrap: nowrap;
-            align-items: flex-end;
+            flex-direction: column;
+            align-items: stretch;
             justify-content: center;
-            gap: var(--hilo-play-gap);
+            gap: var(--spacing-8);
             overflow: hidden;
             padding: 0;
             margin-inline: auto;
           }
 
-          .joker-hilo-game-frame > .joker-hilo-prediction-group,
-          .joker-hilo-game-frame > .joker-hilo-main-card-wrap {
+          .joker-hilo-game-frame__felt {
+            position: relative;
+            isolation: isolate;
+            container-type: size;
+            container-name: hilo-felt;
+            display: flex;
+            flex: 0 1 auto;
+            width: min(100%, calc((100% - 32px) * var(--hilo-felt-aspect-ratio)));
+            max-width: 100%;
+            height: auto;
+            max-height: calc(100% - 32px);
+            min-width: 0;
+            min-height: 0;
+            aspect-ratio: 780 / 401;
+            align-self: center;
+            margin-inline: auto;
+            align-items: center;
+            justify-content: center;
+            box-sizing: border-box;
+            border: var(--border-width-default) solid var(--joker-black-300);
+            border-radius: 999px;
+            background:
+              radial-gradient(circle at 50% 50%, rgb(0 0 0 / 0.06), rgb(0 0 0 / 0.34) 88%),
+              url("${hiloFeltBg}") center / cover no-repeat;
+            box-shadow:
+              inset 0 0 64px rgb(0 0 0 / 0.48),
+              0 18px 48px rgb(0 0 0 / 0.35);
+            overflow: hidden;
+            padding: var(--hilo-felt-padding-block-start) var(--hilo-felt-inline-padding)
+              var(--hilo-felt-padding-block-end);
+          }
+
+          .joker-hilo-game-frame__play {
+            display: flex;
+            width: 100%;
+            height: 100%;
+            box-sizing: border-box;
+            min-width: 0;
+            min-height: 0;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+          }
+
+          .joker-hilo-game-frame__play-inner {
+            display: flex;
+            width: var(--hilo-play-row-native-width);
+            height: var(--hilo-play-fit-native-height);
+            box-sizing: border-box;
+            flex: 0 0 auto;
+            flex-wrap: nowrap;
+            align-items: flex-end;
+            justify-content: center;
+            gap: var(--hilo-play-gap);
+            transform: scale(min(calc(100cqw / 699px), calc(100cqh / 463px)));
+            transform-origin: center center;
+            --hilo-play-scale: 1;
+            --hilo-side-scale: 1.082;
+            --hilo-main-slot-width: var(--hilo-main-native-width);
+            --hilo-main-slot-height: var(--hilo-main-native-height);
+            --hilo-side-slot-width: calc(var(--hilo-main-native-width) * var(--hilo-side-to-main-ratio));
+            --hilo-side-slot-height: calc(var(--hilo-main-native-height) * var(--hilo-side-to-main-ratio));
+            --hilo-card-bottom-inset: var(--spacing-12);
+          }
+
+          .joker-hilo-game-frame__play-inner > .joker-hilo-prediction-group,
+          .joker-hilo-game-frame__play-inner > .joker-hilo-main-card-wrap {
             flex: 0 0 auto;
             min-width: 0;
           }
 
-          .joker-hilo-game-frame::before {
-            display: none;
-            content: none;
-          }
-
-          .joker-hilo-game-frame .joker-game-card-stack,
-          .joker-hilo-game-frame .joker-higher-card,
-          .joker-hilo-game-frame .joker-lower-card {
+          .joker-hilo-game-frame__play-inner .joker-game-card-stack,
+          .joker-hilo-game-frame__play-inner .joker-higher-card,
+          .joker-hilo-game-frame__play-inner .joker-lower-card {
             flex: 0 0 auto;
             max-width: none;
+          }
+
+          .joker-hilo-game-frame__status {
+            margin: 0;
+            flex: 0 0 auto;
+            color: var(--joker-white-50);
+            font-family: var(--font-display);
+            font-size: clamp(18px, 2.4vw, 30px);
+            font-weight: 500;
+            letter-spacing: 0.06em;
+            line-height: 1;
+            text-align: center;
+            text-transform: uppercase;
+          }
+
+          .joker-hilo-game-frame__status strong {
+            color: var(--joker-gold-400);
+            font-weight: 600;
           }
 
           .joker-hilo-main-card-wrap {
@@ -2717,7 +2785,7 @@ function HiloPage({ onGameChange }) {
             }
 
             .joker-hilo-stage {
-              --hilo-board-padding: 20px;
+              --hilo-board-padding: var(--spacing-24);
               padding: 0 20px calc(var(--spacing-24) + 56px);
               overflow: visible;
             }
@@ -2752,8 +2820,7 @@ function HiloPage({ onGameChange }) {
               justify-content: center;
               height: 100%;
               min-height: 0;
-              padding-top: var(--spacing-8);
-              padding-bottom: var(--spacing-16);
+              padding: var(--spacing-8) var(--hilo-felt-inline-padding) var(--spacing-16);
             }
 
             .joker-hilo-history-track {
@@ -2762,19 +2829,31 @@ function HiloPage({ onGameChange }) {
             }
 
             .joker-hilo-game-frame {
-              display: flex;
               width: 100%;
-              max-width: 100%;
               height: 100%;
-              min-height: 0;
-              flex-wrap: nowrap;
-              align-items: center;
-              justify-content: center;
+              max-height: 100cqh;
+              gap: var(--spacing-8);
+            }
+
+            .joker-hilo-game-frame__felt {
+              flex: 0 1 auto;
+              width: min(100%, calc((100% - 28px) * var(--hilo-felt-aspect-ratio)));
+              max-height: calc(100% - 28px);
+              padding: 24px var(--hilo-felt-inline-padding) 20px;
+            }
+
+            .joker-hilo-game-frame__play-inner {
+              transform: scale(min(calc(100cqw / 699px), calc(100cqh / 463px)));
+              transform-origin: center center;
               gap: 0;
             }
 
-            .joker-hilo-game-frame > .joker-hilo-prediction-group {
+            .joker-hilo-game-frame__play-inner > .joker-hilo-prediction-group {
               display: none;
+            }
+
+            .joker-hilo-game-frame__status {
+              font-size: clamp(16px, 5vw, 22px);
             }
 
             .joker-hilo-main-card-wrap {
@@ -2847,6 +2926,7 @@ function HiloPage({ onGameChange }) {
       >
         <HiloStage
           bettingPanelLayout={bettingPanelLayout}
+          cardsRemaining={deck.length}
           currentCard={currentCard}
           higherMultiplier={higherMultiplier}
           higherOdds={formatHiloPercent(displayOdds.higherPercent)}
@@ -5284,6 +5364,7 @@ function CocoHutPage({ onGameChange }) {
 
 function HiloStage({
   bettingPanelLayout = "desktop",
+  cardsRemaining = 0,
   currentCard,
   higherMultiplier,
   higherOdds,
@@ -5299,6 +5380,9 @@ function HiloStage({
   skipAvailable,
   winModal,
 }) {
+  const cardTotal =
+    roundStatus === "pre-game" ? hiloRanks.length * hiloSuits.length : history.length + cardsRemaining;
+
   return (
     <section className="joker-hilo-stage" aria-label="Hilo game board">
       <div className="joker-hilo-history-row" aria-label="Previous cards">
@@ -5316,41 +5400,50 @@ function HiloStage({
       </div>
       <div className="joker-hilo-main-area">
         <div className="joker-hilo-game-frame" aria-label="Hilo game area">
-          <HiloChoiceCard
-            Card={LowerCard}
-            disabled={roundStatus !== "active"}
-            multiplier={lowerMultiplier}
-            onClick={onLowerSame}
-            support={
-              <>
-                Ace being the
-                <br />
-                Lowest
-              </>
-            }
-          />
-          <HiloMainCard
-            card={currentCard}
-            key={currentCard.id}
-            onSkipCard={onSkipCard}
-            showSkipButton={
-              bettingPanelLayout === "mobile" || (roundStatus === "active" && skipAvailable)
-            }
-            skipDisabled={roundStatus !== "active" || !skipAvailable}
-          />
-          <HiloChoiceCard
-            Card={HigherCard}
-            disabled={roundStatus !== "active"}
-            multiplier={higherMultiplier}
-            onClick={onHigherSame}
-            support={
-              <>
-                King being the
-                <br />
-                Highest
-              </>
-            }
-          />
+          <div className="joker-hilo-game-frame__felt">
+            <div className="joker-hilo-game-frame__play">
+              <div className="joker-hilo-game-frame__play-inner">
+                <HiloChoiceCard
+                  Card={LowerCard}
+                  disabled={roundStatus !== "active"}
+                  multiplier={lowerMultiplier}
+                  onClick={onLowerSame}
+                  support={
+                    <>
+                      Ace being the
+                      <br />
+                      Lowest
+                    </>
+                  }
+                />
+                <HiloMainCard
+                  card={currentCard}
+                  key={currentCard.id}
+                  onSkipCard={onSkipCard}
+                  showSkipButton={
+                    bettingPanelLayout === "mobile" || (roundStatus === "active" && skipAvailable)
+                  }
+                  skipDisabled={roundStatus !== "active" || !skipAvailable}
+                />
+                <HiloChoiceCard
+                  Card={HigherCard}
+                  disabled={roundStatus !== "active"}
+                  multiplier={higherMultiplier}
+                  onClick={onHigherSame}
+                  support={
+                    <>
+                      King being the
+                      <br />
+                      Highest
+                    </>
+                  }
+                />
+              </div>
+            </div>
+          </div>
+          <p className="joker-hilo-game-frame__status">
+            CARD <strong>{history.length}</strong> OF {cardTotal}
+          </p>
         </div>
       </div>
       {bettingPanelLayout === "mobile" && (
