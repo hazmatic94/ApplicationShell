@@ -4,7 +4,10 @@ import {defineConfig} from 'vite';
 
 export default defineConfig({
   plugins: [react()],
-   base: '/showroom/gameshell/',
+  base: '/showroom/gameshell/',
+  server: {
+    host: true,
+  },
   resolve: {
     alias: {
       '../EnterBetPrecursor/index.js': fileURLToPath(
@@ -12,5 +15,4 @@ export default defineConfig({
       ),
     },
   },
-
 });
