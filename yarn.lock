@@ -402,11 +402,11 @@ __metadata:
 
 "@joker/design-system@https://github.com/mjprod/DesignSystemGames.git#main":
   version: 0.1.62
-  resolution: "@joker/design-system@https://github.com/mjprod/DesignSystemGames.git#commit=3c081dd5f3ce957773498bcb334dbd2d056be5bb"
+  resolution: "@joker/design-system@https://github.com/mjprod/DesignSystemGames.git#commit=76302d9bee373d0a799a4423dcab3961fca33168"
   peerDependencies:
     react: ">=18"
     react-dom: ">=18"
-  checksum: 10c0/7add14b258aade91686a9d3c77fa8cdf0e7d9b0729621bddc59ab006a0ed69996fc5c90ba9252ec5386d78ca1aff40a5240f97ae1203ebe46df1951ad45302bc
+  checksum: 10c0/8dbc9b40a65556ad3b51efc301debb44ed3941662bea594de92639df4b52a823254188e363efe2294d546d9cb34f52d3947212d9953e3e57afb02fa03e3df791
   languageName: node
   linkType: hard
 
@@ -1086,13 +1086,13 @@ __metadata:
   linkType: hard
 
 "postcss@npm:^8.5.3":
-  version: 8.5.18
-  resolution: "postcss@npm:8.5.18"
+  version: 8.5.19
+  resolution: "postcss@npm:8.5.19"
   dependencies:
     nanoid: "npm:^3.3.12"
     picocolors: "npm:^1.1.1"
     source-map-js: "npm:^1.2.1"
-  checksum: 10c0/6fbab24a457ca5b90d423c333d0bab13e6646fda646e83235eed892f9e4f2dc6c50689ddc5ac1632fc085be2e096d2e8e03779ac092de6353e1cfcbbc3681685
+  checksum: 10c0/302af9e4dfa8cce4f43af1798576b3a77ab7b23abac5522328c6c7a830d49b31281cba9d6071e478e6970a05ef82346d1570b8fbffae912f26a4f1a1a07f0a44
   languageName: node
   linkType: hard
 

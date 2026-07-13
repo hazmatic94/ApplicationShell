@@ -26,6 +26,7 @@ import {
   SkipButton,
   WinModalCard,
   WinTile,
+  getCoinReceiverLossTotalMs,
 } from "@joker/design-system";
 import infoIcon from "../assets/info.svg?url";
 import dynamiteIcon from "../assets/mines-bomb.png?url";
@@ -41,6 +42,10 @@ import jokerCoinIcon from "../assets/jokerCoin.svg?url";
 const minTileAmount = 2;
 const desktopMinesGrid = { columns: 5, rows: 5 };
 const mobileMinesGrid = { columns: 4, rows: 5 };
+const MINES_PAGE_LOAD_ANIMATION_MS = 460;
+const MINES_PAGE_LOAD_ROW_STAGGER_MS = 24;
+const MINES_PAGE_LOAD_ROW_BASE_DELAY_MS = 32;
+const MINES_PAGE_LOAD_ROW_DURATION_MS = 320;
 const minesRtp = 0.96; // 96% RTP applied to fair multipliers
 const coinFlipRtp = 0.96;
 const coinFlipMaxWins = 4;
@@ -1341,6 +1346,49 @@ function MinesPage({ onGameChange }) {
             }
           }
 
+          .joker-mines-board-area.is-page-load-enter {
+            animation: joker-mines-load-board-fade 200ms var(--ease-out) both;
+          }
+
+          .joker-mines-grid.is-page-load-enter .joker-mines-grid-cell {
+            animation: joker-mines-load-tile-reveal 320ms var(--ease-out) var(--mines-load-row-delay, 32ms) both;
+          }
+
+          .joker-mines-grid.is-page-load-enter .joker-mines-grid-tile:hover {
+            transform: none;
+          }
+
+          @keyframes joker-mines-load-board-fade {
+            from {
+              opacity: 0;
+            }
+
+            to {
+              opacity: 1;
+            }
+          }
+
+          @keyframes joker-mines-load-tile-reveal {
+            from {
+              opacity: 0;
+              transform: translateY(10px);
+            }
+
+            to {
+              opacity: 1;
+              transform: translateY(0);
+            }
+          }
+
+          @media (prefers-reduced-motion: reduce) {
+            .joker-mines-board-area.is-page-load-enter,
+            .joker-mines-grid.is-page-load-enter .joker-mines-grid-cell {
+              animation: none;
+              opacity: 1;
+              transform: none;
+            }
+          }
+
           ${GAME_ROUND_END_STYLES}
         `}
       </style>
@@ -2258,10 +2306,6 @@ function HiloPage({ onGameChange }) {
             flex: 0 0 auto;
           }
 
-          .joker-hilo-main-card-wrap .joker-hilo-main-card-stack .joker-game-card-stack__layer--front .joker-game-card {
-            animation: joker-hilo-card-draw var(--motion-slow) var(--ease-out) both;
-          }
-
           .joker-hilo-main-card-skip-slot {
             position: absolute;
             top: calc(var(--spacing-16) * -1);
@@ -2398,18 +2442,6 @@ function HiloPage({ onGameChange }) {
             }
           }
 
-          @keyframes joker-hilo-card-draw {
-            0% {
-              opacity: 0;
-              transform: translateY(var(--spacing-16)) scale(0.985);
-            }
-
-            100% {
-              opacity: 1;
-              transform: translateY(0) scale(1);
-            }
-          }
-
           @keyframes joker-hilo-history-enter {
             0% {
               opacity: 0;
@@ -2419,6 +2451,111 @@ function HiloPage({ onGameChange }) {
             100% {
               opacity: 1;
               transform: translateY(0) scale(1);
+            }
+          }
+
+          .joker-hilo-game-frame.is-page-load-enter .joker-hilo-main-card-scale {
+            animation: joker-hilo-load-deal-main 400ms var(--ease-out) both;
+          }
+
+          .joker-hilo-game-frame.is-page-load-enter .joker-hilo-main-card-glow {
+            animation: joker-hilo-load-deal-glow 360ms var(--ease-out) 30ms both;
+          }
+
+          .joker-hilo-game-frame.is-page-load-enter .joker-hilo-prediction-group--lower .joker-hilo-prediction-card-scale {
+            animation: joker-hilo-load-deal-side 380ms var(--ease-out) 70ms both;
+          }
+
+          .joker-hilo-game-frame.is-page-load-enter .joker-hilo-prediction-group--higher .joker-hilo-prediction-card-scale {
+            animation: joker-hilo-load-deal-side 380ms var(--ease-out) 120ms both;
+          }
+
+          .joker-hilo-game-frame.is-page-load-enter .joker-hilo-history-chip {
+            animation: joker-hilo-load-deal-chip 280ms var(--ease-out) var(--hilo-load-chip-delay, 200ms) both;
+          }
+
+          .joker-hilo-game-frame.is-page-load-enter .joker-hilo-history-card-wrap {
+            animation: joker-hilo-load-deal-history-card 300ms var(--ease-out) var(--hilo-load-chip-delay, 200ms) both;
+          }
+
+          .joker-hilo-game-frame.is-page-load-enter .joker-hilo-history-entry.is-latest,
+          .joker-hilo-game-frame.is-page-load-enter .joker-higher-card__chevron,
+          .joker-hilo-game-frame.is-page-load-enter .joker-lower-card__chevron {
+            animation: none;
+          }
+
+          @keyframes joker-hilo-load-deal-main {
+            from {
+              opacity: 0;
+              transform: scale(var(--hilo-play-scale)) translateY(22px);
+            }
+
+            to {
+              opacity: 1;
+              transform: scale(var(--hilo-play-scale)) translateY(0);
+            }
+          }
+
+          @keyframes joker-hilo-load-deal-glow {
+            from {
+              opacity: 0;
+            }
+
+            to {
+              opacity: 1;
+            }
+          }
+
+          @keyframes joker-hilo-load-deal-side {
+            from {
+              opacity: 0;
+              transform: scale(var(--hilo-side-scale)) translateY(22px);
+            }
+
+            to {
+              opacity: 1;
+              transform: scale(var(--hilo-side-scale)) translateY(0);
+            }
+          }
+
+          @keyframes joker-hilo-load-deal-chip {
+            from {
+              opacity: 0;
+              transform: translate(-50%, calc(-50% + 10px));
+            }
+
+            to {
+              opacity: 1;
+              transform: translate(-50%, -50%);
+            }
+          }
+
+          @keyframes joker-hilo-load-deal-history-card {
+            from {
+              opacity: 0;
+              transform: translateY(10px);
+            }
+
+            to {
+              opacity: 1;
+              transform: translateY(0);
+            }
+          }
+
+          @media (prefers-reduced-motion: reduce) {
+            .joker-hilo-game-frame.is-page-load-enter .joker-hilo-main-card-scale,
+            .joker-hilo-game-frame.is-page-load-enter .joker-hilo-main-card-glow,
+            .joker-hilo-game-frame.is-page-load-enter .joker-hilo-prediction-group--lower .joker-hilo-prediction-card-scale,
+            .joker-hilo-game-frame.is-page-load-enter .joker-hilo-prediction-group--higher .joker-hilo-prediction-card-scale,
+            .joker-hilo-game-frame.is-page-load-enter .joker-hilo-history-chip,
+            .joker-hilo-game-frame.is-page-load-enter .joker-hilo-history-card-wrap {
+              animation: none;
+              opacity: 1;
+              transform: none;
+            }
+
+            .joker-hilo-game-frame.is-page-load-enter .joker-hilo-history-chip {
+              transform: translate(-50%, -50%);
             }
           }
 
@@ -3811,6 +3948,9 @@ function CrashPage({ onGameChange }) {
 
 const COIN_FLIP_PROGRESSION_RECEIVER_SIZE = 72;
 const COIN_FLIP_PROGRESSION_COIN_SIZE = Math.round(COIN_FLIP_PROGRESSION_RECEIVER_SIZE * 0.76);
+const COIN_FLIP_PAGE_LOAD_ANIMATION_MS = 480;
+const COIN_FLIP_LOSS_RESET_MS = getCoinReceiverLossTotalMs() + 240;
+const COIN_FLIP_LOSS_SEALED_HOLD_MS = 400;
 
 function CoinFlipPage({ onGameChange }) {
   const bettingPanelLayout = useGameShellBettingPanelLayout();
@@ -3831,8 +3971,13 @@ function CoinFlipPage({ onGameChange }) {
   const [progressionActiveIndex, setProgressionActiveIndex] = useState(0);
   const [progressionCompletedThrough, setProgressionCompletedThrough] = useState(-1);
   const [progressionLockingIndex, setProgressionLockingIndex] = useState(null);
+  const [progressionLosingIndex, setProgressionLosingIndex] = useState(null);
+  const [progressionLossIndex, setProgressionLossIndex] = useState(null);
+  const [coinProgressionKey, setCoinProgressionKey] = useState(0);
+  const [isPageLoadEnter, setIsPageLoadEnter] = useState(true);
   const coinProfitAnimationRef = useRef(null);
   const coinWinModalTimeoutRef = useRef(null);
+  const coinLossResetTimeoutRef = useRef(null);
   const coinWinModalResetRef = useRef(false);
   const pendingTossRef = useRef(null);
   const selectedSideRef = useRef(selectedSide);
@@ -3844,7 +3989,11 @@ function CoinFlipPage({ onGameChange }) {
     hasActiveCoinRound && settledCoinCount > 0 && !isCoinFlipping && !coinWinModal;
   const isRoundLocked = hasActiveCoinRound;
   const canStartCoinFlip =
-    hasCoinBetAmount && coinHistory.length < maxRoundsToWin && !isCoinFlipping && !coinWinModal;
+    hasCoinBetAmount &&
+    coinHistory.length < maxRoundsToWin &&
+    !isCoinFlipping &&
+    !coinWinModal &&
+    progressionLosingIndex == null;
   const canFlipCoin = canStartCoinFlip;
   const coinProgressionSteps = useMemo(
     () =>
@@ -3870,6 +4019,14 @@ function CoinFlipPage({ onGameChange }) {
   }, [coinHistory, maxRoundsToWin]);
 
   useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setIsPageLoadEnter(false);
+    }, COIN_FLIP_PAGE_LOAD_ANIMATION_MS);
+
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
     return () => {
       if (coinProfitAnimationRef.current) {
         window.cancelAnimationFrame(coinProfitAnimationRef.current);
@@ -3877,6 +4034,7 @@ function CoinFlipPage({ onGameChange }) {
       if (coinWinModalTimeoutRef.current) {
         window.clearTimeout(coinWinModalTimeoutRef.current);
       }
+      clearCoinLossResetTimer();
     };
   }, []);
 
@@ -3925,7 +4083,15 @@ function CoinFlipPage({ onGameChange }) {
     }
   }
 
+  function clearCoinLossResetTimer() {
+    if (coinLossResetTimeoutRef.current) {
+      window.clearTimeout(coinLossResetTimeoutRef.current);
+      coinLossResetTimeoutRef.current = null;
+    }
+  }
+
   function resetCoinRound() {
+    clearCoinLossResetTimer();
     setCoinRoundStatus("idle");
     setCoinResult(null);
     setCoinHistory([]);
@@ -3938,12 +4104,28 @@ function CoinFlipPage({ onGameChange }) {
     setProgressionActiveIndex(0);
     setProgressionCompletedThrough(-1);
     setProgressionLockingIndex(null);
+    setProgressionLosingIndex(null);
+    setProgressionLossIndex(null);
+    setCoinProgressionKey((currentKey) => currentKey + 1);
+  }
+
+  function scheduleCoinLossReset(delayMs = COIN_FLIP_LOSS_RESET_MS) {
+    clearCoinLossResetTimer();
+    coinLossResetTimeoutRef.current = window.setTimeout(() => {
+      resetCoinRound();
+    }, delayMs);
   }
 
   const handleProgressionLockComplete = useCallback((index) => {
     setProgressionCompletedThrough(index);
     setProgressionActiveIndex(index + 1);
     setProgressionLockingIndex(null);
+  }, []);
+
+  const handleProgressionLossComplete = useCallback((index) => {
+    setProgressionLossIndex(index);
+    setProgressionLosingIndex(null);
+    scheduleCoinLossReset(COIN_FLIP_LOSS_SEALED_HOLD_MS);
   }, []);
 
   function closeCoinWinModal() {
@@ -3987,6 +4169,8 @@ function CoinFlipPage({ onGameChange }) {
       setProgressionActiveIndex(0);
       setProgressionCompletedThrough(-1);
       setProgressionLockingIndex(null);
+      setProgressionLosingIndex(null);
+      setProgressionLossIndex(null);
     }
     setCoinRoundStatus("active");
     window.setTimeout(() => runCoinFlipAnimation(true), 60);
@@ -4061,16 +4245,8 @@ function CoinFlipPage({ onGameChange }) {
     }
 
     if (!didWin) {
-      window.setTimeout(() => {
-        setCoinRoundStatus("idle");
-        setCoinHistory([]);
-        setCoinResult(null);
-        setDisplayedCoinProfit(0);
-        setCoinSide(selectedSideRef.current);
-        setProgressionActiveIndex(0);
-        setProgressionCompletedThrough(-1);
-        setProgressionLockingIndex(null);
-      }, GAME_ROUND_END_RESET_MS);
+      setProgressionLosingIndex(lockIndex);
+      scheduleCoinLossReset();
     }
   }
 
@@ -4111,6 +4287,8 @@ function CoinFlipPage({ onGameChange }) {
       setProgressionActiveIndex(0);
       setProgressionCompletedThrough(-1);
       setProgressionLockingIndex(null);
+      setProgressionLosingIndex(null);
+      setProgressionLossIndex(null);
       runCoinFlipAnimation(true);
       return;
     }
@@ -4262,6 +4440,137 @@ function CoinFlipPage({ onGameChange }) {
 
           .joker-coin-flip-history-rail::-webkit-scrollbar {
             display: none;
+          }
+
+          .joker-coin-flip-game-frame.is-page-load-enter .joker-coin-toss__playfield {
+            animation: joker-coin-flip-load-coin-land 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+          }
+
+          .joker-coin-flip-game-frame.is-page-load-enter .joker-coin-toss-rings__ring--outer,
+          .joker-coin-flip-game-frame.is-page-load-enter .joker-coin-toss-rings__ring--inner {
+            animation: joker-coin-flip-load-ring-expand 360ms var(--ease-out) 100ms both;
+          }
+
+          .joker-coin-flip-game-frame.is-page-load-enter .joker-coin-toss-rings__particles {
+            opacity: 0;
+            animation: joker-coin-flip-load-fade-in 260ms var(--ease-out) 300ms forwards;
+          }
+
+          .joker-coin-flip-game-frame.is-page-load-enter .joker-coin-toss-rings__coin-shadow {
+            animation: none;
+            opacity: 0.3;
+          }
+
+          .joker-coin-flip-game-frame.is-page-load-enter .joker-coin-receiver__active-fx {
+            opacity: 0;
+          }
+
+          .joker-coin-flip-game-frame.is-page-load-enter .joker-coin-progression__step {
+            opacity: 0;
+            transform: translateY(8px);
+            animation: joker-coin-flip-load-progression-step 300ms var(--ease-out) var(--coin-flip-load-step-delay, 220ms) both;
+          }
+
+          .joker-coin-flip-game-frame.is-page-load-enter .joker-coin-progression__step:nth-child(1) {
+            --coin-flip-load-step-delay: 220ms;
+          }
+
+          .joker-coin-flip-game-frame.is-page-load-enter .joker-coin-progression__step:nth-child(2) {
+            --coin-flip-load-step-delay: 260ms;
+          }
+
+          .joker-coin-flip-game-frame.is-page-load-enter .joker-coin-progression__step:nth-child(3) {
+            --coin-flip-load-step-delay: 300ms;
+          }
+
+          .joker-coin-flip-game-frame.is-page-load-enter .joker-coin-progression__step:nth-child(4) {
+            --coin-flip-load-step-delay: 340ms;
+          }
+
+          .joker-coin-flip-game-frame.is-page-load-enter .joker-coin-progression__step:nth-child(5) {
+            --coin-flip-load-step-delay: 380ms;
+          }
+
+          .joker-coin-flip-game-frame.is-page-load-enter .joker-coin-progression__step:nth-child(6) {
+            --coin-flip-load-step-delay: 420ms;
+          }
+
+          .joker-coin-flip-game-frame.is-page-load-enter .joker-coin-toss-demo__hint {
+            opacity: 0;
+            animation: none;
+          }
+
+          .joker-coin-flip-game-frame.is-page-load-enter .joker-coin-toss__tap-target {
+            pointer-events: none;
+          }
+
+          @keyframes joker-coin-flip-load-coin-land {
+            0% {
+              transform: translateX(-50%) translateY(-30px);
+            }
+
+            74% {
+              transform: translateX(-50%) translateY(3px);
+            }
+
+            88% {
+              transform: translateX(-50%) translateY(-2px);
+            }
+
+            100% {
+              transform: translateX(-50%) translateY(0);
+            }
+          }
+
+          @keyframes joker-coin-flip-load-ring-expand {
+            from {
+              opacity: 0.55;
+              transform: translate(-50%, -50%) scale(0.8);
+            }
+
+            to {
+              opacity: 1;
+              transform: translate(-50%, -50%) scale(1);
+            }
+          }
+
+          @keyframes joker-coin-flip-load-fade-in {
+            from {
+              opacity: 0;
+            }
+
+            to {
+              opacity: 1;
+            }
+          }
+
+          @keyframes joker-coin-flip-load-progression-step {
+            to {
+              opacity: 1;
+              transform: translateY(0);
+            }
+          }
+
+          @media (prefers-reduced-motion: reduce) {
+            .joker-coin-flip-game-frame.is-page-load-enter .joker-coin-toss__playfield,
+            .joker-coin-flip-game-frame.is-page-load-enter .joker-coin-toss-rings__ring--outer,
+            .joker-coin-flip-game-frame.is-page-load-enter .joker-coin-toss-rings__ring--inner,
+            .joker-coin-flip-game-frame.is-page-load-enter .joker-coin-toss-rings__particles,
+            .joker-coin-flip-game-frame.is-page-load-enter .joker-coin-progression__step,
+            .joker-coin-flip-game-frame.is-page-load-enter .joker-coin-toss-demo__hint {
+              animation: none;
+              opacity: 1;
+              transform: none;
+            }
+
+            .joker-coin-flip-game-frame.is-page-load-enter .joker-coin-toss__playfield {
+              transform: translateX(-50%);
+            }
+
+            .joker-coin-flip-game-frame.is-page-load-enter .joker-coin-toss-rings__ring--outer,
+            .joker-coin-flip-game-frame.is-page-load-enter .joker-coin-toss-rings__ring--inner {
+              transform: translate(-50%, -50%) scale(1);
+            }
           }
 
           .joker-coin-flip-game-frame__bottom {
@@ -4568,6 +4877,7 @@ function CoinFlipPage({ onGameChange }) {
               className={[
                 "joker-coin-flip-game-frame",
                 "joker-game-round-end-canvas",
+                isPageLoadEnter ? "is-page-load-enter" : "",
                 coinResult === "loss" ? "is-round-ending" : "",
               ]
                 .filter(Boolean)
@@ -4581,18 +4891,24 @@ function CoinFlipPage({ onGameChange }) {
                   ref={coinHistoryRailRef}
                 >
                   <CoinProgression
+                    key={coinProgressionKey}
                     steps={coinProgressionSteps}
                     activeIndex={progressionActiveIndex}
                     completedThrough={progressionCompletedThrough}
                     lockingIndex={progressionLockingIndex}
+                    losingIndex={progressionLosingIndex}
+                    lossIndex={progressionLossIndex}
                     receiverSize={COIN_FLIP_PROGRESSION_RECEIVER_SIZE}
                     onLockComplete={handleProgressionLockComplete}
+                    onLossComplete={handleProgressionLossComplete}
                     renderCoin={(index) => {
                       const historyItem = coinHistory[index];
-                      if (!historyItem) return null;
+                      const isLossSlot =
+                        progressionLosingIndex === index || progressionLossIndex === index;
+                      if (!historyItem && !isLossSlot) return null;
                       return (
                         <Coin
-                          side={historyItem.result}
+                          side={historyItem?.result ?? coinSide}
                           style={{ "--coin-size": `${COIN_FLIP_PROGRESSION_COIN_SIZE}px` }}
                         />
                       );
@@ -4619,7 +4935,7 @@ function CoinFlipPage({ onGameChange }) {
                               tossOutcome={tossOutcome}
                               onTossEnd={handleTossEnd}
                               tapHint="tap to flip"
-                              tapHintVisible={tapHintVisible && canFlipCoin}
+                              tapHintVisible={tapHintVisible && canFlipCoin && !isPageLoadEnter}
                             />
                           </button>
                         </div>
@@ -4708,6 +5024,9 @@ function CocoHutPage({ onGameChange }) {
   );
 }
 
+const HILO_PAGE_LOAD_ANIMATION_MS = 480;
+const HILO_PAGE_LOAD_CHIP_STAGGER_MS = 50;
+
 function HiloStage({
   bettingPanelLayout = "desktop",
   cardsRemaining = 0,
@@ -4733,6 +5052,39 @@ function HiloStage({
   const choiceInteractive =
     roundStatus === "active" || (roundStatus === "pre-game" && hasBetAmount);
   const historyRailRef = useRef(null);
+  const historyLengthRef = useRef(history.length);
+  const [isPageLoadEnter, setIsPageLoadEnter] = useState(true);
+  const [enteringHistoryIndex, setEnteringHistoryIndex] = useState(null);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setIsPageLoadEnter(false);
+    }, HILO_PAGE_LOAD_ANIMATION_MS);
+
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    if (isPageLoadEnter) {
+      historyLengthRef.current = history.length;
+      return;
+    }
+
+    if (history.length <= historyLengthRef.current) {
+      historyLengthRef.current = history.length;
+      return;
+    }
+
+    const nextIndex = history.length - 1;
+    historyLengthRef.current = history.length;
+    setEnteringHistoryIndex(nextIndex);
+
+    const timer = window.setTimeout(() => {
+      setEnteringHistoryIndex((currentIndex) => (currentIndex === nextIndex ? null : currentIndex));
+    }, 600);
+
+    return () => window.clearTimeout(timer);
+  }, [history.length, isPageLoadEnter]);
 
   useLayoutEffect(() => {
     const rail = historyRailRef.current;
@@ -4751,6 +5103,7 @@ function HiloStage({
           className={[
             "joker-hilo-game-frame",
             "joker-game-round-end-canvas",
+            isPageLoadEnter ? "is-page-load-enter" : "",
             roundStatus === "loss" ? "is-round-ending" : "",
           ]
             .filter(Boolean)
@@ -4767,7 +5120,9 @@ function HiloStage({
                 {history.map((card, index) => (
                   <HiloHistoryEntry
                     card={card}
-                    className={index === history.length - 1 ? "is-latest" : ""}
+                    chipIndex={index}
+                    className={enteringHistoryIndex === index ? "is-latest" : ""}
+                    isPageLoadEnter={isPageLoadEnter}
                     key={`${card.id}-${index}`}
                   />
                 ))}
@@ -4928,12 +5283,20 @@ function HiloChoiceCard({ Card, className = "", disabled, multiplier, onClick, s
   );
 }
 
-function HiloHistoryEntry({ card, className = "" }) {
+function HiloHistoryEntry({ card, chipIndex = 0, className = "", isPageLoadEnter = false }) {
   const chipVariant = getHiloHistoryChipVariant(card.chipTone);
   const chipLabel = chipVariant === "start" || chipVariant === "skip" ? undefined : card.chip;
+  const loadStyle = isPageLoadEnter
+    ? {
+        "--hilo-load-chip-delay": `${200 + chipIndex * HILO_PAGE_LOAD_CHIP_STAGGER_MS}ms`,
+      }
+    : undefined;
 
   return (
-    <div className={["joker-hilo-history-entry", className].filter(Boolean).join(" ")}>
+    <div
+      className={["joker-hilo-history-entry", className].filter(Boolean).join(" ")}
+      style={loadStyle}
+    >
       <Chip className="joker-hilo-history-chip" variant={chipVariant}>
         {chipLabel}
       </Chip>
@@ -4961,6 +5324,7 @@ function HiloHistoryEntry({ card, className = "" }) {
 
 function MinesBoardTile({
   blockedByShield,
+  cellStyle,
   freshReveal,
   gameActive,
   multiplier,
@@ -5001,7 +5365,7 @@ function MinesBoardTile({
 
   if (!revealed) {
     return (
-      <div className={cellClassName}>
+      <div className={cellClassName} style={cellStyle}>
         <MinesTile
           aria-hidden={false}
           aria-label={`Reveal tile ${tile}`}
@@ -5041,7 +5405,7 @@ function MinesBoardTile({
   }
 
   return (
-    <div className={cellClassName}>
+    <div className={cellClassName} style={cellStyle}>
       {tileNode}
       {blockedByShield ? (
         <span className="joker-mines-shield-badge" aria-hidden="true">
@@ -5068,6 +5432,15 @@ function MinesGrid({
   tiles,
 }) {
   const gameActive = roundStatus === "active";
+  const [isPageLoadEnter, setIsPageLoadEnter] = useState(true);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setIsPageLoadEnter(false);
+    }, MINES_PAGE_LOAD_ANIMATION_MS);
+
+    return () => window.clearTimeout(timer);
+  }, []);
 
   return (
     <section className="joker-mines-stage" aria-label="Mines game board">
@@ -5075,6 +5448,7 @@ function MinesGrid({
         className={[
           "joker-mines-board-area",
           "joker-game-round-end-canvas",
+          isPageLoadEnter ? "is-page-load-enter" : "",
           roundStatus === "lost" ? "is-round-ending" : "",
         ]
           .filter(Boolean)
@@ -5085,7 +5459,14 @@ function MinesGrid({
         }}
       >
         <div
-          className={`joker-mines-grid ${gameActive ? "is-round-active" : ""} ${roundStatus === "lost" ? "is-round-lost" : ""}`.trim()}
+          className={[
+            "joker-mines-grid",
+            gameActive ? "is-round-active" : "",
+            roundStatus === "lost" ? "is-round-lost" : "",
+            isPageLoadEnter ? "is-page-load-enter" : "",
+          ]
+            .filter(Boolean)
+            .join(" ")}
         >
           {tiles.map((tile, index) => {
             const revealed = revealedTiles.includes(tile);
@@ -5093,11 +5474,18 @@ function MinesGrid({
             const tileData = board[index];
             const tileContent = getTileContent(tileData);
             const blockedByShield = Boolean(tileData?.blockedByShield);
+            const rowIndex = Math.floor(index / columns);
+            const cellStyle = isPageLoadEnter
+              ? {
+                  "--mines-load-row-delay": `${MINES_PAGE_LOAD_ROW_BASE_DELAY_MS + rowIndex * MINES_PAGE_LOAD_ROW_STAGGER_MS}ms`,
+                }
+              : undefined;
 
             return (
               <MinesBoardTile
                 key={tile}
                 blockedByShield={blockedByShield}
+                cellStyle={cellStyle}
                 freshReveal={freshReveal}
                 gameActive={gameActive}
                 multiplier={multiplier}
