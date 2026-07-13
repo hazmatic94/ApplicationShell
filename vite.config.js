@@ -7,6 +7,7 @@ export default defineConfig({
   base: '/showroom/gameshell/',
   server: {
     host: true,
+    allowedHosts: true,
     watch: {
       ignored: ['!**/DesignSystemGames/**'],
     },
