@@ -400,9 +400,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@joker/design-system@https://github.com/mjprod/DesignSystemGames.git#dev":
+"@joker/design-system@https://github.com/mjprod/DesignSystemGames.git#main":
   version: 0.1.62
-  resolution: "@joker/design-system@https://github.com/mjprod/DesignSystemGames.git#commit=33a223a4a06fd2853e826680b9e2d96268e93759"
+  resolution: "@joker/design-system@https://github.com/mjprod/DesignSystemGames.git#commit=76d91875afe39d25be0a10a28f7d39e975737f7f"
   peerDependencies:
     react: ">=18"
     react-dom: ">=18"
@@ -916,7 +916,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "game-shell@workspace:."
   dependencies:
-    "@joker/design-system": "https://github.com/mjprod/DesignSystemGames.git#dev"
+    "@joker/design-system": "https://github.com/mjprod/DesignSystemGames.git#main"
     "@vitejs/plugin-react": "npm:^4.3.4"
     lucide-react: "npm:^0.468.0"
     react: "npm:^18.3.1"
