@@ -7,6 +7,9 @@ import {
   CoinFlipBettingPanel as JokerCoinFlipBettingPanel,
   CoinProgression,
   CrashBettingPanel as JokerCrashBettingPanel,
+  FourDMinesBettingPanel,
+  FourDMinesTile,
+  FourDMinesWinTile,
   GameCardFace,
   GameCardMini,
   GameCardMiniFace,
@@ -27,6 +30,10 @@ import {
   WinModalCard,
   WinTile,
   getCoinReceiverLossTotalMs,
+  getFourDNumberPermutations,
+  isFourDNumberPermutationMatch,
+  isValidFourDNumber,
+  normalizeFourDNumber,
 } from "@joker/design-system";
 import infoIcon from "../assets/info.svg?url";
 import dynamiteIcon from "../assets/mines-bomb.png?url";
@@ -40,6 +47,11 @@ import coinFlipSound from "../assets/coin-flip.mp3?url";
 import cocoHutBackground from "../assets/cocohut-bg.png?url";
 import jokerCoinIcon from "../assets/jokerCoin.svg?url";
 const minTileAmount = 2;
+const minFourDMinesAmount = 1;
+const fourDMinesTileCount = 24;
+const maxFourDMinesAmount = fourDMinesTileCount - 1;
+const desktopFourDMinesGrid = { columns: 6, rows: 4 };
+const mobileFourDMinesGrid = { columns: 4, rows: 6 };
 const desktopMinesGrid = { columns: 5, rows: 5 };
 const mobileMinesGrid = { columns: 4, rows: 5 };
 const MINES_PAGE_LOAD_ANIMATION_MS = 460;
@@ -63,6 +75,17 @@ function createMinesAmountOptions(maxTileAmount) {
           <span>{count} Dynamite</span>
         </span>
       ),
+    };
+  });
+}
+
+function createFourDMinesAmountOptions() {
+  return Array.from({ length: maxFourDMinesAmount }, (_, index) => {
+    const count = index + 1;
+
+    return {
+      value: String(count),
+      label: `${count} ${count === 1 ? "Mine" : "Mines"}`,
     };
   });
 }
@@ -146,7 +169,14 @@ const cocoHutNavigationPreset = {
   openMenuLabel: "Originals",
   selectedValue: "coco-hut",
 };
+const fourDMinesNavigationPreset = {
+  defaultValue: "4d-mines",
+  game: { label: "4D Mines", icon: "4d-mines" },
+  openMenuLabel: "Originals",
+  selectedValue: "4d-mines",
+};
 const gameRouteMap = {
+  "4d-mines": "/4d-mines",
   "coco-hut": "/coco-hut",
   "coin-flip": "/coin-flip",
   crash: "/crash",
@@ -376,6 +406,108 @@ function createRoundBoard(minesCount, mineTiles) {
 
 function getTileContent(tile) {
   return tile?.content || "gold";
+}
+
+function clampFourDMinesAmount(value) {
+  const numericValue = Number(value);
+
+  if (!Number.isFinite(numericValue)) {
+    return minFourDMinesAmount;
+  }
+
+  return Math.min(Math.max(numericValue, minFourDMinesAmount), maxFourDMinesAmount);
+}
+
+function hasUniqueFourDDigits(value) {
+  const digits = normalizeFourDNumber(value).split("");
+
+  return digits.length === 4 && new Set(digits).size === 4;
+}
+
+function createFourDMineTiles(tileCount = fourDMinesTileCount) {
+  return Array.from({ length: tileCount }, (_, index) => index + 1);
+}
+
+function createFourDRoundBoard(mineCount, playerFourDNumber, tileCount = fourDMinesTileCount) {
+  const tileIndexes = Array.from({ length: tileCount }, (_, index) => index);
+  const shuffledIndexes = [...tileIndexes];
+
+  for (let index = shuffledIndexes.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1));
+    [shuffledIndexes[index], shuffledIndexes[swapIndex]] = [
+      shuffledIndexes[swapIndex],
+      shuffledIndexes[index],
+    ];
+  }
+
+  const dynamiteIndexes = new Set(shuffledIndexes.slice(0, mineCount));
+  const earlyShieldIndexes = tileIndexes.slice(0, 4);
+  const availableEarlyShieldIndexes = earlyShieldIndexes.filter(
+    (index) => !dynamiteIndexes.has(index)
+  );
+  const jokerIndexPool =
+    availableEarlyShieldIndexes.length > 0
+      ? availableEarlyShieldIndexes
+      : shuffledIndexes.filter((index) => !dynamiteIndexes.has(index));
+  const jokerIndex =
+    jokerIndexPool[Math.floor(Math.random() * jokerIndexPool.length)];
+
+  const winIndexes = tileIndexes.filter(
+    (index) => !dynamiteIndexes.has(index) && index !== jokerIndex
+  );
+  const shuffledPermutations = [...getFourDNumberPermutations(playerFourDNumber)];
+
+  for (let index = shuffledPermutations.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1));
+    [shuffledPermutations[index], shuffledPermutations[swapIndex]] = [
+      shuffledPermutations[swapIndex],
+      shuffledPermutations[index],
+    ];
+  }
+
+  const permutationByIndex = new Map();
+  winIndexes.forEach((index, permutationIndex) => {
+    permutationByIndex.set(
+      index,
+      shuffledPermutations[permutationIndex % shuffledPermutations.length]
+    );
+  });
+
+  return tileIndexes.map((index) => {
+    if (dynamiteIndexes.has(index)) {
+      return {
+        blockedByShield: false,
+        content: "dynamite",
+        fourDNumber: null,
+        id: index + 1,
+      };
+    }
+
+    if (index === jokerIndex) {
+      return {
+        blockedByShield: false,
+        content: "joker",
+        fourDNumber: null,
+        id: index + 1,
+      };
+    }
+
+    return {
+      blockedByShield: false,
+      content: "win",
+      fourDNumber: permutationByIndex.get(index),
+      id: index + 1,
+    };
+  });
+}
+
+function getFourDTileContent(tile) {
+  return tile?.content || "safe";
+}
+
+function countFourDSafeReveals(board, revealedTiles) {
+  return revealedTiles.filter((tile) => getFourDTileContent(board[tile - 1]) !== "dynamite")
+    .length;
 }
 
 function countSafeReveals(board, revealedTiles) {
@@ -801,6 +933,15 @@ export function App() {
       <>
         <MobileShellScrollFix />
         <CocoHutPage onGameChange={navigateToGame} />
+      </>
+    );
+  }
+
+  if (pathname === "/4d-mines") {
+    return (
+      <>
+        <MobileShellScrollFix />
+        <FourDMinesPage onGameChange={navigateToGame} />
       </>
     );
   }
@@ -1432,6 +1573,436 @@ function MinesPage({ onGameChange }) {
           revealedTiles={revealedTiles}
           roundStatus={roundStatus}
           rows={minesGrid.rows}
+          tiles={mineTiles}
+        />
+      </GameShell>
+    </>
+  );
+}
+
+function FourDMinesPage({ onGameChange }) {
+  const bettingPanelLayout = useGameShellBettingPanelLayout();
+  const fourDMinesGrid = bettingPanelLayout === "mobile" ? mobileFourDMinesGrid : desktopFourDMinesGrid;
+  const fourDMinesAmountOptions = useMemo(() => createFourDMinesAmountOptions(), []);
+  const mineTiles = useMemo(() => createFourDMineTiles(fourDMinesTileCount), []);
+  const [betAmount, setBetAmount] = useState("");
+  const [fourDNumber, setFourDNumber] = useState("");
+  const [bettingPanelKey, setBettingPanelKey] = useState(0);
+  const [activeFourDNumber, setActiveFourDNumber] = useState("");
+  const [balance, setBalance] = useState(150000);
+  const { deferWinCredit, applyDeferredWinCredit } = useDeferredWinCredit(setBalance);
+  const [board, setBoard] = useState([]);
+  const [message, setMessage] = useState("");
+  const [mines, setMines] = useState(String(minFourDMinesAmount));
+  const [revealedTiles, setRevealedTiles] = useState([]);
+  const [freshRevealedTiles, setFreshRevealedTiles] = useState([]);
+  const [roundStatus, setRoundStatus] = useState("idle");
+  const [cashoutResult, setCashoutResult] = useState(null);
+  const [lossResult, setLossResult] = useState(false);
+  const resultResetTimeout = useRef(null);
+
+  const activeMineCount = clampFourDMinesAmount(mines);
+  const safeRevealedCount = countFourDSafeReveals(board, revealedTiles);
+  const gameInPlay = roundStatus === "active";
+  const multiplier = calculateMultiplier(fourDMinesTileCount, activeMineCount, safeRevealedCount);
+  const nextMultiplier = calculateMultiplier(
+    fourDMinesTileCount,
+    activeMineCount,
+    safeRevealedCount + 1
+  );
+  const numericBetAmount = Number(betAmount) || 0;
+  const currentProfit =
+    roundStatus === "active" && safeRevealedCount > 0
+      ? numericBetAmount * multiplier
+      : 0;
+  const nextProfit = numericBetAmount * nextMultiplier;
+
+  useEffect(() => {
+    const openFourDMinesMenu = () => {
+      const gameMenu = [...document.querySelectorAll(".joker-product-rail-game-menu")].find(
+        (menu) =>
+          menu
+            .querySelector(".joker-product-rail-menu-label")
+            ?.textContent?.trim() === fourDMinesNavigationPreset.openMenuLabel
+      );
+      const trigger = gameMenu?.querySelector(".joker-product-rail-menu-trigger");
+
+      if (gameMenu && trigger && !gameMenu.classList.contains("is-open")) {
+        trigger.click();
+      }
+    };
+
+    openFourDMinesMenu();
+    const frameId = window.requestAnimationFrame(openFourDMinesMenu);
+
+    return () => window.cancelAnimationFrame(frameId);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (resultResetTimeout.current) {
+        window.clearTimeout(resultResetTimeout.current);
+      }
+    };
+  }, []);
+
+  function clearResultTimer() {
+    if (resultResetTimeout.current) {
+      window.clearTimeout(resultResetTimeout.current);
+      resultResetTimeout.current = null;
+    }
+  }
+
+  function dismissCashoutResult() {
+    setRoundStatus("idle");
+    setBoard([]);
+    setRevealedTiles([]);
+    setFreshRevealedTiles([]);
+    setCashoutResult(null);
+    setLossResult(false);
+    setMessage("");
+    setFourDNumber("");
+    setBettingPanelKey((currentKey) => currentKey + 1);
+    setActiveFourDNumber("");
+    resultResetTimeout.current = null;
+  }
+
+  function handleResultClose() {
+    const shouldResetCashout = Boolean(cashoutResult);
+
+    clearResultTimer();
+    setLossResult(false);
+
+    if (shouldResetCashout) {
+      dismissCashoutResult();
+      return;
+    }
+
+    setCashoutResult(null);
+  }
+
+  function handleTileClick(tile) {
+    if (roundStatus !== "active" || revealedTiles.includes(tile)) {
+      return;
+    }
+
+    const tileContent = getFourDTileContent(board[tile - 1]);
+
+    setRevealedTiles((currentTiles) =>
+      currentTiles.includes(tile) ? currentTiles : [...currentTiles, tile]
+    );
+    setFreshRevealedTiles((currentTiles) =>
+      currentTiles.includes(tile) ? currentTiles : [...currentTiles, tile]
+    );
+
+    if (tileContent === "dynamite") {
+      setRoundStatus("lost");
+      setLossResult(true);
+      setMessage("");
+
+      clearResultTimer();
+      resultResetTimeout.current = window.setTimeout(
+        dismissCashoutResult,
+        GAME_ROUND_END_RESET_MS
+      );
+    }
+
+    window.setTimeout(() => {
+      setFreshRevealedTiles((currentTiles) =>
+        currentTiles.filter((currentTile) => currentTile !== tile)
+      );
+    }, 1500);
+  }
+
+  function handleBetAction() {
+    if (roundStatus === "cashedOut") {
+      return;
+    }
+
+    if (gameInPlay) {
+      playSound(minesCashoutSound);
+      deferWinCredit(currentProfit);
+      setCashoutResult({
+        multiplier,
+        profit: currentProfit,
+      });
+      setRoundStatus("cashedOut");
+      setFreshRevealedTiles([]);
+      setLossResult(false);
+      setMessage("");
+
+      clearResultTimer();
+      resultResetTimeout.current = window.setTimeout(dismissCashoutResult, 3000);
+      return;
+    }
+
+    if (numericBetAmount <= 0 || numericBetAmount > balance) {
+      setMessage("Enter a valid bet amount");
+      return;
+    }
+
+    if (!isValidFourDNumber(fourDNumber) || !hasUniqueFourDDigits(fourDNumber)) {
+      setMessage("Enter a valid 4D number");
+      return;
+    }
+
+    const normalizedFourDNumber = normalizeFourDNumber(fourDNumber);
+    const nextBoard = createFourDRoundBoard(activeMineCount, normalizedFourDNumber);
+    playSound(minesPlaceBetSound);
+
+    clearResultTimer();
+
+    setBalance((currentBalance) => currentBalance - numericBetAmount);
+    setActiveFourDNumber(normalizedFourDNumber);
+    setBoard(nextBoard);
+    setRoundStatus("active");
+    setRevealedTiles([]);
+    setFreshRevealedTiles([]);
+    setCashoutResult(null);
+    setLossResult(false);
+    setMessage("");
+  }
+
+  return (
+    <>
+      <style>
+        {`
+          .joker-mines-stage {
+            display: grid;
+            width: 100%;
+            height: 100%;
+            min-height: 0;
+            overflow: hidden;
+            background: var(--joker-black-800);
+          }
+
+          @media (min-width: 1024px) {
+            .joker-game-shell--4d-mines .joker-game-shell-betting {
+              overflow-y: hidden;
+            }
+          }
+
+          .joker-mines-board-area {
+            --mines-board-padding: 32px;
+            --mines-grid-gap: var(--spacing-8);
+            position: relative;
+            display: grid;
+            height: 100%;
+            min-height: 0;
+            align-items: stretch;
+            justify-items: stretch;
+            padding: var(--mines-board-padding);
+            overflow: hidden;
+            container-type: size;
+            container-name: mines-board;
+          }
+
+          .joker-mines-grid {
+            display: grid;
+            width: 100%;
+            height: 100%;
+            min-width: 0;
+            min-height: 0;
+            grid-template-columns: repeat(var(--mines-grid-columns, 5), minmax(0, 1fr));
+            grid-template-rows: repeat(var(--mines-grid-rows, 5), minmax(0, 1fr));
+            gap: var(--mines-grid-gap);
+            overflow: visible;
+          }
+
+          .joker-game-shell .joker-navigation-mobile-content .joker-mines-stage {
+            height: 100%;
+            min-height: 100%;
+            overflow: visible;
+          }
+
+          .joker-game-shell .joker-navigation-mobile-content .joker-mines-board-area {
+            height: 100%;
+            min-height: 0;
+            overflow: visible;
+          }
+
+          @media (min-width: 1024px) {
+            .joker-mines-board-area {
+              --mines-board-padding: 40px;
+              place-items: center;
+            }
+
+            .joker-mines-grid {
+              --mines-grid-fit: min(100cqw, 100cqh);
+              width: var(--mines-grid-fit);
+              height: var(--mines-grid-fit);
+              max-width: 100%;
+              max-height: 100%;
+            }
+          }
+
+          @media (min-width: 1280px) {
+            .joker-mines-board-area {
+              --mines-board-padding: 48px;
+            }
+          }
+
+          @media (max-width: 1023px) {
+            .joker-mines-board-area {
+              --mines-board-padding: 8px;
+            }
+          }
+
+          .joker-mines-grid-cell {
+            position: relative;
+            display: grid;
+            width: 100%;
+            height: 100%;
+            min-width: 0;
+            min-height: 0;
+            overflow: visible;
+            place-items: stretch;
+          }
+
+          .joker-mines-grid-tile {
+            --game-tile-size: 100%;
+            width: 100%;
+            height: 100%;
+            max-width: 100%;
+            max-height: 100%;
+          }
+
+          .joker-mines-grid-cell .joker-mines-grid-tile {
+            align-self: stretch;
+            justify-self: stretch;
+          }
+
+          .joker-mines-grid.is-round-lost .joker-mines-grid-cell:not(.is-revealed) .joker-mines-grid-tile {
+            opacity: 0.34;
+            filter: saturate(0.48);
+            pointer-events: none;
+          }
+
+          .joker-mines-result-card {
+            position: absolute;
+            inset: 0;
+            z-index: 40;
+            display: grid;
+            place-items: center;
+            padding: var(--spacing-24);
+            pointer-events: auto;
+            transform: scale(0.96);
+            animation: joker-mines-cashout-pop 420ms var(--ease-standard) both;
+          }
+
+          .joker-mines-result-card > * {
+            max-width: min(500px, calc(100cqw - var(--spacing-48)));
+            box-shadow: 0 var(--spacing-24) var(--spacing-64) rgb(0 0 0 / 0.42);
+          }
+
+          @keyframes joker-mines-cashout-pop {
+            0% {
+              opacity: 0;
+              transform: translateY(var(--spacing-24)) scale(0.86);
+            }
+
+            48% {
+              opacity: 1;
+              transform: translateY(calc(var(--spacing-4) * -1)) scale(1.06);
+            }
+
+            72% {
+              opacity: 1;
+              transform: translateY(var(--spacing-2, 2px)) scale(0.98);
+            }
+
+            100% {
+              opacity: 1;
+              transform: translateY(0) scale(1);
+            }
+          }
+
+          .joker-mines-board-area.is-page-load-enter {
+            animation: joker-mines-load-board-fade 200ms var(--ease-out) both;
+          }
+
+          .joker-mines-grid.is-page-load-enter .joker-mines-grid-cell {
+            animation: joker-mines-load-tile-reveal 320ms var(--ease-out) var(--mines-load-row-delay, 32ms) both;
+          }
+
+          .joker-mines-grid.is-page-load-enter .joker-mines-grid-tile:hover {
+            transform: none;
+          }
+
+          @keyframes joker-mines-load-board-fade {
+            from {
+              opacity: 0;
+            }
+
+            to {
+              opacity: 1;
+            }
+          }
+
+          @keyframes joker-mines-load-tile-reveal {
+            from {
+              opacity: 0;
+              transform: translateY(10px);
+            }
+
+            to {
+              opacity: 1;
+              transform: translateY(0);
+            }
+          }
+
+          @media (prefers-reduced-motion: reduce) {
+            .joker-mines-board-area.is-page-load-enter,
+            .joker-mines-grid.is-page-load-enter .joker-mines-grid-cell {
+              animation: none;
+              opacity: 1;
+              transform: none;
+            }
+          }
+
+          ${GAME_ROUND_END_STYLES}
+        `}
+      </style>
+      <GameShell
+        balance={formatBalance(balance)}
+        className="joker-game-shell--4d-mines"
+        defaultValue={fourDMinesNavigationPreset.defaultValue}
+        game={fourDMinesNavigationPreset.game}
+        onValueChange={onGameChange}
+        value={fourDMinesNavigationPreset.selectedValue}
+        bettingPanel={
+          <PackagedFourDMinesBettingPanel
+            key={bettingPanelKey}
+            betAmount={betAmount}
+            currentProfit={currentProfit}
+            gameInPlay={gameInPlay}
+            layout={bettingPanelLayout}
+            mines={mines}
+            minesAmountOptions={fourDMinesAmountOptions}
+            multiplier={multiplier}
+            nextMultiplier={nextMultiplier}
+            nextProfit={nextProfit}
+            onBetAmountChange={setBetAmount}
+            onFourDNumberChange={setFourDNumber}
+            onMinesChange={setMines}
+            onPlaceBet={handleBetAction}
+          />
+        }
+      >
+        <FourDMinesGrid
+          board={board}
+          cashoutResult={cashoutResult}
+          columns={fourDMinesGrid.columns}
+          freshRevealedTiles={freshRevealedTiles}
+          lossResult={lossResult}
+          multiplier={multiplier}
+          onResultClose={handleResultClose}
+          onWinCoinsLand={applyDeferredWinCredit}
+          onTileClick={handleTileClick}
+          playerFourDNumber={activeFourDNumber}
+          revealedTiles={revealedTiles}
+          roundStatus={roundStatus}
+          rows={fourDMinesGrid.rows}
           tiles={mineTiles}
         />
       </GameShell>
@@ -5520,6 +6091,204 @@ function MinesGrid({
   );
 }
 
+function FourDMinesBoardTile({
+  cellStyle,
+  freshReveal,
+  gameActive,
+  multiplier,
+  onClick,
+  playerFourDNumber,
+  revealed,
+  stackIndex,
+  tile,
+  tileData,
+}) {
+  const [showRevealed, setShowRevealed] = useState(revealed && !freshReveal);
+  const tileContent = getFourDTileContent(tileData);
+  const tileClassName = "joker-mines-grid-tile";
+
+  useEffect(() => {
+    if (!revealed) {
+      setShowRevealed(false);
+      return;
+    }
+
+    if (freshReveal) {
+      setShowRevealed(false);
+      const frameId = window.requestAnimationFrame(() => {
+        setShowRevealed(true);
+      });
+      return () => window.cancelAnimationFrame(frameId);
+    }
+
+    setShowRevealed(true);
+  }, [freshReveal, revealed]);
+
+  const cellClassName = [
+    "joker-mines-grid-cell",
+    revealed ? "is-revealed" : "",
+    freshReveal ? "is-fresh-reveal" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  if (!revealed) {
+    return (
+      <div className={cellClassName} style={cellStyle}>
+        <FourDMinesTile
+          aria-hidden={false}
+          aria-label={`Reveal tile ${tile}`}
+          className={tileClassName}
+          onClick={gameActive ? onClick : undefined}
+          role="button"
+          selected={gameActive}
+          stackIndex={stackIndex}
+          tabIndex={gameActive ? 0 : -1}
+        />
+      </div>
+    );
+  }
+
+  const revealProps = {
+    "aria-hidden": false,
+    "aria-label": `Tile ${tile}: ${tileContent}`,
+    className: tileClassName,
+    defaultRevealed: false,
+    revealed: showRevealed,
+    stackIndex,
+  };
+
+  let tileNode;
+  if (tileContent === "dynamite") {
+    tileNode = <LossTile {...revealProps} soundOnReveal />;
+  } else if (tileContent === "win") {
+    const tileNumber = tileData?.fourDNumber ?? "0000";
+    const isPermutationMatch = isFourDNumberPermutationMatch(tileNumber, playerFourDNumber);
+
+    tileNode = (
+      <FourDMinesWinTile
+        {...revealProps}
+        number={playerFourDNumber || tileNumber}
+        displayNumber={tileNumber}
+        multiplier={
+          freshReveal && isPermutationMatch ? `${multiplier.toFixed(2)}x` : undefined
+        }
+      />
+    );
+  } else {
+    tileNode = <SafeTile {...revealProps} />;
+  }
+
+  return (
+    <div className={cellClassName} style={cellStyle}>
+      {tileNode}
+    </div>
+  );
+}
+
+function FourDMinesGrid({
+  board,
+  cashoutResult,
+  columns,
+  freshRevealedTiles,
+  lossResult,
+  multiplier,
+  onResultClose,
+  onWinCoinsLand,
+  onTileClick,
+  playerFourDNumber,
+  revealedTiles,
+  roundStatus,
+  rows,
+  tiles,
+}) {
+  const gameActive = roundStatus === "active";
+  const [isPageLoadEnter, setIsPageLoadEnter] = useState(true);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setIsPageLoadEnter(false);
+    }, MINES_PAGE_LOAD_ANIMATION_MS);
+
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  return (
+    <section className="joker-mines-stage" aria-label="4D Mines game board">
+      <div
+        className={[
+          "joker-mines-board-area",
+          "joker-game-round-end-canvas",
+          isPageLoadEnter ? "is-page-load-enter" : "",
+          roundStatus === "lost" ? "is-round-ending" : "",
+        ]
+          .filter(Boolean)
+          .join(" ")}
+        style={{
+          "--mines-grid-columns": columns,
+          "--mines-grid-rows": rows,
+        }}
+      >
+        <div
+          className={[
+            "joker-mines-grid",
+            gameActive ? "is-round-active" : "",
+            roundStatus === "lost" ? "is-round-lost" : "",
+            isPageLoadEnter ? "is-page-load-enter" : "",
+          ]
+            .filter(Boolean)
+            .join(" ")}
+        >
+          {tiles.map((tile, index) => {
+            const revealed = revealedTiles.includes(tile);
+            const freshReveal = freshRevealedTiles.includes(tile);
+            const tileData = board[index];
+            const rowIndex = Math.floor(index / columns);
+            const cellStyle = isPageLoadEnter
+              ? {
+                  "--mines-load-row-delay": `${MINES_PAGE_LOAD_ROW_BASE_DELAY_MS + rowIndex * MINES_PAGE_LOAD_ROW_STAGGER_MS}ms`,
+                }
+              : undefined;
+
+            return (
+              <FourDMinesBoardTile
+                key={tile}
+                cellStyle={cellStyle}
+                freshReveal={freshReveal}
+                gameActive={gameActive}
+                multiplier={multiplier}
+                onClick={() => onTileClick(tile)}
+                playerFourDNumber={playerFourDNumber}
+                revealed={revealed}
+                stackIndex={tiles.length - index}
+                tile={tile}
+                tileData={tileData}
+              />
+            );
+          })}
+        </div>
+        <GameRoundEndTransition
+          active={roundStatus === "lost"}
+          animationKey={`4d-mines-loss-${revealedTiles.join("-")}`}
+        />
+        {cashoutResult && (
+          <div className="joker-mines-result-card" role="status" aria-live="polite">
+            <WinModalCard
+              title="Cashout Successful"
+              amountWon={formatCurrency(cashoutResult.profit)}
+              currency={null}
+              message="Your winnings from this round have been added to your balance."
+              closeLabel="Close"
+              onCoinsLand={onWinCoinsLand}
+              onClose={onResultClose}
+            />
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
 function PackagedMinesBettingPanel({
   betAmount,
   bettingMode,
@@ -5575,6 +6344,58 @@ function PackagedMinesBettingPanel({
       onMinesAmountChange={handleMinesAmountChange}
       numberOfBets={numberOfBets}
       onNumberOfBetsChange={handleNumberOfBetsChange}
+    />
+  );
+}
+
+function PackagedFourDMinesBettingPanel({
+  betAmount,
+  currentProfit,
+  gameInPlay,
+  layout = "desktop",
+  mines,
+  minesAmountOptions,
+  multiplier,
+  nextMultiplier,
+  nextProfit,
+  onBetAmountChange,
+  onFourDNumberChange,
+  onMinesChange,
+  onPlaceBet,
+}) {
+  function handleBetAmountChange(event) {
+    onBetAmountChange(event.currentTarget.value.replace(/[^\d.]/g, ""));
+  }
+
+  function handleMinesAmountChange(nextValue) {
+    onMinesChange(String(clampFourDMinesAmount(nextValue)));
+  }
+
+  function handleFourDNumberChange(nextValue) {
+    onFourDNumberChange(normalizeFourDNumber(nextValue));
+  }
+
+  return (
+    <FourDMinesBettingPanel
+      layout={layout}
+      onPlaceBet={onPlaceBet}
+      onCashout={onPlaceBet}
+      inGame={gameInPlay}
+      cashoutLabel="Cashout"
+      inGameCardProps={{
+        currentProfit: formatCurrency(currentProfit),
+        nextValue: formatCurrency(nextProfit),
+        currentMultiplier: `${multiplier.toFixed(2)}x`,
+        nextMultiplier: `${nextMultiplier.toFixed(2)}x`,
+      }}
+      betAmount={betAmount}
+      onBetAmountChange={handleBetAmountChange}
+      disablePlaceBetUntilBetAmount
+      minesAmountOptions={minesAmountOptions}
+      defaultMinesAmount={String(minFourDMinesAmount)}
+      minesAmount={mines}
+      onMinesAmountChange={handleMinesAmountChange}
+      onFourDNumberChange={handleFourDNumberChange}
     />
   );
 }
