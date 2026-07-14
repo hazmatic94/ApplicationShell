@@ -402,11 +402,11 @@ __metadata:
 
 "@joker/design-system@file:../Design System::locator=game-shell%40workspace%3A.":
   version: 0.1.62
-  resolution: "@joker/design-system@file:../Design System#../Design System::hash=89f7ce&locator=game-shell%40workspace%3A."
+  resolution: "@joker/design-system@file:../Design System#../Design System::hash=a760b4&locator=game-shell%40workspace%3A."
   peerDependencies:
     react: ">=18"
     react-dom: ">=18"
-  checksum: 10c0/0ae2c4b8aa874927389acaf57dd19be0851af3a0569d7074d2474d850f50cbd48ac65e0da33b93102bdade3b8e991bdcbba2dbb898be55e9487f0650ccf5fd0c
+  checksum: 10c0/ca84bfb475a0898d376c17f21fbcbbd1b96a399883e5d0076ecb884afd3d914951ce104d02c9ad346d0b0f60281152e6754f495488ff8f82215301232b3ee23d
   languageName: node
   linkType: hard
 
