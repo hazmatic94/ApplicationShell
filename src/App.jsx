@@ -25,17 +25,20 @@ import {
   MinesTile,
   MobileHiLoOddsGroup,
   OddsButtonGroup,
+  RouletteBettingPanel as JokerRouletteBettingPanel,
+  RouletteWheel,
   SafeTile,
   SkipButton,
   WinModalCard,
   WinTile,
   getCoinReceiverLossTotalMs,
+  getPocketColor,
+  useRouletteWheelSpin,
   getFourDNumberPermutations,
   isFourDNumberPermutationMatch,
   isValidFourDNumber,
   normalizeFourDNumber,
 } from "@joker/design-system";
-import infoIcon from "../assets/info.svg?url";
 import dynamiteIcon from "../assets/mines-bomb.png?url";
 import shieldIcon from "../assets/mines-shield.png?url";
 import minesBombSound from "../assets/mines-bomb.mp3?url";
@@ -175,6 +178,12 @@ const fourDMinesNavigationPreset = {
   openMenuLabel: "Originals",
   selectedValue: "4d-mines",
 };
+const rouletteNavigationPreset = {
+  defaultValue: "roulette",
+  game: { label: "Roulette", icon: "roulette" },
+  openMenuLabel: "Originals",
+  selectedValue: "roulette",
+};
 const gameRouteMap = {
   "4d-mines": "/4d-mines",
   "coco-hut": "/coco-hut",
@@ -182,7 +191,49 @@ const gameRouteMap = {
   crash: "/crash",
   hilo: "/hilo",
   mines: "/",
+  roulette: "/roulette",
 };
+
+function getRouletteOddsOptions(betAmount) {
+  const stake = Number(betAmount) || 0;
+
+  return [
+    {
+      value: "red",
+      label: "Bet Red",
+      sideIcon: "red",
+      odds: stake > 0 ? formatJkcAmount(stake) : "1:1",
+    },
+    {
+      value: "black",
+      label: "Bet Black",
+      sideIcon: "black",
+      odds: stake > 0 ? formatJkcAmount(stake) : "1:1",
+    },
+    {
+      value: "green",
+      label: "Bet 0",
+      sideIcon: "green",
+      odds: stake > 0 ? formatJkcAmount(stake * 35) : "35:1",
+    },
+  ];
+}
+
+function didRouletteBetWin(betType, resultNumber) {
+  if (betType === "green") {
+    return resultNumber === 0;
+  }
+
+  return getPocketColor(resultNumber) === betType;
+}
+
+function formatRouletteResultLabel(resultNumber, resultColor) {
+  if (resultNumber === 0) {
+    return "0";
+  }
+
+  return `${resultNumber} ${resultColor}`;
+}
 
 function calculateCoinFlipMultiplier(winCount) {
   if (winCount <= 0) {
@@ -919,6 +970,15 @@ export function App() {
     );
   }
 
+  if (pathname === "/roulette") {
+    return (
+      <>
+        <MobileShellScrollFix />
+        <RoulettePage onGameChange={navigateToGame} />
+      </>
+    );
+  }
+
   if (pathname === "/coin-flip") {
     return (
       <>
@@ -1172,16 +1232,6 @@ function MinesPage({ onGameChange }) {
             min-height: 0;
             overflow: hidden;
             background: var(--joker-black-800);
-          }
-
-          .joker-game-shell .joker-game-header-info {
-            display: inline-grid;
-            place-items: center;
-            background: url("${infoIcon}") center / contain no-repeat;
-          }
-
-          .joker-game-shell .joker-game-header-info svg {
-            opacity: 0;
           }
 
           .joker-game-shell .joker-navigation-body {
@@ -2330,16 +2380,6 @@ function HiloPage({ onGameChange }) {
     <>
       <style>
         {`
-          .joker-game-shell .joker-game-header-info {
-            display: inline-grid;
-            place-items: center;
-            background: url("${infoIcon}") center / contain no-repeat;
-          }
-
-          .joker-game-shell .joker-game-header-info svg {
-            opacity: 0;
-          }
-
           .joker-game-shell .joker-navigation-body {
             max-width: none;
             justify-self: center;
@@ -4517,6 +4557,500 @@ function CrashPage({ onGameChange }) {
   );
 }
 
+const ROULETTE_WHEEL_NATIVE_SIZE = {
+  desktop: 760,
+  mobile: 440,
+};
+const ROULETTE_ROUND_RESET_MS = 2400;
+
+
+function RouletteWheelStage({ className = "", onSpinComplete, spinRequestId, wheelSize }) {
+  const {
+    wheelRotation,
+    ballPosition,
+    ballBounceScale,
+    ballBounceLift,
+    showBall,
+    targetPocket,
+    celebratingPocket,
+    spin,
+  } = useRouletteWheelSpin({
+    onSpinComplete: (result) => onSpinComplete?.(result.targetPocket.value),
+  });
+  const handledSpinRequestRef = useRef(0);
+
+  useEffect(() => {
+    if (!spinRequestId || spinRequestId === handledSpinRequestRef.current) {
+      return;
+    }
+
+    handledSpinRequestRef.current = spinRequestId;
+    spin();
+  }, [spinRequestId, spin]);
+
+  return (
+    <div className={["joker-roulette-wheel-stage", className].filter(Boolean).join(" ")}>
+      <RouletteWheel
+        size={wheelSize}
+        wheelRotation={wheelRotation}
+        ballPosition={ballPosition}
+        ballBounceScale={ballBounceScale}
+        ballBounceLift={ballBounceLift}
+        showBall={showBall}
+        showDebugVisual={
+          import.meta.env.DEV &&
+          new URLSearchParams(window.location.search).has("rouletteDebug")
+        }
+        targetPocket={targetPocket}
+        celebratingPocket={celebratingPocket}
+      />
+    </div>
+  );
+}
+
+function RoulettePage({ onGameChange }) {
+  const bettingPanelLayout = useGameShellBettingPanelLayout();
+  const [betAmount, setBetAmount] = useState("");
+  const [selectedOdds, setSelectedOdds] = useState("red");
+  const [balance, setBalance] = useState(150000);
+  const { deferWinCredit, applyDeferredWinCredit } = useDeferredWinCredit(setBalance);
+  const [inGame, setInGame] = useState(false);
+  const [spinRequestId, setSpinRequestId] = useState(0);
+  const [roundResult, setRoundResult] = useState(null);
+  const [roundEnding, setRoundEnding] = useState(false);
+  const activeStakeRef = useRef(0);
+  const activeOddsRef = useRef("red");
+  const numericBetAmount = Number(betAmount) || 0;
+  const hasBetAmount = numericBetAmount > 0;
+  const rouletteWheelNativeSize =
+    bettingPanelLayout === "mobile"
+      ? ROULETTE_WHEEL_NATIVE_SIZE.mobile
+      : ROULETTE_WHEEL_NATIVE_SIZE.desktop;
+  const rouletteOddsOptions = useMemo(
+    () => (hasBetAmount ? getRouletteOddsOptions(betAmount) : undefined),
+    [betAmount, hasBetAmount]
+  );
+
+  useEffect(() => {
+    if (!roundResult) {
+      return undefined;
+    }
+
+    const timer = window.setTimeout(() => {
+      setRoundResult(null);
+      setRoundEnding(false);
+      setInGame(false);
+      activeStakeRef.current = 0;
+    }, ROULETTE_ROUND_RESET_MS);
+
+    return () => window.clearTimeout(timer);
+  }, [roundResult]);
+
+  function handleRouletteResultClose() {
+    setRoundResult(null);
+    setRoundEnding(false);
+    setInGame(false);
+    activeStakeRef.current = 0;
+  }
+
+  function handleSpinComplete(resultNumber) {
+    const stake = activeStakeRef.current;
+    const betType = activeOddsRef.current;
+    const resultColor = getPocketColor(resultNumber);
+    const didWin = didRouletteBetWin(betType, resultNumber);
+
+    if (didWin) {
+      const multiplier = betType === "green" ? 36 : 2;
+      const payout = stake * multiplier;
+
+      setRoundResult({
+        type: "win",
+        amount: payout,
+        number: resultNumber,
+        color: resultColor,
+      });
+      deferWinCredit(payout);
+    } else {
+      setRoundResult({
+        type: "loss",
+        number: resultNumber,
+        color: resultColor,
+      });
+    }
+
+    setRoundEnding(true);
+  }
+
+  function handlePlaceBet() {
+    if (!hasBetAmount || !selectedOdds || inGame) {
+      return;
+    }
+
+    if (numericBetAmount > balance) {
+      return;
+    }
+
+    activeStakeRef.current = numericBetAmount;
+    activeOddsRef.current = selectedOdds;
+    setBalance((currentBalance) => currentBalance - numericBetAmount);
+    setRoundResult(null);
+    setRoundEnding(false);
+    setInGame(true);
+    setSpinRequestId((currentRequestId) => currentRequestId + 1);
+  }
+
+  return (
+    <>
+      <style>
+        {`
+          .joker-game-shell--roulette .joker-game-shell-empty-stage {
+            position: relative;
+            min-height: 0;
+            overflow: hidden;
+          }
+
+          .joker-game-shell--roulette .joker-game-inner-canvas {
+            overflow: hidden;
+          }
+
+          .joker-game-shell--roulette .joker-game-shell-empty-stage > .joker-roulette-stage {
+            min-height: 0;
+            height: 100%;
+          }
+
+          .joker-roulette-stage {
+            container-type: size;
+            position: relative;
+            display: grid;
+            width: 100%;
+            height: 100%;
+            min-height: 0;
+            box-sizing: border-box;
+            --roulette-betting-divider-offset: calc(
+              var(--spacing-32) + calc(var(--body-12) * var(--text-body-line-height)) +
+                var(--spacing-8) + var(--input-control-height) + var(--spacing-24)
+            );
+            --roulette-streak-inset: var(--spacing-24);
+            --roulette-sync-streak-rail-height: var(--roulette-betting-divider-offset);
+            --roulette-sync-top-band-height: calc(
+              var(--roulette-sync-streak-rail-height) + var(--roulette-streak-inset)
+            );
+            --roulette-wheel-native-size: ${ROULETTE_WHEEL_NATIVE_SIZE.desktop}px;
+            --roulette-wheel-visible-scale: 1;
+            --roulette-wheel-scale-boost: 1.4;
+            --roulette-wheel-scale-max: 1.34;
+            --roulette-wheel-lift: 35%;
+            --roulette-wheel-lift-offset: 0px;
+            --roulette-wheel-vignette-size: 200px;
+            padding: 0;
+            overflow: hidden;
+            background: var(--joker-black-800);
+          }
+
+          .joker-roulette-main-area {
+            container-type: size;
+            display: flex;
+            width: 100%;
+            height: 100%;
+            min-width: 0;
+            min-height: 0;
+            align-items: stretch;
+            justify-content: flex-start;
+            overflow: hidden;
+          }
+
+          .joker-roulette-game-frame {
+            position: relative;
+            display: flex;
+            width: 100%;
+            height: 100%;
+            max-height: 100cqh;
+            box-sizing: border-box;
+            min-width: 0;
+            min-height: 0;
+            flex-direction: column;
+            align-items: stretch;
+            justify-content: flex-start;
+            gap: 0;
+            overflow: hidden;
+            padding: 0;
+            margin-inline: auto;
+          }
+
+          .joker-roulette-game-frame__top {
+            display: flex;
+            width: 100%;
+            flex: 0 0 auto;
+            flex-direction: column;
+            align-items: flex-start;
+            box-sizing: border-box;
+            padding: var(--roulette-streak-inset) 0 0 var(--roulette-streak-inset);
+            overflow: hidden;
+            background: var(--joker-black-800);
+          }
+
+          @media (min-width: 1024px) {
+            .joker-roulette-game-frame__top {
+              position: relative;
+              flex: 0 0 auto;
+              height: var(--roulette-sync-top-band-height);
+              min-height: var(--roulette-sync-top-band-height);
+              max-height: var(--roulette-sync-top-band-height);
+              padding: var(--roulette-streak-inset) 0 0 var(--roulette-streak-inset);
+              justify-content: flex-start;
+            }
+          }
+
+          .joker-roulette-streak-rail {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            width: 100%;
+            min-width: 0;
+            min-height: var(--roulette-sync-streak-rail-height);
+            flex: 0 0 auto;
+            align-items: flex-start;
+            justify-content: flex-start;
+            padding: 0;
+            overflow: hidden;
+          }
+
+          .joker-roulette-game-frame__bottom {
+            display: flex;
+            width: 100%;
+            flex: 1 1 auto;
+            flex-direction: column;
+            align-items: stretch;
+            justify-content: stretch;
+            gap: 0;
+            min-height: 0;
+            padding: 0;
+            box-sizing: border-box;
+            overflow: hidden;
+            background: var(--joker-black-800);
+          }
+
+          .joker-roulette-wheel-viewport {
+            position: relative;
+            display: flex;
+            width: 100%;
+            height: 100%;
+            min-height: 0;
+            flex: 1 1 auto;
+            align-items: flex-end;
+            justify-content: center;
+            overflow: hidden;
+            background: var(--joker-black-800);
+            container-type: size;
+            container-name: roulette-wheel;
+            --roulette-wheel-visible-scale: min(
+              calc((100cqw * 1.22) / var(--roulette-wheel-native-size)),
+              calc((100cqh * 2.35) / var(--roulette-wheel-native-size)),
+              var(--roulette-wheel-scale-max)
+            );
+          }
+
+          .joker-roulette-wheel-vignette {
+            position: absolute;
+            inset: 0;
+            z-index: 3;
+            pointer-events: none;
+            background:
+              linear-gradient(
+                90deg,
+                #151515 0%,
+                rgb(21 21 21 / 80%) 49%,
+                rgb(21 21 21 / 0%) 100%
+              )
+              left center / var(--roulette-wheel-vignette-size) 100% no-repeat,
+              linear-gradient(
+                270deg,
+                #151515 0%,
+                rgb(21 21 21 / 80%) 49%,
+                rgb(21 21 21 / 0%) 100%
+              )
+              right center / var(--roulette-wheel-vignette-size) 100% no-repeat,
+              linear-gradient(
+                0deg,
+                #151515 0%,
+                rgb(21 21 21 / 80%) 49%,
+                rgb(21 21 21 / 0%) 100%
+              )
+              center bottom / 100% var(--roulette-wheel-vignette-size) no-repeat;
+          }
+
+          .joker-roulette-wheel-mount {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            flex: 0 0 auto;
+            width: var(--roulette-wheel-native-size);
+            height: var(--roulette-wheel-native-size);
+            align-items: center;
+            justify-content: center;
+            transform: translateY(
+                calc(var(--roulette-wheel-lift, 35%) + var(--roulette-wheel-lift-offset, 0px))
+              )
+              scale(calc(var(--roulette-wheel-visible-scale, 1) * var(--roulette-wheel-scale-boost, 1.4)));
+            transform-origin: center center;
+          }
+
+          .joker-roulette-wheel-stage {
+            display: flex;
+            width: 100%;
+            height: 100%;
+            align-items: center;
+            justify-content: center;
+          }
+
+          .joker-roulette-wheel-viewport,
+          .joker-roulette-wheel-mount,
+          .joker-roulette-wheel-stage,
+          .joker-roulette-wheel-stage .joker-roulette-wheel {
+            overflow: hidden;
+          }
+
+          .joker-roulette-result-overlay {
+            position: absolute;
+            inset: 0;
+            z-index: 40;
+            display: grid;
+            place-items: center;
+            padding: var(--spacing-24);
+            pointer-events: none;
+          }
+
+          .joker-roulette-result-overlay .joker-win-modal-card {
+            pointer-events: auto;
+          }
+
+          @media (min-width: 1024px) {
+            .joker-roulette-stage {
+              --roulette-wheel-lift: 50%;
+              --roulette-wheel-lift-offset: 60px;
+            }
+
+            .joker-roulette-wheel-viewport {
+              --roulette-wheel-visible-scale: min(
+                calc((100cqw * 1.18) / var(--roulette-wheel-native-size)),
+                calc((100cqh * 2.42) / var(--roulette-wheel-native-size)),
+                var(--roulette-wheel-scale-max)
+              );
+            }
+
+            .joker-roulette-wheel-mount {
+              --roulette-wheel-visible-scale: max(0.86, var(--roulette-wheel-visible-scale, 1));
+            }
+          }
+
+          @media (max-width: 1023px) {
+            .joker-roulette-stage {
+              --roulette-wheel-native-size: ${ROULETTE_WHEEL_NATIVE_SIZE.mobile}px;
+              --roulette-wheel-scale-max: 1.28;
+              --roulette-wheel-lift: 33%;
+            }
+
+            .joker-roulette-game-frame {
+              position: relative;
+              min-height: 0;
+            }
+
+            .joker-roulette-game-frame__bottom {
+              flex: 1 1 auto;
+              min-height: 0;
+            }
+
+            .joker-roulette-wheel-viewport {
+              --roulette-wheel-visible-scale: min(
+                calc((100cqw * 1.26) / var(--roulette-wheel-native-size)),
+                calc((100cqh * 2.45) / var(--roulette-wheel-native-size)),
+                var(--roulette-wheel-scale-max)
+              );
+            }
+
+            .joker-roulette-wheel-mount {
+              --roulette-wheel-visible-scale: max(0.9, var(--roulette-wheel-visible-scale, 1));
+            }
+          }
+
+          ${GAME_ROUND_END_STYLES}
+        `}
+      </style>
+      <GameShell
+        balance={formatBalance(balance)}
+        className="joker-game-shell--roulette"
+        defaultValue={rouletteNavigationPreset.defaultValue}
+        game={rouletteNavigationPreset.game}
+        onValueChange={onGameChange}
+        value={rouletteNavigationPreset.selectedValue}
+        bettingPanel={
+          <PackagedRouletteBettingPanel
+            betAmount={betAmount}
+            isSpinning={inGame}
+            layout={bettingPanelLayout}
+            oddsOptions={rouletteOddsOptions}
+            onBetAmountChange={setBetAmount}
+            onOddsChange={setSelectedOdds}
+            onPlaceBet={handlePlaceBet}
+            selectedOdds={selectedOdds}
+          />
+        }
+      >
+        <section className="joker-roulette-stage" aria-label="Roulette game board">
+          <div className="joker-roulette-main-area">
+            <div
+              className={[
+                "joker-roulette-game-frame",
+                "joker-game-round-end-canvas",
+                roundEnding && roundResult?.type === "loss" ? "is-round-ending" : "",
+              ]
+                .filter(Boolean)
+                .join(" ")}
+              aria-label="Roulette game area"
+            >
+              <div className="joker-roulette-game-frame__top">
+                <div className="joker-roulette-streak-rail" aria-label="Roulette streak" />
+              </div>
+              <div className="joker-roulette-game-frame__bottom">
+                <div className="joker-roulette-wheel-viewport" aria-label="Roulette wheel">
+                  <div className="joker-roulette-wheel-vignette" aria-hidden="true" />
+                  <div className="joker-roulette-wheel-mount">
+                    <RouletteWheelStage
+                      onSpinComplete={handleSpinComplete}
+                      spinRequestId={spinRequestId}
+                      wheelSize={rouletteWheelNativeSize}
+                    />
+                  </div>
+                </div>
+              </div>
+              <GameRoundEndTransition
+                active={roundEnding && roundResult?.type === "loss"}
+                animationKey={`roulette-loss-${spinRequestId}`}
+              />
+              {roundResult?.type === "win" ? (
+                <div className="joker-roulette-result-overlay" role="status" aria-live="polite">
+                  <WinModalCard
+                    className="joker-roulette-result-card"
+                    title="You Won"
+                    amountWon={formatCurrency(roundResult.amount)}
+                    currency={null}
+                    message={`${formatRouletteResultLabel(roundResult.number, roundResult.color)} — your ${
+                      activeOddsRef.current === "green" ? "0" : activeOddsRef.current
+                    } bet paid out.`}
+                    closeLabel="Close"
+                    onCoinsLand={applyDeferredWinCredit}
+                    onClose={handleRouletteResultClose}
+                  />
+                </div>
+              ) : null}
+            </div>
+          </div>
+        </section>
+      </GameShell>
+    </>
+  );
+}
+
 const COIN_FLIP_PROGRESSION_RECEIVER_SIZE = 72;
 const COIN_FLIP_PROGRESSION_COIN_SIZE = Math.round(COIN_FLIP_PROGRESSION_RECEIVER_SIZE * 0.76);
 const COIN_FLIP_PAGE_LOAD_ANIMATION_MS = 480;
@@ -6589,6 +7123,45 @@ function PackagedCocoHutBettingPanel({
       onBetAmountChange={handleBetAmountChange}
       onDifficultyChange={onDifficultyChange}
       onPlaceBet={onPlaceBet}
+      disablePlaceBetUntilBetAmount
+    />
+  );
+}
+
+function PackagedRouletteBettingPanel({
+  betAmount,
+  isSpinning = false,
+  layout = "desktop",
+  oddsOptions,
+  onBetAmountChange,
+  onOddsChange,
+  onPlaceBet,
+  selectedOdds,
+}) {
+  function handleBetAmountChange(event) {
+    if (isSpinning) return;
+
+    onBetAmountChange(event.currentTarget.value.replace(/\D/g, ""));
+  }
+
+  function handleOddsChange(value, option) {
+    if (isSpinning) return;
+
+    onOddsChange?.(value, option);
+  }
+
+  return (
+    <JokerRouletteBettingPanel
+      layout={layout}
+      betAmount={betAmount}
+      selectedOddsValue={selectedOdds}
+      defaultSelectedOddsValue="red"
+      onBetAmountChange={handleBetAmountChange}
+      onOddsValueChange={handleOddsChange}
+      onPlaceBet={onPlaceBet}
+      oddsOptions={oddsOptions}
+      oddsLayout="stacked"
+      showOdds
       disablePlaceBetUntilBetAmount
     />
   );
