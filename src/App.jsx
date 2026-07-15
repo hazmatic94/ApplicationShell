@@ -26,10 +26,13 @@ import {
   MobileHiLoOddsGroup,
   OddsButtonGroup,
   RouletteBettingPanel as JokerRouletteBettingPanel,
+  RouletteGameHeaderRail,
   RouletteWheel,
+  RouletteWheelWin,
   SafeTile,
   SkipButton,
   WinModalCard,
+  WinStreakRow,
   WinTile,
   getCoinReceiverLossTotalMs,
   getPocketColor,
@@ -65,6 +68,7 @@ const minesRtp = 0.96; // 96% RTP applied to fair multipliers
 const coinFlipRtp = 0.96;
 const coinFlipMaxWins = 4;
 const coinFlipFairProbability = 0.5;
+const rouletteRtp = 0.96;
 
 function createMinesAmountOptions(maxTileAmount) {
   return Array.from({ length: maxTileAmount - minTileAmount + 1 }, (_, index) => {
@@ -194,27 +198,63 @@ const gameRouteMap = {
   roulette: "/roulette",
 };
 
-function getRouletteOddsOptions(betAmount) {
+function getRouletteFairBaseMultiplier(betType) {
+  return betType === "green" ? 36 : 2;
+}
+
+function getRouletteWinBaseMultiplier(betType) {
+  return getRouletteFairBaseMultiplier(betType) * rouletteRtp;
+}
+
+function formatRouletteStreakWinMultiplier(betType, winIndex) {
+  const multiplier = getRouletteWinBaseMultiplier(betType) * 2 ** winIndex;
+  return `${multiplier.toFixed(2)}x`;
+}
+
+function calculateRouletteStreakProfit(stake, streakWins) {
+  const numericStake = Number(stake) || 0;
+
+  if (numericStake <= 0 || streakWins.length === 0) {
+    return 0;
+  }
+
+  return streakWins.reduce((total, win, index) => {
+    const base = getRouletteWinBaseMultiplier(win.betColor);
+    return total + Math.round(numericStake * base * 2 ** index);
+  }, 0);
+}
+
+function getRouletteOddsOptions(betAmount, streakWinCount = 0) {
   const stake = Number(betAmount) || 0;
+  const nextWinIndex = streakWinCount;
 
   return [
     {
       value: "red",
       label: "Bet Red",
       sideIcon: "red",
-      odds: stake > 0 ? formatJkcAmount(stake) : "1:1",
+      odds:
+        stake > 0
+          ? formatJkcAmount(stake * getRouletteWinBaseMultiplier("red") * 2 ** nextWinIndex)
+          : "1:1",
     },
     {
       value: "black",
       label: "Bet Black",
       sideIcon: "black",
-      odds: stake > 0 ? formatJkcAmount(stake) : "1:1",
+      odds:
+        stake > 0
+          ? formatJkcAmount(stake * getRouletteWinBaseMultiplier("black") * 2 ** nextWinIndex)
+          : "1:1",
     },
     {
       value: "green",
-      label: "Bet 0",
+      label: "Bet Green",
       sideIcon: "green",
-      odds: stake > 0 ? formatJkcAmount(stake * 35) : "35:1",
+      odds:
+        stake > 0
+          ? formatJkcAmount(stake * getRouletteWinBaseMultiplier("green") * 2 ** nextWinIndex)
+          : "35:1",
     },
   ];
 }
@@ -4561,16 +4601,25 @@ const ROULETTE_WHEEL_NATIVE_SIZE = {
   desktop: 760,
   mobile: 440,
 };
-const ROULETTE_ROUND_RESET_MS = 2400;
+const ROULETTE_WIN_CHIP_SIZE = 72;
 
 
-function RouletteWheelStage({ className = "", onSpinComplete, spinRequestId, wheelSize }) {
+function RouletteWheelStage({
+  className = "",
+  onSpinComplete,
+  onSpinningChange,
+  spinRequestId,
+  wheelSize,
+  celebrationActive = false,
+  celebrationVariant = "win",
+}) {
   const {
     wheelRotation,
     ballPosition,
     ballBounceScale,
     ballBounceLift,
     showBall,
+    isSpinning,
     targetPocket,
     celebratingPocket,
     spin,
@@ -4578,18 +4627,60 @@ function RouletteWheelStage({ className = "", onSpinComplete, spinRequestId, whe
     onSpinComplete: (result) => onSpinComplete?.(result.targetPocket.value),
   });
   const handledSpinRequestRef = useRef(0);
+  const isSpinningRef = useRef(isSpinning);
+
+  useEffect(() => {
+    isSpinningRef.current = isSpinning;
+    onSpinningChange?.(isSpinning);
+  }, [isSpinning, onSpinningChange]);
 
   useEffect(() => {
     if (!spinRequestId || spinRequestId === handledSpinRequestRef.current) {
-      return;
+      return undefined;
     }
 
-    handledSpinRequestRef.current = spinRequestId;
-    spin();
+    let cancelled = false;
+    let rafId = 0;
+    let attempts = 0;
+    const maxAttempts = 180;
+
+    const attemptSpin = () => {
+      if (cancelled || handledSpinRequestRef.current === spinRequestId) {
+        return;
+      }
+
+      if (!isSpinningRef.current) {
+        spin();
+      }
+
+      if (isSpinningRef.current) {
+        handledSpinRequestRef.current = spinRequestId;
+        return;
+      }
+
+      attempts += 1;
+      if (attempts >= maxAttempts) {
+        return;
+      }
+
+      rafId = window.requestAnimationFrame(attemptSpin);
+    };
+
+    attemptSpin();
+
+    return () => {
+      cancelled = true;
+      window.cancelAnimationFrame(rafId);
+    };
   }, [spinRequestId, spin]);
 
   return (
-    <div className={["joker-roulette-wheel-stage", className].filter(Boolean).join(" ")}>
+    <RouletteWheelWin
+      active={celebrationActive}
+      variant={celebrationVariant}
+      className={["joker-roulette-wheel-stage", className].filter(Boolean).join(" ")}
+      size={wheelSize}
+    >
       <RouletteWheel
         size={wheelSize}
         wheelRotation={wheelRotation}
@@ -4597,6 +4688,7 @@ function RouletteWheelStage({ className = "", onSpinComplete, spinRequestId, whe
         ballBounceScale={ballBounceScale}
         ballBounceLift={ballBounceLift}
         showBall={showBall}
+        isSpinning={isSpinning}
         showDebugVisual={
           import.meta.env.DEV &&
           new URLSearchParams(window.location.search).has("rouletteDebug")
@@ -4604,85 +4696,168 @@ function RouletteWheelStage({ className = "", onSpinComplete, spinRequestId, whe
         targetPocket={targetPocket}
         celebratingPocket={celebratingPocket}
       />
-    </div>
+    </RouletteWheelWin>
   );
 }
 
 function RoulettePage({ onGameChange }) {
   const bettingPanelLayout = useGameShellBettingPanelLayout();
   const [betAmount, setBetAmount] = useState("");
+  const [lockedBetAmount, setLockedBetAmount] = useState("");
   const [selectedOdds, setSelectedOdds] = useState("red");
   const [balance, setBalance] = useState(150000);
   const { deferWinCredit, applyDeferredWinCredit } = useDeferredWinCredit(setBalance);
   const [inGame, setInGame] = useState(false);
+  const [isSpinning, setIsSpinning] = useState(false);
+  const [spinPending, setSpinPending] = useState(false);
   const [spinRequestId, setSpinRequestId] = useState(0);
   const [roundResult, setRoundResult] = useState(null);
-  const [roundEnding, setRoundEnding] = useState(false);
+  const [winCelebrationActive, setWinCelebrationActive] = useState(false);
+  const [loseCelebrationActive, setLoseCelebrationActive] = useState(false);
+  const [streakWins, setStreakWins] = useState([]);
+  const [rouletteWinModal, setRouletteWinModal] = useState(null);
+  const winStreakRailRef = useRef(null);
+  const handleWheelSpinningChange = useCallback((wheelIsSpinning) => {
+    setIsSpinning(wheelIsSpinning);
+    if (wheelIsSpinning) {
+      setSpinPending(false);
+    }
+  }, []);
+  const activeSpinRequestRef = useRef(0);
   const activeStakeRef = useRef(0);
   const activeOddsRef = useRef("red");
   const numericBetAmount = Number(betAmount) || 0;
   const hasBetAmount = numericBetAmount > 0;
+  const displayBetAmount = inGame ? lockedBetAmount : betAmount;
+  const hasDisplayBetAmount = Number(displayBetAmount) > 0;
+  const canCashOut = inGame && streakWins.length > 0 && !isSpinning && !spinPending && !rouletteWinModal;
+  const spinLocked = isSpinning || spinPending;
   const rouletteWheelNativeSize =
     bettingPanelLayout === "mobile"
       ? ROULETTE_WHEEL_NATIVE_SIZE.mobile
       : ROULETTE_WHEEL_NATIVE_SIZE.desktop;
   const rouletteOddsOptions = useMemo(
-    () => (hasBetAmount ? getRouletteOddsOptions(betAmount) : undefined),
-    [betAmount, hasBetAmount]
+    () =>
+      hasDisplayBetAmount
+        ? getRouletteOddsOptions(displayBetAmount, streakWins.length)
+        : undefined,
+    [displayBetAmount, hasDisplayBetAmount, streakWins.length]
   );
 
+  const streakWinSlots = useMemo(
+    () =>
+      streakWins.map((win) => ({
+        betColor: win.betColor,
+        multiplier: win.multiplier,
+      })),
+    [streakWins],
+  );
+  const streakCompletedThrough = streakWins.length > 0 ? streakWins.length - 2 : -1;
+  const rouletteCelebrationActive = winCelebrationActive || loseCelebrationActive;
+  const rouletteCelebrationVariant = loseCelebrationActive ? "lose" : "win";
+
+  useLayoutEffect(() => {
+    const rail = winStreakRailRef.current;
+    if (!rail) {
+      return;
+    }
+
+    rail.scrollLeft = Math.max(0, rail.scrollWidth - rail.clientWidth);
+  }, [streakWins]);
+
   useEffect(() => {
-    if (!roundResult) {
+    if (roundResult?.type !== "loss") {
       return undefined;
     }
 
     const timer = window.setTimeout(() => {
-      setRoundResult(null);
-      setRoundEnding(false);
-      setInGame(false);
-      activeStakeRef.current = 0;
-    }, ROULETTE_ROUND_RESET_MS);
+      resetRouletteRound();
+    }, GAME_ROUND_END_RESET_MS);
 
     return () => window.clearTimeout(timer);
   }, [roundResult]);
 
-  function handleRouletteResultClose() {
+  useEffect(() => {
+    if (!spinPending) {
+      return undefined;
+    }
+
+    const timer = window.setTimeout(() => {
+      setSpinPending(false);
+    }, 7000);
+
+    return () => window.clearTimeout(timer);
+  }, [spinPending, spinRequestId]);
+
+  function resetRouletteRound() {
     setRoundResult(null);
-    setRoundEnding(false);
     setInGame(false);
+    setWinCelebrationActive(false);
+    setLoseCelebrationActive(false);
+    setStreakWins([]);
+    setRouletteWinModal(null);
+    setLockedBetAmount("");
     activeStakeRef.current = 0;
   }
 
+  function requestSpin() {
+    setRoundResult(null);
+    setWinCelebrationActive(false);
+    setLoseCelebrationActive(false);
+    setSpinPending(true);
+    setSpinRequestId((currentRequestId) => {
+      const nextRequestId = currentRequestId + 1;
+      activeSpinRequestRef.current = nextRequestId;
+      return nextRequestId;
+    });
+  }
+
+  function triggerRouletteCelebration(variant) {
+    setWinCelebrationActive(false);
+    setLoseCelebrationActive(false);
+    window.requestAnimationFrame(() => {
+      setWinCelebrationActive(variant === "win");
+      setLoseCelebrationActive(variant === "lose");
+    });
+  }
+
   function handleSpinComplete(resultNumber) {
-    const stake = activeStakeRef.current;
     const betType = activeOddsRef.current;
     const resultColor = getPocketColor(resultNumber);
     const didWin = didRouletteBetWin(betType, resultNumber);
+    const completedSpinId = activeSpinRequestRef.current;
 
     if (didWin) {
-      const multiplier = betType === "green" ? 36 : 2;
-      const payout = stake * multiplier;
+      setSpinPending(false);
+      setStreakWins((currentStreak) => {
+        const winIndex = currentStreak.length;
 
-      setRoundResult({
-        type: "win",
-        amount: payout,
-        number: resultNumber,
-        color: resultColor,
+        return [
+          ...currentStreak,
+          {
+            id: completedSpinId,
+            betColor: betType,
+            multiplier: formatRouletteStreakWinMultiplier(betType, winIndex),
+          },
+        ];
       });
-      deferWinCredit(payout);
-    } else {
-      setRoundResult({
-        type: "loss",
-        number: resultNumber,
-        color: resultColor,
-      });
+      triggerRouletteCelebration("win");
+      return;
     }
 
-    setRoundEnding(true);
+    setSpinPending(false);
+    setStreakWins([]);
+    setInGame(false);
+    triggerRouletteCelebration("lose");
+    setRoundResult({
+      type: "loss",
+      number: resultNumber,
+      color: resultColor,
+    });
   }
 
   function handlePlaceBet() {
-    if (!hasBetAmount || !selectedOdds || inGame) {
+    if (!hasBetAmount || !selectedOdds || inGame || spinLocked) {
       return;
     }
 
@@ -4692,11 +4867,50 @@ function RoulettePage({ onGameChange }) {
 
     activeStakeRef.current = numericBetAmount;
     activeOddsRef.current = selectedOdds;
+    setLockedBetAmount(betAmount);
     setBalance((currentBalance) => currentBalance - numericBetAmount);
-    setRoundResult(null);
-    setRoundEnding(false);
     setInGame(true);
-    setSpinRequestId((currentRequestId) => currentRequestId + 1);
+    requestSpin();
+  }
+
+  function handleContinueSpin() {
+    if (
+      !inGame ||
+      spinLocked ||
+      !selectedOdds ||
+      rouletteWinModal ||
+      loseCelebrationActive
+    ) {
+      return;
+    }
+
+    activeOddsRef.current = selectedOdds;
+    requestSpin();
+  }
+
+  function handleRouletteCashout() {
+    if (!canCashOut) {
+      return;
+    }
+
+    const cashoutProfit = calculateRouletteStreakProfit(lockedBetAmount, streakWins);
+
+    playSound(minesCashoutSound);
+    deferWinCredit(cashoutProfit);
+    setRouletteWinModal({ profit: cashoutProfit });
+  }
+
+  function handleRouletteCashoutClose() {
+    setRouletteWinModal(null);
+    resetRouletteRound();
+  }
+
+  function handleOddsChange(value) {
+    if (spinLocked) {
+      return;
+    }
+
+    setSelectedOdds(value);
   }
 
   return (
@@ -4778,6 +4992,11 @@ function RoulettePage({ onGameChange }) {
           }
 
           .joker-roulette-game-frame__top {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 5;
             display: flex;
             width: 100%;
             flex: 0 0 auto;
@@ -4785,14 +5004,17 @@ function RoulettePage({ onGameChange }) {
             align-items: flex-start;
             box-sizing: border-box;
             padding: var(--roulette-streak-inset) 0 0 var(--roulette-streak-inset);
-            overflow: hidden;
-            background: var(--joker-black-800);
+            overflow: visible;
+            background: transparent;
+            pointer-events: none;
+          }
+
+          .joker-roulette-game-frame__top .joker-roulette-streak-rail {
+            pointer-events: auto;
           }
 
           @media (min-width: 1024px) {
             .joker-roulette-game-frame__top {
-              position: relative;
-              flex: 0 0 auto;
               height: var(--roulette-sync-top-band-height);
               min-height: var(--roulette-sync-top-band-height);
               max-height: var(--roulette-sync-top-band-height);
@@ -4803,16 +5025,28 @@ function RoulettePage({ onGameChange }) {
 
           .joker-roulette-streak-rail {
             position: relative;
-            z-index: 2;
-            display: flex;
+            z-index: 5;
             width: 100%;
             min-width: 0;
             min-height: var(--roulette-sync-streak-rail-height);
             flex: 0 0 auto;
-            align-items: flex-start;
-            justify-content: flex-start;
-            padding: 0;
-            overflow: hidden;
+            --win-streak-row-gap: var(--spacing-12);
+            --win-streak-row-chip-size: ${ROULETTE_WIN_CHIP_SIZE}px;
+            overflow-x: auto;
+            overflow-y: visible;
+            scroll-behavior: smooth;
+            scroll-padding-inline-end: var(--spacing-24);
+            scroll-padding-inline-start: var(--spacing-24);
+            scrollbar-width: none;
+          }
+
+          .joker-roulette-streak-rail .joker-win-streak-row__track {
+            width: max-content;
+            min-width: 100%;
+          }
+
+          .joker-roulette-streak-rail::-webkit-scrollbar {
+            display: none;
           }
 
           .joker-roulette-game-frame__bottom {
@@ -4824,6 +5058,7 @@ function RoulettePage({ onGameChange }) {
             justify-content: stretch;
             gap: 0;
             min-height: 0;
+            height: 100%;
             padding: 0;
             box-sizing: border-box;
             overflow: hidden;
@@ -4888,6 +5123,7 @@ function RoulettePage({ onGameChange }) {
             height: var(--roulette-wheel-native-size);
             align-items: center;
             justify-content: center;
+            overflow: visible;
             transform: translateY(
                 calc(var(--roulette-wheel-lift, 35%) + var(--roulette-wheel-lift-offset, 0px))
               )
@@ -4901,11 +5137,14 @@ function RoulettePage({ onGameChange }) {
             height: 100%;
             align-items: center;
             justify-content: center;
+            overflow: visible;
+          }
+
+          .joker-roulette-wheel-stage .joker-roulette-wheel-composition {
+            overflow: visible;
           }
 
           .joker-roulette-wheel-viewport,
-          .joker-roulette-wheel-mount,
-          .joker-roulette-wheel-stage,
           .joker-roulette-wheel-stage .joker-roulette-wheel {
             overflow: hidden;
           }
@@ -4981,17 +5220,20 @@ function RoulettePage({ onGameChange }) {
         className="joker-game-shell--roulette"
         defaultValue={rouletteNavigationPreset.defaultValue}
         game={rouletteNavigationPreset.game}
+        gameHeaderRail={<RouletteGameHeaderRail />}
         onValueChange={onGameChange}
         value={rouletteNavigationPreset.selectedValue}
         bettingPanel={
           <PackagedRouletteBettingPanel
-            betAmount={betAmount}
-            isSpinning={inGame}
+            betAmount={displayBetAmount}
+            inGame={inGame}
+            isSpinning={spinLocked}
             layout={bettingPanelLayout}
             oddsOptions={rouletteOddsOptions}
             onBetAmountChange={setBetAmount}
-            onOddsChange={setSelectedOdds}
-            onPlaceBet={handlePlaceBet}
+            onCashout={handleRouletteCashout}
+            onOddsChange={handleOddsChange}
+            onPlaceBet={inGame ? handleContinueSpin : handlePlaceBet}
             selectedOdds={selectedOdds}
           />
         }
@@ -4999,47 +5241,47 @@ function RoulettePage({ onGameChange }) {
         <section className="joker-roulette-stage" aria-label="Roulette game board">
           <div className="joker-roulette-main-area">
             <div
-              className={[
-                "joker-roulette-game-frame",
-                "joker-game-round-end-canvas",
-                roundEnding && roundResult?.type === "loss" ? "is-round-ending" : "",
-              ]
-                .filter(Boolean)
-                .join(" ")}
+              className="joker-roulette-game-frame joker-game-round-end-canvas"
               aria-label="Roulette game area"
             >
-              <div className="joker-roulette-game-frame__top">
-                <div className="joker-roulette-streak-rail" aria-label="Roulette streak" />
-              </div>
+              {streakWins.length > 0 ? (
+                <div className="joker-roulette-game-frame__top" ref={winStreakRailRef}>
+                  <WinStreakRow
+                    className="joker-roulette-streak-rail"
+                    wins={streakWinSlots}
+                    animateOnMount={false}
+                    completedThrough={streakCompletedThrough}
+                    chipSize={ROULETTE_WIN_CHIP_SIZE}
+                    gap={12}
+                  />
+                </div>
+              ) : null}
               <div className="joker-roulette-game-frame__bottom">
                 <div className="joker-roulette-wheel-viewport" aria-label="Roulette wheel">
                   <div className="joker-roulette-wheel-vignette" aria-hidden="true" />
                   <div className="joker-roulette-wheel-mount">
                     <RouletteWheelStage
                       onSpinComplete={handleSpinComplete}
+                      onSpinningChange={handleWheelSpinningChange}
                       spinRequestId={spinRequestId}
                       wheelSize={rouletteWheelNativeSize}
+                      celebrationActive={rouletteCelebrationActive}
+                      celebrationVariant={rouletteCelebrationVariant}
                     />
                   </div>
                 </div>
               </div>
-              <GameRoundEndTransition
-                active={roundEnding && roundResult?.type === "loss"}
-                animationKey={`roulette-loss-${spinRequestId}`}
-              />
-              {roundResult?.type === "win" ? (
+              {rouletteWinModal ? (
                 <div className="joker-roulette-result-overlay" role="status" aria-live="polite">
                   <WinModalCard
                     className="joker-roulette-result-card"
-                    title="You Won"
-                    amountWon={formatCurrency(roundResult.amount)}
+                    title="Cashout Successful"
+                    amountWon={formatCurrency(rouletteWinModal.profit)}
                     currency={null}
-                    message={`${formatRouletteResultLabel(roundResult.number, roundResult.color)} — your ${
-                      activeOddsRef.current === "green" ? "0" : activeOddsRef.current
-                    } bet paid out.`}
+                    message="Your winnings from this round have been added to your balance."
                     closeLabel="Close"
                     onCoinsLand={applyDeferredWinCredit}
-                    onClose={handleRouletteResultClose}
+                    onClose={handleRouletteCashoutClose}
                   />
                 </div>
               ) : null}
@@ -7130,16 +7372,18 @@ function PackagedCocoHutBettingPanel({
 
 function PackagedRouletteBettingPanel({
   betAmount,
+  inGame = false,
   isSpinning = false,
   layout = "desktop",
   oddsOptions,
   onBetAmountChange,
+  onCashout,
   onOddsChange,
   onPlaceBet,
   selectedOdds,
 }) {
   function handleBetAmountChange(event) {
-    if (isSpinning) return;
+    if (inGame || isSpinning) return;
 
     onBetAmountChange(event.currentTarget.value.replace(/\D/g, ""));
   }
@@ -7150,6 +7394,18 @@ function PackagedRouletteBettingPanel({
     onOddsChange?.(value, option);
   }
 
+  function handlePlaceBet(event) {
+    if (isSpinning) return;
+
+    onPlaceBet?.(event);
+  }
+
+  function handleCashout(event) {
+    if (isSpinning) return;
+
+    onCashout?.(event);
+  }
+
   return (
     <JokerRouletteBettingPanel
       layout={layout}
@@ -7158,10 +7414,12 @@ function PackagedRouletteBettingPanel({
       defaultSelectedOddsValue="red"
       onBetAmountChange={handleBetAmountChange}
       onOddsValueChange={handleOddsChange}
-      onPlaceBet={onPlaceBet}
+      onPlaceBet={handlePlaceBet}
+      onCashout={handleCashout}
       oddsOptions={oddsOptions}
       oddsLayout="stacked"
       showOdds
+      inGame={inGame}
       disablePlaceBetUntilBetAmount
     />
   );
