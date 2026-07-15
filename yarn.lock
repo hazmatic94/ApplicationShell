@@ -402,11 +402,11 @@ __metadata:
 
 "@joker/design-system@https://github.com/mjprod/DesignSystemGames.git#main":
   version: 0.1.62
-  resolution: "@joker/design-system@https://github.com/mjprod/DesignSystemGames.git#commit=76d91875afe39d25be0a10a28f7d39e975737f7f"
+  resolution: "@joker/design-system@https://github.com/mjprod/DesignSystemGames.git#commit=0f9acad2742a6035c160b818d3d42f530d307099"
   peerDependencies:
     react: ">=18"
     react-dom: ">=18"
-  checksum: 10c0/11188db8f1279f086460a0347fd1b4f0fbbd227603181b0701ce0d901b0d5806693ada313cc4018efcbf48149eeb6cd31246614310806f2edb4aa784858d3576
+  checksum: 10c0/b2c728ddc0b9b389992595a326d8a982a3e7441e3dbd38fbc4af20edc1d11fb78d09e1881ec112c94b6b58c481b746a9f8cbdd0051d5ae4f82314f6a489a06a2
   languageName: node
   linkType: hard
 
@@ -765,9 +765,9 @@ __metadata:
   linkType: hard
 
 "electron-to-chromium@npm:^1.5.389":
-  version: 1.5.391
-  resolution: "electron-to-chromium@npm:1.5.391"
-  checksum: 10c0/7e206c5fa524fee4295ec7614d682f88e11e5b680f6c6a99aecbebb9410f4dfb121cea8b16b98a34f10f3393b0e413c1a48b5c2a4a453d989227fd5d7b2ccca1
+  version: 1.5.392
+  resolution: "electron-to-chromium@npm:1.5.392"
+  checksum: 10c0/13b691fb97ef02f6c3da6fecb530d667a2c72c951aaca2c5c13271074d6e2f9a9bb23c84939a6b9274fef1611247f3a7affba7b3961d0bdc0324d59f97046269
   languageName: node
   linkType: hard
 
