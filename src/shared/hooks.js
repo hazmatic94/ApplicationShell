@@ -1,3 +1,4 @@
+/** Cross-game React hooks (layout, balance timing, rail menu). */
 import { useEffect, useRef, useState } from "react";
 
 const gameShellMobilePanelQuery = "(max-width: 1023px)";
@@ -49,4 +50,26 @@ export function useDeferredWinCredit(setBalance) {
   };
 
   return { deferWinCredit, applyDeferredWinCredit };
+}
+
+export function useOpenGameMenu(openMenuLabel) {
+  useEffect(() => {
+    const openMenu = () => {
+      const gameMenu = [...document.querySelectorAll(".joker-product-rail-game-menu")].find(
+        (menu) =>
+          menu.querySelector(".joker-product-rail-menu-label")?.textContent?.trim() ===
+          openMenuLabel
+      );
+      const trigger = gameMenu?.querySelector(".joker-product-rail-menu-trigger");
+
+      if (gameMenu && trigger && !gameMenu.classList.contains("is-open")) {
+        trigger.click();
+      }
+    };
+
+    openMenu();
+    const frameId = window.requestAnimationFrame(openMenu);
+
+    return () => window.cancelAnimationFrame(frameId);
+  }, [openMenuLabel]);
 }

@@ -6,15 +6,13 @@ import minesPlaceBetSound from "../../../assets/mines-placebet.mp3?url";
 import {
   GAME_ROUND_END_RESET_MS,
   GAME_ROUND_END_STYLES,
-  GameRoundEndTransition,
 } from "../../shared/gameRoundEnd.jsx";
 import { formatBalance } from "../../shared/formatting.js";
-import { useDeferredWinCredit, useGameShellBettingPanelLayout } from "../../shared/hooks.js";
+import { useDeferredWinCredit, useGameShellBettingPanelLayout, useOpenGameMenu } from "../../shared/hooks.js";
 import { playSound } from "../../shared/sounds.js";
 import { MinesGrid } from "./MinesGrid.jsx";
 import { PackagedMinesBettingPanel } from "./PackagedMinesBettingPanel.jsx";
 import {
-  MINES_PAGE_LOAD_ANIMATION_MS,
   desktopMinesGrid,
   minTileAmount,
   minesNavigationPreset,
@@ -71,26 +69,7 @@ export function MinesPage({ onGameChange }) {
       : 0;
   const nextProfit = numericBetAmount * nextMultiplier;
 
-  useEffect(() => {
-    const openMinesMenu = () => {
-      const minesMenu = [...document.querySelectorAll(".joker-product-rail-game-menu")].find(
-        (menu) =>
-          menu
-            .querySelector(".joker-product-rail-menu-label")
-            ?.textContent?.trim() === minesNavigationPreset.openMenuLabel
-      );
-      const trigger = minesMenu?.querySelector(".joker-product-rail-menu-trigger");
-
-      if (minesMenu && trigger && !minesMenu.classList.contains("is-open")) {
-        trigger.click();
-      }
-    };
-
-    openMinesMenu();
-    const frameId = window.requestAnimationFrame(openMinesMenu);
-
-    return () => window.cancelAnimationFrame(frameId);
-  }, []);
+  useOpenGameMenu(minesNavigationPreset.openMenuLabel);
 
   useEffect(() => {
     return () => {

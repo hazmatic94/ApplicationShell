@@ -1,13 +1,7 @@
-import { useEffect, useState } from "react";
-import { CocoHutPage } from "./pages/coco-hut/index.js";
-import { CoinFlipPage } from "./pages/coin-flip/index.js";
-import { CrashPage } from "./pages/crash/index.js";
-import { FourDMinesPage } from "./pages/four-d-mines/index.js";
-import { HiloPage } from "./pages/hilo/index.js";
-import { MinesPage } from "./pages/mines/index.js";
-import { RoulettePage } from "./pages/roulette/index.js";
+import { Suspense, useEffect, useState } from "react";
 import { MobileShellScrollFix } from "./shared/MobileShellScrollFix.jsx";
 import { gameRouteMap, normalizePathname, withBase } from "./shared/routing.js";
+import { resolveGameRoute } from "./shared/routes.jsx";
 
 export function App() {
   const [pathname, setPathname] = useState(() =>
@@ -35,64 +29,14 @@ export function App() {
     setPathname(normalizedNextPath);
   }
 
-  if (pathname === "/hilo") {
-    return (
-      <>
-        <MobileShellScrollFix />
-        <HiloPage onGameChange={navigateToGame} />
-      </>
-    );
-  }
-
-  if (pathname === "/crash") {
-    return (
-      <>
-        <MobileShellScrollFix />
-        <CrashPage onGameChange={navigateToGame} />
-      </>
-    );
-  }
-
-  if (pathname === "/roulette") {
-    return (
-      <>
-        <MobileShellScrollFix />
-        <RoulettePage onGameChange={navigateToGame} />
-      </>
-    );
-  }
-
-  if (pathname === "/coin-flip") {
-    return (
-      <>
-        <MobileShellScrollFix />
-        <CoinFlipPage onGameChange={navigateToGame} />
-      </>
-    );
-  }
-
-  if (pathname === "/coco-hut") {
-    return (
-      <>
-        <MobileShellScrollFix />
-        <CocoHutPage onGameChange={navigateToGame} />
-      </>
-    );
-  }
-
-  if (pathname === "/4d-mines") {
-    return (
-      <>
-        <MobileShellScrollFix />
-        <FourDMinesPage onGameChange={navigateToGame} />
-      </>
-    );
-  }
+  const { Page } = resolveGameRoute(pathname);
 
   return (
     <>
       <MobileShellScrollFix />
-      <MinesPage onGameChange={navigateToGame} />
+      <Suspense fallback={null}>
+        <Page onGameChange={navigateToGame} />
+      </Suspense>
     </>
   );
 }
