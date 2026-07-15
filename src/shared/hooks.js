@@ -50,3 +50,25 @@ export function useDeferredWinCredit(setBalance) {
 
   return { deferWinCredit, applyDeferredWinCredit };
 }
+
+export function useOpenGameMenu(openMenuLabel) {
+  useEffect(() => {
+    const openMenu = () => {
+      const gameMenu = [...document.querySelectorAll(".joker-product-rail-game-menu")].find(
+        (menu) =>
+          menu.querySelector(".joker-product-rail-menu-label")?.textContent?.trim() ===
+          openMenuLabel
+      );
+      const trigger = gameMenu?.querySelector(".joker-product-rail-menu-trigger");
+
+      if (gameMenu && trigger && !gameMenu.classList.contains("is-open")) {
+        trigger.click();
+      }
+    };
+
+    openMenu();
+    const frameId = window.requestAnimationFrame(openMenu);
+
+    return () => window.cancelAnimationFrame(frameId);
+  }, [openMenuLabel]);
+}

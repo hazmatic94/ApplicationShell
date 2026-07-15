@@ -1,15 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { GameShell, isValidFourDNumber, normalizeFourDNumber } from "@joker/design-system";
-import minesBombSound from "../../../assets/mines-bomb.mp3?url";
 import minesCashoutSound from "../../../assets/mines-cashout.mp3?url";
 import minesPlaceBetSound from "../../../assets/mines-placebet.mp3?url";
 import {
   GAME_ROUND_END_RESET_MS,
   GAME_ROUND_END_STYLES,
-  GameRoundEndTransition,
 } from "../../shared/gameRoundEnd.jsx";
 import { formatBalance } from "../../shared/formatting.js";
-import { useDeferredWinCredit, useGameShellBettingPanelLayout } from "../../shared/hooks.js";
+import { useDeferredWinCredit, useGameShellBettingPanelLayout, useOpenGameMenu } from "../../shared/hooks.js";
 import { playSound } from "../../shared/sounds.js";
 import { calculateMultiplier } from "../mines/minesGameLogic.jsx";
 import { FourDMinesGrid } from "./FourDMinesGrid.jsx";
@@ -18,7 +16,6 @@ import {
   desktopFourDMinesGrid,
   fourDMinesNavigationPreset,
   fourDMinesTileCount,
-  maxFourDMinesAmount,
   minFourDMinesAmount,
   mobileFourDMinesGrid,
 } from "./fourDMinesConfig.js";
@@ -70,26 +67,7 @@ export function FourDMinesPage({ onGameChange }) {
       : 0;
   const nextProfit = numericBetAmount * nextMultiplier;
 
-  useEffect(() => {
-    const openFourDMinesMenu = () => {
-      const gameMenu = [...document.querySelectorAll(".joker-product-rail-game-menu")].find(
-        (menu) =>
-          menu
-            .querySelector(".joker-product-rail-menu-label")
-            ?.textContent?.trim() === fourDMinesNavigationPreset.openMenuLabel
-      );
-      const trigger = gameMenu?.querySelector(".joker-product-rail-menu-trigger");
-
-      if (gameMenu && trigger && !gameMenu.classList.contains("is-open")) {
-        trigger.click();
-      }
-    };
-
-    openFourDMinesMenu();
-    const frameId = window.requestAnimationFrame(openFourDMinesMenu);
-
-    return () => window.cancelAnimationFrame(frameId);
-  }, []);
+  useOpenGameMenu(fourDMinesNavigationPreset.openMenuLabel);
 
   useEffect(() => {
     return () => {

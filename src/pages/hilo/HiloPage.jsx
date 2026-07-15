@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { GameShell } from "@joker/design-system";
 import hiloCardDrawSound from "../../../assets/hilo-card-draw.mp3?url";
 import hiloNextSound from "../../../assets/hilo-next.mp3?url";
@@ -10,7 +10,7 @@ import {
   GAME_ROUND_END_STYLES,
 } from "../../shared/gameRoundEnd.jsx";
 import { formatBalance } from "../../shared/formatting.js";
-import { useDeferredWinCredit, useGameShellBettingPanelLayout } from "../../shared/hooks.js";
+import { useDeferredWinCredit, useGameShellBettingPanelLayout, useOpenGameMenu } from "../../shared/hooks.js";
 import { playSound } from "../../shared/sounds.js";
 import { HiloStage } from "./HiloStage.jsx";
 import { PackagedHiloBettingPanel } from "./PackagedHiloBettingPanel.jsx";
@@ -62,26 +62,7 @@ export function HiloPage({ onGameChange }) {
   );
   const currentProfit = multiplier > 1 ? numericBetAmount * multiplier : 0;
 
-  useEffect(() => {
-    const openHiloMenu = () => {
-      const hiloMenu = [...document.querySelectorAll(".joker-product-rail-game-menu")].find(
-        (menu) =>
-          menu
-            .querySelector(".joker-product-rail-menu-label")
-            ?.textContent?.trim() === hiloNavigationPreset.openMenuLabel
-      );
-      const trigger = hiloMenu?.querySelector(".joker-product-rail-menu-trigger");
-
-      if (hiloMenu && trigger && !hiloMenu.classList.contains("is-open")) {
-        trigger.click();
-      }
-    };
-
-    openHiloMenu();
-    const frameId = window.requestAnimationFrame(openHiloMenu);
-
-    return () => window.cancelAnimationFrame(frameId);
-  }, []);
+  useOpenGameMenu(hiloNavigationPreset.openMenuLabel);
 
   useEffect(() => {
     return () => {
