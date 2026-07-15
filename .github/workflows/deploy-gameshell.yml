@@ -24,7 +24,7 @@ jobs:
 
       - name: Configure private repo access
         run: |
-          git config --global url."https://${{ secrets.PRIVATE_REPO_TOKEN }}@github.com/".insteadOf "https://github.com/"
+          git config --global url."https://x-access-token:${{ secrets.PRIVATE_REPO_TOKEN }}@github.com/".insteadOf "https://github.com/"
 
       - name: Install dependencies
         run: yarn install --no-immutable
@@ -39,6 +39,6 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           source: 'dist/*'
-          target: '/var/www/showroom-gameshell'
+          target: '/var/www/showroom/gameshell'
           strip_components: 1
           overwrite: true
