@@ -430,11 +430,11 @@ __metadata:
 
 "@joker/design-system@https://github.com/mjprod/DesignSystemGames.git#main":
   version: 0.1.62
-  resolution: "@joker/design-system@https://github.com/mjprod/DesignSystemGames.git#commit=0f9acad2742a6035c160b818d3d42f530d307099"
+  resolution: "@joker/design-system@https://github.com/mjprod/DesignSystemGames.git#commit=29995f4f5c164518439e83ae4d02332670025029"
   peerDependencies:
     react: ">=18"
     react-dom: ">=18"
-  checksum: 10c0/b2c728ddc0b9b389992595a326d8a982a3e7441e3dbd38fbc4af20edc1d11fb78d09e1881ec112c94b6b58c481b746a9f8cbdd0051d5ae4f82314f6a489a06a2
+  checksum: 10c0/fa46cb76feef38e96a78bbc996e7fa715fa932235252fea7ea9b9a1793539073a151b25fba48a0b717e4c380cc545b84ca36c56854baff10c5eed85359d7b5b9
   languageName: node
   linkType: hard
 
