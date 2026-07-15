@@ -37,5 +37,11 @@ export const gameRoutes = [
 ];
 
 export function resolveGameRoute(pathname) {
-  return gameRoutes.find((route) => route.pathname === pathname) ?? gameRoutes[gameRoutes.length - 1];
+  const navigationless = pathname === "/embed" || pathname.startsWith("/embed/");
+  const gamePathname = navigationless ? pathname.slice("/embed".length) || "/" : pathname;
+  const route =
+    gameRoutes.find((candidate) => candidate.pathname === gamePathname) ??
+    gameRoutes[gameRoutes.length - 1];
+
+  return { ...route, navigationless };
 }
