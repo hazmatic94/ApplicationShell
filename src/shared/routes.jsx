@@ -1,3 +1,4 @@
+/** Lazy-loaded game pages. Register new games here and in routing.js `gameRouteMap`. */
 import { lazy } from "react";
 
 function lazyPage(importFn, exportName) {

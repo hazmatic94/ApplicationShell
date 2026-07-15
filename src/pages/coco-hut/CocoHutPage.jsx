@@ -6,6 +6,11 @@ import { useGameShellBettingPanelLayout } from "../../shared/hooks.js";
 import { PackagedCocoHutBettingPanel } from "./PackagedCocoHutBettingPanel.jsx";
 import { cocoHutNavigationPreset } from "./cocoHutConfig.js";
 
+/**
+ * STUB — shell and betting panel only.
+ * Missing: cocoHutGameLogic.js, play-area components, bet/round flow, win/loss.
+ * See README.md → "Coco Hut".
+ */
 export function CocoHutPage({ onGameChange }) {
   const [betAmount, setBetAmount] = useState("");
   const [balance] = useState(150000);
@@ -13,7 +18,7 @@ export function CocoHutPage({ onGameChange }) {
   const bettingPanelLayout = useGameShellBettingPanelLayout();
 
   function handleBetAction() {
-    // Coco Hut gameplay will be wired here without touching the other games.
+    // STUB: wire round flow here when gameplay is specced.
   }
 
   return (

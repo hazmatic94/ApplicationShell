@@ -1,3 +1,4 @@
+/** Cross-game React hooks (layout, balance timing, rail menu). */
 import { useEffect, useRef, useState } from "react";
 
 const gameShellMobilePanelQuery = "(max-width: 1023px)";
