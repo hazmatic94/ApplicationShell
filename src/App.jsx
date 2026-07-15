@@ -4602,6 +4602,17 @@ const ROULETTE_WHEEL_NATIVE_SIZE = {
   mobile: 440,
 };
 const ROULETTE_WIN_CHIP_SIZE = 72;
+const ROULETTE_MOBILE_WHEEL_SCALE = {
+  widthFactor: 1.58,
+  heightFactor: 3.35,
+  scaleBoost: 1.72,
+  scaleMax: 2.65,
+  lift: 36,
+  minVisibleScale: 1.05,
+};
+const ROULETTE_SPIN_DURATION_MS = 5800;
+const ROULETTE_SPIN_STALL_RECOVERY_MS = ROULETTE_SPIN_DURATION_MS + 1200;
+const ROULETTE_SPIN_START_TIMEOUT_MS = 900;
 
 
 function RouletteWheelStage({
@@ -4613,6 +4624,12 @@ function RouletteWheelStage({
   celebrationActive = false,
   celebrationVariant = "win",
 }) {
+  const onSpinCompleteRef = useRef(onSpinComplete);
+
+  useEffect(() => {
+    onSpinCompleteRef.current = onSpinComplete;
+  }, [onSpinComplete]);
+
   const {
     wheelRotation,
     ballPosition,
@@ -4623,14 +4640,14 @@ function RouletteWheelStage({
     targetPocket,
     celebratingPocket,
     spin,
+    abortSpin: abortSpinFromHook,
   } = useRouletteWheelSpin({
-    onSpinComplete: (result) => onSpinComplete?.(result.targetPocket.value),
+    onSpinComplete: (result) => onSpinCompleteRef.current?.(result.targetPocket.value),
   });
+  const abortSpin = abortSpinFromHook ?? (() => {});
   const handledSpinRequestRef = useRef(0);
-  const isSpinningRef = useRef(isSpinning);
 
   useEffect(() => {
-    isSpinningRef.current = isSpinning;
     onSpinningChange?.(isSpinning);
   }, [isSpinning, onSpinningChange]);
 
@@ -4640,39 +4657,36 @@ function RouletteWheelStage({
     }
 
     let cancelled = false;
-    let rafId = 0;
-    let attempts = 0;
-    const maxAttempts = 180;
 
-    const attemptSpin = () => {
-      if (cancelled || handledSpinRequestRef.current === spinRequestId) {
+    const startRequestedSpin = () => {
+      if (cancelled || spinRequestId === handledSpinRequestRef.current) {
         return;
       }
 
-      if (!isSpinningRef.current) {
-        spin();
-      }
-
-      if (isSpinningRef.current) {
+      if (spin()) {
         handledSpinRequestRef.current = spinRequestId;
         return;
       }
 
-      attempts += 1;
-      if (attempts >= maxAttempts) {
-        return;
-      }
+      abortSpin();
 
-      rafId = window.requestAnimationFrame(attemptSpin);
+      window.requestAnimationFrame(() => {
+        if (cancelled || spinRequestId === handledSpinRequestRef.current) {
+          return;
+        }
+
+        if (spin()) {
+          handledSpinRequestRef.current = spinRequestId;
+        }
+      });
     };
 
-    attemptSpin();
+    startRequestedSpin();
 
     return () => {
       cancelled = true;
-      window.cancelAnimationFrame(rafId);
     };
-  }, [spinRequestId, spin]);
+  }, [abortSpin, spin, spinRequestId]);
 
   return (
     <RouletteWheelWin
@@ -4716,16 +4730,17 @@ function RoulettePage({ onGameChange }) {
   const [loseCelebrationActive, setLoseCelebrationActive] = useState(false);
   const [streakWins, setStreakWins] = useState([]);
   const [rouletteWinModal, setRouletteWinModal] = useState(null);
+  const [wheelStageKey, setWheelStageKey] = useState(0);
   const winStreakRailRef = useRef(null);
+  const activeSpinRequestRef = useRef(0);
+  const activeStakeRef = useRef(0);
+  const activeOddsRef = useRef("red");
   const handleWheelSpinningChange = useCallback((wheelIsSpinning) => {
     setIsSpinning(wheelIsSpinning);
     if (wheelIsSpinning) {
       setSpinPending(false);
     }
   }, []);
-  const activeSpinRequestRef = useRef(0);
-  const activeStakeRef = useRef(0);
-  const activeOddsRef = useRef("red");
   const numericBetAmount = Number(betAmount) || 0;
   const hasBetAmount = numericBetAmount > 0;
   const displayBetAmount = inGame ? lockedBetAmount : betAmount;
@@ -4782,12 +4797,23 @@ function RoulettePage({ onGameChange }) {
       return undefined;
     }
 
-    const timer = window.setTimeout(() => {
-      setSpinPending(false);
-    }, 7000);
+    const startTimer = window.setTimeout(() => {
+      if (!isSpinning) {
+        setWheelStageKey((currentKey) => currentKey + 1);
+      }
+    }, ROULETTE_SPIN_START_TIMEOUT_MS);
 
-    return () => window.clearTimeout(timer);
-  }, [spinPending, spinRequestId]);
+    const stallTimer = window.setTimeout(() => {
+      setWheelStageKey((currentKey) => currentKey + 1);
+      setSpinPending(false);
+      setIsSpinning(false);
+    }, ROULETTE_SPIN_STALL_RECOVERY_MS);
+
+    return () => {
+      window.clearTimeout(startTimer);
+      window.clearTimeout(stallTimer);
+    };
+  }, [spinPending, isSpinning, spinRequestId]);
 
   function resetRouletteRound() {
     setRoundResult(null);
@@ -5185,8 +5211,10 @@ function RoulettePage({ onGameChange }) {
           @media (max-width: 1023px) {
             .joker-roulette-stage {
               --roulette-wheel-native-size: ${ROULETTE_WHEEL_NATIVE_SIZE.mobile}px;
-              --roulette-wheel-scale-max: 1.28;
-              --roulette-wheel-lift: 33%;
+              --roulette-wheel-scale-boost: ${ROULETTE_MOBILE_WHEEL_SCALE.scaleBoost};
+              --roulette-wheel-scale-max: ${ROULETTE_MOBILE_WHEEL_SCALE.scaleMax};
+              --roulette-wheel-lift: ${ROULETTE_MOBILE_WHEEL_SCALE.lift}%;
+              --roulette-wheel-vignette-size: 120px;
             }
 
             .joker-roulette-game-frame {
@@ -5200,15 +5228,27 @@ function RoulettePage({ onGameChange }) {
             }
 
             .joker-roulette-wheel-viewport {
+              align-items: stretch;
               --roulette-wheel-visible-scale: min(
-                calc((100cqw * 1.26) / var(--roulette-wheel-native-size)),
-                calc((100cqh * 2.45) / var(--roulette-wheel-native-size)),
+                calc(
+                  (min(100svw, 100cqw) * ${ROULETTE_MOBILE_WHEEL_SCALE.widthFactor}) /
+                    var(--roulette-wheel-native-size)
+                ),
+                calc(
+                  (min(100svh, 100cqh) * ${ROULETTE_MOBILE_WHEEL_SCALE.heightFactor}) /
+                    var(--roulette-wheel-native-size)
+                ),
                 var(--roulette-wheel-scale-max)
               );
             }
 
             .joker-roulette-wheel-mount {
-              --roulette-wheel-visible-scale: max(0.9, var(--roulette-wheel-visible-scale, 1));
+              align-self: center;
+              margin-top: auto;
+              --roulette-wheel-visible-scale: max(
+                ${ROULETTE_MOBILE_WHEEL_SCALE.minVisibleScale},
+                var(--roulette-wheel-visible-scale, 1)
+              );
             }
           }
 
@@ -5261,6 +5301,7 @@ function RoulettePage({ onGameChange }) {
                   <div className="joker-roulette-wheel-vignette" aria-hidden="true" />
                   <div className="joker-roulette-wheel-mount">
                     <RouletteWheelStage
+                      key={wheelStageKey}
                       onSpinComplete={handleSpinComplete}
                       onSpinningChange={handleWheelSpinningChange}
                       spinRequestId={spinRequestId}
