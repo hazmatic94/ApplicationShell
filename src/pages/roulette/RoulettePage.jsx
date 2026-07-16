@@ -16,11 +16,10 @@ import { formatBalance, formatCurrency } from "../../shared/formatting.js";
 import { useDeferredWinCredit, useGameShellBettingPanelLayout } from "../../shared/hooks.js";
 import { playSound } from "../../shared/sounds.js";
 import { PackagedRouletteBettingPanel } from "./PackagedRouletteBettingPanel.jsx";
-import { RouletteWheelStage } from "./RouletteWheelStage.jsx";
+import { RouletteWheelSlot } from "./RouletteWheelSlot.jsx";
 import {
   ROULETTE_CELEBRATION_MS,
   ROULETTE_SPIN_STALL_RECOVERY_MS,
-  ROULETTE_WHEEL_NATIVE_SIZE,
   ROULETTE_WIN_CHIP_SIZE,
   rouletteNavigationPreset,
 } from "./rouletteConfig.js";
@@ -77,10 +76,6 @@ export function RoulettePage({ onGameChange }) {
   const spinLocked = isSpinning || spinPending;
   const isRoundEnding = roundResult?.type === "loss";
   const isRoundLocked = isRoundEnding || loseCelebrationActive;
-  const rouletteWheelNativeSize =
-    bettingPanelLayout === "mobile"
-      ? ROULETTE_WHEEL_NATIVE_SIZE.mobile
-      : ROULETTE_WHEEL_NATIVE_SIZE.desktop;
   const rouletteOddsOptions = useMemo(
     () =>
       hasDisplayBetAmount
@@ -98,8 +93,6 @@ export function RoulettePage({ onGameChange }) {
       })),
     [streakWins],
   );
-  const rouletteCelebrationActive = winCelebrationActive || loseCelebrationActive;
-  const rouletteCelebrationVariant = loseCelebrationActive ? "lose" : "win";
 
   const handleStreakChipLockComplete = useCallback((index) => {
     setStreakCompletedThrough(index);
@@ -332,74 +325,59 @@ export function RoulettePage({ onGameChange }) {
           />
         }
       >
-        <section className="joker-roulette-stage" aria-label="Roulette game board">
-          <div className="joker-roulette-main-area">
-            <div
-              className={[
-                "joker-roulette-game-frame joker-game-round-end-canvas",
-                isRoundEnding ? "is-round-ending" : "",
-              ]
-                .filter(Boolean)
-                .join(" ")}
-              aria-label="Roulette game area"
-            >
-              <div className="joker-roulette-game-frame__top" ref={winStreakRailRef}>
-                {streakWins.length > 0 ? (
-                  <WinStreakRow
-                    className="joker-roulette-streak-rail"
-                    wins={streakWinSlots}
-                    animateOnMount={false}
-                    completedThrough={streakCompletedThrough}
-                    lockingIndex={streakLockingIndex}
-                    onChipLockComplete={handleStreakChipLockComplete}
-                    chipSize={ROULETTE_WIN_CHIP_SIZE}
-                    gap={12}
-                  />
-                ) : (
-                  <div
-                    className="joker-roulette-streak-rail joker-roulette-streak-rail--empty"
-                    aria-hidden="true"
-                  />
-                )}
-              </div>
-              <div className="joker-roulette-game-frame__bottom">
-                <div className="joker-roulette-wheel-viewport" aria-label="Roulette wheel">
-                  <div className="joker-roulette-wheel-vignette" aria-hidden="true" />
-                  <div className="joker-roulette-wheel-mount">
-                    <RouletteWheelStage
-                      onSpinComplete={handleSpinComplete}
-                      onSpinningChange={handleWheelSpinningChange}
-                      spinRequestId={spinRequestId}
-                      wheelSize={rouletteWheelNativeSize}
-                      celebrationActive={rouletteCelebrationActive}
-                      celebrationVariant={rouletteCelebrationVariant}
-                    />
-                  </div>
-                </div>
-              </div>
-              <GameRoundEndTransition
-                active={isRoundEnding}
-                animationKey={
-                  isRoundEnding ? `roulette-loss-${String(roundResult.number)}` : "roulette-loss-idle"
-                }
+        <div
+          className={[
+            "joker-roulette-game-frame joker-game-round-end-canvas",
+            isRoundEnding ? "is-round-ending" : "",
+          ]
+            .filter(Boolean)
+            .join(" ")}
+          aria-label="Roulette game area"
+        >
+          <div className="joker-roulette-game-frame__top" ref={winStreakRailRef}>
+            {streakWins.length > 0 ? (
+              <WinStreakRow
+                className="joker-roulette-streak-rail"
+                wins={streakWinSlots}
+                animateOnMount={false}
+                completedThrough={streakCompletedThrough}
+                onChipAnimationComplete={handleStreakChipLockComplete}
+                chipSize={ROULETTE_WIN_CHIP_SIZE}
+                gap={12}
               />
-              {rouletteWinModal ? (
-                <div className="joker-roulette-result-overlay" role="status" aria-live="polite">
-                  <WinModalCard
-                    className="joker-roulette-result-card"
-                    title="Cashout Successful"
-                    amountWon={formatCurrency(rouletteWinModal.profit)}
-                    currency={null}
-                    message="Your winnings from this round have been added to your balance."
-                    closeLabel="Close"
-                    onCoinsLand={applyDeferredWinCredit}
-                    onClose={handleRouletteCashoutClose}
-                  />
-                </div>
-              ) : null}
-            </div>
+            ) : (
+              <div
+                className="joker-roulette-streak-rail joker-roulette-streak-rail--empty"
+                aria-hidden="true"
+              />
+            )}
           </div>
-        </section>
+          <RouletteWheelSlot
+            onSpinComplete={handleSpinComplete}
+            onSpinningChange={handleWheelSpinningChange}
+            spinRequestId={spinRequestId}
+          />
+          <GameRoundEndTransition
+            active={isRoundEnding}
+            animationKey={
+              isRoundEnding ? `roulette-loss-${String(roundResult.number)}` : "roulette-loss-idle"
+            }
+          />
+          {rouletteWinModal ? (
+            <div className="joker-roulette-result-overlay" role="status" aria-live="polite">
+              <WinModalCard
+                className="joker-roulette-result-card"
+                title="Cashout Successful"
+                amountWon={formatCurrency(rouletteWinModal.profit)}
+                currency={null}
+                message="Your winnings from this round have been added to your balance."
+                closeLabel="Close"
+                onCoinsLand={applyDeferredWinCredit}
+                onClose={handleRouletteCashoutClose}
+              />
+            </div>
+          ) : null}
+        </div>
       </GameShell>
     </>
   );
