@@ -2,8 +2,8 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import {
   GameShell,
   RouletteGameHeaderRail,
+  RouletteWinStreakRow,
   WinModalCard,
-  WinStreakRow,
   getPocketColor,
 } from "@joker/design-system";
 import minesCashoutSound from "../../../assets/mines-cashout.mp3?url";
@@ -16,11 +16,12 @@ import { formatBalance, formatCurrency } from "../../shared/formatting.js";
 import { useDeferredWinCredit, useGameShellBettingPanelLayout } from "../../shared/hooks.js";
 import { playSound } from "../../shared/sounds.js";
 import { PackagedRouletteBettingPanel } from "./PackagedRouletteBettingPanel.jsx";
-import { RouletteWheelSlot } from "./RouletteWheelSlot.jsx";
+import { RouletteGameAreaSlot } from "./RouletteGameAreaSlot.jsx";
 import {
   ROULETTE_CELEBRATION_MS,
   ROULETTE_SPIN_STALL_RECOVERY_MS,
   ROULETTE_WIN_CHIP_SIZE,
+  ROULETTE_WIN_STREAK_GAP,
   rouletteNavigationPreset,
 } from "./rouletteConfig.js";
 import {
@@ -334,25 +335,31 @@ export function RoulettePage({ onGameChange }) {
             .join(" ")}
           aria-label="Roulette game area"
         >
-          <div className="joker-roulette-game-frame__top" ref={winStreakRailRef}>
-            {streakWins.length > 0 ? (
-              <WinStreakRow
-                className="joker-roulette-streak-rail"
-                wins={streakWinSlots}
-                animateOnMount={false}
-                completedThrough={streakCompletedThrough}
-                onChipAnimationComplete={handleStreakChipLockComplete}
-                chipSize={ROULETTE_WIN_CHIP_SIZE}
-                gap={12}
-              />
-            ) : (
-              <div
-                className="joker-roulette-streak-rail joker-roulette-streak-rail--empty"
-                aria-hidden="true"
-              />
-            )}
+          <div className="joker-roulette-wheel-edge-fade" aria-hidden="true" />
+          <div className="joker-roulette-wheel-edge-fade joker-roulette-wheel-edge-fade--right" aria-hidden="true" />
+          <div className="joker-roulette-wheel-edge-fade joker-roulette-wheel-edge-fade--bottom" aria-hidden="true" />
+          <div className="joker-roulette-game-frame__top">
+            <div
+              className="joker-roulette-streak-rail"
+              aria-label="Roulette win streak"
+              ref={winStreakRailRef}
+            >
+              <div className="joker-roulette-streak-track">
+                {streakWins.length > 0 ? (
+                  <RouletteWinStreakRow
+                    wins={streakWinSlots}
+                    animateOnMount={false}
+                    completedThrough={streakCompletedThrough}
+                    lockingIndex={streakLockingIndex}
+                    onChipLockComplete={handleStreakChipLockComplete}
+                    chipSize={ROULETTE_WIN_CHIP_SIZE}
+                    gap={ROULETTE_WIN_STREAK_GAP}
+                  />
+                ) : null}
+              </div>
+            </div>
           </div>
-          <RouletteWheelSlot
+          <RouletteGameAreaSlot
             onSpinComplete={handleSpinComplete}
             onSpinningChange={handleWheelSpinningChange}
             spinRequestId={spinRequestId}

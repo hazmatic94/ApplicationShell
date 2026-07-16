@@ -6,6 +6,7 @@ export const rouletteNavigationPreset = {
 };
 
 export const ROULETTE_WIN_CHIP_SIZE = 72;
+export const ROULETTE_WIN_STREAK_GAP = Math.round(ROULETTE_WIN_CHIP_SIZE * 0.34);
 
 export const ROULETTE_SPIN_DURATION_MS = 5800;
 export const ROULETTE_SPIN_STALL_RECOVERY_MS = ROULETTE_SPIN_DURATION_MS + 1200;

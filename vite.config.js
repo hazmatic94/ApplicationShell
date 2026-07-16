@@ -2,9 +2,33 @@ import react from '@vitejs/plugin-react';
 import {fileURLToPath} from 'node:url';
 import {defineConfig} from 'vitest/config';
 
+const appBase = '/showroom/gameshell/';
+
+function redirectMissingBaseSlash() {
+  const baseWithoutSlash = appBase.replace(/\/$/, '');
+
+  return {
+    name: 'redirect-missing-base-slash',
+    configureServer(server) {
+      server.middlewares.use((req, res, next) => {
+        const url = req.url?.split('?')[0] ?? '';
+
+        if (url === baseWithoutSlash) {
+          const query = req.url?.includes('?') ? req.url.slice(req.url.indexOf('?')) : '';
+          res.writeHead(301, {Location: `${appBase}${query}`});
+          res.end();
+          return;
+        }
+
+        next();
+      });
+    },
+  };
+}
+
 export default defineConfig({
-  plugins: [react()],
-  base: '/showroom/gameshell/',
+  plugins: [react(), redirectMissingBaseSlash()],
+  base: appBase,
   test: {
     environment: 'node',
     include: ['src/**/*.test.{js,jsx}'],
