@@ -425,33 +425,35 @@ export function CoinFlipPage({ onGameChange }) {
               <div className="joker-coin-flip-game-frame__top">
                 <div
                   className="joker-coin-flip-history-rail"
-                  aria-label="Coin Flip preview history"
+                  aria-label="Coin Flip win streak"
                   ref={coinHistoryRailRef}
                 >
-                  <CoinProgression
-                    key={coinProgressionKey}
-                    steps={coinProgressionSteps}
-                    activeIndex={progressionActiveIndex}
-                    completedThrough={progressionCompletedThrough}
-                    lockingIndex={progressionLockingIndex}
-                    losingIndex={progressionLosingIndex}
-                    lossIndex={progressionLossIndex}
-                    receiverSize={COIN_FLIP_PROGRESSION_RECEIVER_SIZE}
-                    onLockComplete={handleProgressionLockComplete}
-                    onLossComplete={handleProgressionLossComplete}
-                    renderCoin={(index) => {
-                      const historyItem = coinHistory[index];
-                      const isLossSlot =
-                        progressionLosingIndex === index || progressionLossIndex === index;
-                      if (!historyItem && !isLossSlot) return null;
-                      return (
-                        <Coin
-                          side={historyItem?.result ?? coinSide}
-                          style={{ "--coin-size": `${COIN_FLIP_PROGRESSION_COIN_SIZE}px` }}
-                        />
-                      );
-                    }}
-                  />
+                  <div className="joker-coin-flip-history-track">
+                    <CoinProgression
+                      key={coinProgressionKey}
+                      steps={coinProgressionSteps}
+                      activeIndex={progressionActiveIndex}
+                      completedThrough={progressionCompletedThrough}
+                      lockingIndex={progressionLockingIndex}
+                      losingIndex={progressionLosingIndex}
+                      lossIndex={progressionLossIndex}
+                      receiverSize={COIN_FLIP_PROGRESSION_RECEIVER_SIZE}
+                      onLockComplete={handleProgressionLockComplete}
+                      onLossComplete={handleProgressionLossComplete}
+                      renderCoin={(index) => {
+                        const historyItem = coinHistory[index];
+                        const isLossSlot =
+                          progressionLosingIndex === index || progressionLossIndex === index;
+                        if (!historyItem && !isLossSlot) return null;
+                        return (
+                          <Coin
+                            side={historyItem?.result ?? coinSide}
+                            style={{ "--coin-size": `${COIN_FLIP_PROGRESSION_COIN_SIZE}px` }}
+                          />
+                        );
+                      }}
+                    />
+                  </div>
                 </div>
               </div>
               <div className="joker-coin-flip-game-frame__bottom">

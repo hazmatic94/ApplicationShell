@@ -1,8 +1,13 @@
 export function getCoinFlipPageStyles(gameRoundEndStyles) {
   return `
+.joker-game-shell--coin-flip .joker-game-inner-canvas,
+.joker-game-shell--coin-flip .joker-game-shell-empty-stage {
+  min-height: 0;
+  height: 100%;
+}
+
 .joker-game-shell--coin-flip .joker-game-shell-empty-stage {
   position: relative;
-  min-height: 0;
 }
 
 .joker-game-shell--coin-flip .joker-game-shell-empty-stage > .joker-coin-flip-stage {
@@ -22,16 +27,11 @@ export function getCoinFlipPageStyles(gameRoundEndStyles) {
     var(--spacing-32) + calc(var(--body-12) * var(--text-body-line-height)) +
       var(--spacing-8) + var(--input-control-height) + var(--spacing-24)
   );
-  --coin-flip-history-inset: var(--spacing-24);
   --coin-flip-sync-history-rail-height: var(--coin-flip-betting-divider-offset);
-  --coin-flip-sync-top-band-height: calc(
-    var(--coin-flip-sync-history-rail-height) + var(--coin-flip-history-inset)
-  );
   --coin-flip-play-native-width: 548px;
   --coin-flip-play-native-height: 500px;
-  --coin-flip-play-scale-bias: 1.08;
-  --coin-flip-play-scale-max: 1.32;
-  --coin-flip-play-gap: var(--spacing-24);
+  --coin-flip-size-boost: 1.32;
+  --coin-flip-felt-card-scale: 0.88;
   --coin-flip-coin-native-size: 256px;
   --coin-flip-stage-native-size: 400px;
   --coin-pull-scale-x: 1;
@@ -53,6 +53,7 @@ export function getCoinFlipPageStyles(gameRoundEndStyles) {
   align-items: stretch;
   justify-content: flex-start;
   overflow: visible;
+  padding: 0;
 }
 
 .joker-coin-flip-game-frame {
@@ -78,35 +79,13 @@ export function getCoinFlipPageStyles(gameRoundEndStyles) {
   width: 100%;
   flex: 0 0 auto;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: stretch;
+  justify-content: flex-start;
+  border-bottom: 0;
   box-sizing: border-box;
-  padding: var(--coin-flip-history-inset) 0 0 var(--coin-flip-history-inset);
+  padding: var(--spacing-24) 0 0;
   overflow: visible;
   background: var(--joker-black-800);
-}
-
-@media (min-width: 1024px) {
-  .joker-coin-flip-game-frame__top {
-    position: relative;
-    flex: 0 0 auto;
-    height: var(--coin-flip-sync-top-band-height);
-    min-height: var(--coin-flip-sync-top-band-height);
-    max-height: var(--coin-flip-sync-top-band-height);
-    padding: var(--coin-flip-history-inset) 0 0 var(--coin-flip-history-inset);
-    justify-content: flex-start;
-  }
-
-  .joker-coin-flip-history-rail {
-    display: flex;
-    height: auto;
-    max-height: none;
-    flex: 0 0 auto;
-    align-items: flex-start;
-    justify-content: flex-start;
-    min-height: 0;
-    padding: 0;
-    box-sizing: border-box;
-  }
 }
 
 .joker-coin-flip-history-rail {
@@ -116,9 +95,10 @@ export function getCoinFlipPageStyles(gameRoundEndStyles) {
   width: 100%;
   min-width: 0;
   flex: 0 0 auto;
-  align-items: flex-start;
+  align-items: center;
   justify-content: flex-start;
-  padding: 0;
+  padding-block: 0;
+  padding-inline: 0;
   overflow-x: auto;
   overflow-y: visible;
   scroll-behavior: smooth;
@@ -127,19 +107,73 @@ export function getCoinFlipPageStyles(gameRoundEndStyles) {
   scrollbar-width: none;
 }
 
+.joker-coin-flip-history-rail::-webkit-scrollbar {
+  display: none;
+}
+
+.joker-coin-flip-history-track {
+  display: flex;
+  width: max-content;
+  min-width: 100%;
+  align-items: center;
+  justify-content: flex-start;
+  padding-inline-start: var(--spacing-24);
+  overflow: visible;
+  box-sizing: border-box;
+}
+
+.joker-coin-flip-history-track::after {
+  content: "";
+  display: block;
+  flex: 0 0 var(--spacing-24);
+  width: var(--spacing-24);
+  height: 1px;
+}
+
 .joker-coin-flip-history-rail .joker-coin-progression {
   width: auto;
 }
 
 .joker-coin-flip-history-rail .joker-coin-progression__track {
-  align-items: flex-start;
+  align-items: center;
   justify-content: flex-start;
   margin: 0;
   padding: 0;
 }
 
-.joker-coin-flip-history-rail::-webkit-scrollbar {
-  display: none;
+@media (min-width: 1024px) {
+  .joker-coin-flip-game-frame__top {
+    position: relative;
+    flex: 0 0 auto;
+    height: var(--coin-flip-sync-history-rail-height);
+    min-height: var(--coin-flip-sync-history-rail-height);
+    max-height: var(--coin-flip-sync-history-rail-height);
+    padding: var(--spacing-24) 0 0;
+    justify-content: flex-start;
+  }
+
+  .joker-coin-flip-history-rail {
+    display: flex;
+    height: auto;
+    max-height: none;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: flex-start;
+    min-height: 0;
+    padding-block: 0;
+    box-sizing: border-box;
+  }
+
+  .joker-coin-flip-history-track {
+    display: flex;
+    width: max-content;
+    min-width: 100%;
+    min-height: 0;
+    align-items: center;
+    justify-content: flex-start;
+    padding-inline-start: var(--spacing-24);
+    box-sizing: border-box;
+  }
 }
 
 .joker-coin-flip-game-frame.is-page-load-enter .joker-coin-toss__playfield {
@@ -290,6 +324,7 @@ export function getCoinFlipPageStyles(gameRoundEndStyles) {
 .joker-coin-flip-play-stack {
   display: flex;
   width: 100%;
+  max-width: var(--coin-flip-play-native-width);
   flex: 1 1 auto;
   flex-direction: column;
   align-items: center;
@@ -297,7 +332,7 @@ export function getCoinFlipPageStyles(gameRoundEndStyles) {
   min-height: 0;
   margin-inline: auto;
   container-type: size;
-  container-name: coin-flip-play;
+  container-name: coin-flip-felt;
 }
 
 .joker-coin-flip-play {
@@ -322,29 +357,17 @@ export function getCoinFlipPageStyles(gameRoundEndStyles) {
   flex: 0 0 auto;
   align-items: center;
   justify-content: center;
+  transform: scale(
+    calc(
+      min(
+        calc(100cqw / var(--coin-flip-play-native-width)),
+        calc(100cqh / var(--coin-flip-play-native-height))
+      ) * var(--coin-flip-felt-card-scale, 0.88) * var(--coin-flip-size-boost, 1)
+    )
+  );
   transform-origin: center center;
   --coin-size: var(--coin-flip-coin-native-size);
   --coin-toss-stage-size: var(--coin-flip-stage-native-size);
-}
-
-@media (min-width: 1024px) {
-  .joker-coin-flip-play-stack {
-    width: 100%;
-    max-width: 900px;
-  }
-
-  .joker-coin-flip-play-inner {
-    --coin-flip-play-scale: min(
-      calc((100cqw - (2 * var(--coin-flip-play-gap))) / var(--coin-flip-play-native-width)),
-      calc((100cqh - var(--coin-flip-play-gap)) / var(--coin-flip-play-native-height)),
-      var(--coin-flip-play-scale-max)
-    );
-    --coin-flip-play-scale: max(
-      0.55,
-      calc(var(--coin-flip-play-scale) * var(--coin-flip-play-scale-bias))
-    );
-    transform: scale(var(--coin-flip-play-scale));
-  }
 }
 
 .joker-coin-flip-coin-stage {
@@ -456,64 +479,145 @@ export function getCoinFlipPageStyles(gameRoundEndStyles) {
 
 @media (max-width: 1023px) {
   .joker-coin-flip-stage {
-    --coin-flip-mobile-odds-reserve: 80px;
-    --coin-flip-mobile-play-scale-bias: 0.9;
+    --coin-flip-mobile-odds-reserve: 52px;
+    --coin-flip-mobile-felt-card-scale: 0.96;
     --coin-flip-play-native-width: 360px;
     --coin-flip-play-native-height: 400px;
     --coin-flip-coin-native-size: 208px;
     --coin-flip-stage-native-size: 320px;
   }
 
-  .joker-game-shell--coin-flip .joker-coin-flip-betting-panel.is-mobile .joker-odds-button-group-field {
-    display: none;
+  .joker-game-shell--coin-flip .joker-game-shell-empty-stage {
+    overflow: visible;
   }
 
   .joker-coin-flip-game-frame {
     position: relative;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    min-width: 0;
+    height: 100%;
+    max-height: 100cqh;
+    gap: 0;
+    padding-bottom: 0;
+    box-sizing: border-box;
+    overflow: visible;
+  }
+
+  .joker-coin-flip-game-frame__top {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    padding: var(--spacing-24) 0 0;
+    gap: 0;
+  }
+
+  .joker-coin-flip-history-rail {
+    z-index: 1;
+    align-items: center;
+    justify-content: flex-start;
+    flex: 0 0 auto;
+    padding-block: 0;
+    padding-inline: 0;
+  }
+
+  .joker-coin-flip-history-track {
+    display: flex;
+    width: max-content;
+    min-width: 100%;
     min-height: 0;
+    align-items: center;
+    justify-content: flex-start;
+    margin-inline: 0;
+    padding-inline-start: var(--spacing-24);
+    box-sizing: border-box;
   }
 
   .joker-coin-flip-game-frame__bottom {
+    position: relative;
+    z-index: 3;
+    display: flex;
     flex: 1 1 auto;
-    justify-content: flex-start;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-width: 0;
     min-height: 0;
-    padding-block: var(--spacing-12) calc(var(--spacing-24) + var(--coin-flip-mobile-odds-reserve));
+    padding: 0;
+    overflow: visible;
   }
 
   .joker-coin-flip-play-stack {
+    position: relative;
+    z-index: 3;
+    display: flex;
+    width: 100%;
+    height: 100%;
     flex: 1 1 auto;
+    flex-direction: column;
+    align-items: center;
     justify-content: center;
     min-height: 0;
-    padding-bottom: var(--spacing-8);
+    padding: 0;
+    box-sizing: border-box;
+    overflow: visible;
+    container-type: size;
+    container-name: coin-flip-mobile-felt;
   }
 
   .joker-coin-flip-play {
+    position: relative;
+    z-index: 3;
     flex: 1 1 auto;
+    width: 100%;
+    height: 100%;
     min-height: 0;
+    display: flex;
     align-items: center;
     justify-content: center;
+    padding-block: 0;
+    padding-inline: 0;
+    overflow: visible;
+  }
+
+  .joker-coin-flip-coin-stage,
+  .joker-coin-flip-coin-zone {
+    overflow: visible;
   }
 
   .joker-coin-flip-play-inner {
+    display: flex;
     width: var(--coin-flip-play-native-width);
     height: var(--coin-flip-play-native-height);
-    --coin-flip-play-scale: min(
-      calc(100cqw / var(--coin-flip-play-native-width)),
-      calc((100cqh - var(--coin-flip-mobile-odds-reserve)) / var(--coin-flip-play-native-height)),
-      1
+    transform: scale(
+      calc(
+        min(
+          calc(100cqw / var(--coin-flip-play-native-width)),
+          calc((100cqh - var(--coin-flip-mobile-odds-reserve)) / var(--coin-flip-play-native-height)),
+          1
+        ) * var(--coin-flip-mobile-felt-card-scale, 0.96) * var(--coin-flip-size-boost, 1)
+      )
     );
-    --coin-flip-play-scale: max(
-      0.48,
-      calc(var(--coin-flip-play-scale) * var(--coin-flip-mobile-play-scale-bias))
-    );
-    transform: scale(var(--coin-flip-play-scale));
+    transform-origin: center center;
+    flex: 0 0 auto;
+    margin-inline: auto;
   }
 
   .joker-coin-flip-mobile-odds {
-    position: absolute;
-    left: var(--spacing-24);
-    right: var(--spacing-24);
-    bottom: var(--spacing-24);
+    position: relative;
+    flex: 0 0 auto;
+    left: auto;
+    right: auto;
+    bottom: auto;
+    width: 100%;
+    max-width: none;
+    margin-top: 0;
+    padding: var(--spacing-4) var(--spacing-24) var(--spacing-16);
+    box-sizing: border-box;
     z-index: 4;
     pointer-events: auto;
   }
@@ -522,21 +626,10 @@ export function getCoinFlipPageStyles(gameRoundEndStyles) {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: var(--spacing-8);
   }
-}
 
-@media (max-width: 760px) {
-  .joker-coin-flip-stage {
-    --coin-flip-mobile-odds-reserve: 84px;
-    --coin-flip-mobile-play-scale-bias: 0.84;
-    --coin-flip-play-native-width: 320px;
-    --coin-flip-play-native-height: 360px;
-    --coin-flip-coin-native-size: 184px;
-    --coin-flip-stage-native-size: 288px;
-  }
-
-  .joker-coin-flip-play-inner {
-    width: var(--coin-flip-play-native-width);
-    height: var(--coin-flip-play-native-height);
+  .joker-coin-flip-game-frame .joker-coin-toss-rings__ring--outer,
+  .joker-coin-flip-game-frame .joker-coin-toss-rings__ring--inner {
+    display: none;
   }
 }
 

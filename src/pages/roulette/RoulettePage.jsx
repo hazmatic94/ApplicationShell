@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   GameShell,
+  MobileRouletteOddsGroup,
   RouletteGameHeaderRail,
   RouletteWinStreakRow,
   WinModalCard,
@@ -364,6 +365,15 @@ export function RoulettePage({ onGameChange }) {
             onSpinningChange={handleWheelSpinningChange}
             spinRequestId={spinRequestId}
           />
+          {bettingPanelLayout === "mobile" ? (
+            <div className="joker-roulette-mobile-odds">
+              <MobileRouletteOddsGroup
+                value={inGame ? selectedOdds || "red" : hasDisplayBetAmount ? selectedOdds : ""}
+                onValueChange={handleOddsChange}
+                disabled={(!hasDisplayBetAmount && !inGame) || spinLocked || isRoundLocked}
+              />
+            </div>
+          ) : null}
           <GameRoundEndTransition
             active={isRoundEnding}
             animationKey={

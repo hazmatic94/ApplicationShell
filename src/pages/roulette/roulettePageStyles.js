@@ -58,9 +58,9 @@ export function getRoulettePageStyles(gameRoundEndStyles) {
     top: 0;
     left: 0;
     bottom: 0;
-    width: 140px;
     z-index: 1;
     pointer-events: none;
+    display: none;
     background: linear-gradient(
       to right,
       rgb(21 21 21 / 100%) 0%,
@@ -81,6 +81,7 @@ export function getRoulettePageStyles(gameRoundEndStyles) {
   }
 
   .joker-roulette-wheel-edge-fade--bottom {
+    display: block;
     top: auto;
     left: 0;
     right: 0;
@@ -268,6 +269,30 @@ export function getRoulettePageStyles(gameRoundEndStyles) {
       margin-inline: 0;
       padding-inline-start: var(--spacing-24);
       box-sizing: border-box;
+    }
+
+    .joker-roulette-mobile-odds {
+      position: relative;
+      flex: 0 0 auto;
+      left: auto;
+      right: auto;
+      bottom: auto;
+      width: 100%;
+      max-width: none;
+      margin-top: 0;
+      padding: var(--spacing-4) var(--spacing-24) var(--spacing-16);
+      box-sizing: border-box;
+      z-index: 4;
+      pointer-events: auto;
+    }
+
+    .joker-roulette-mobile-odds .joker-odds-button-group.is-inline {
+      gap: var(--spacing-8);
+    }
+
+    .joker-roulette-wheel-edge-fade:not(.joker-roulette-wheel-edge-fade--bottom) {
+      display: block;
+      width: 80px;
     }
   }
 ${gameRoundEndStyles}
