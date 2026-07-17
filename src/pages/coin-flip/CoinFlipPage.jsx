@@ -4,8 +4,8 @@ import {
   CoinProgression,
   GameShell,
   WinModalCard,
+  getCoinReceiverLossTotalMs,
 } from "@joker/design-system";
-import coinFlipSound from "../../../assets/coin-flip.mp3?url";
 import minesCashoutSound from "../../../assets/mines-cashout.mp3?url";
 import {
   GAME_ROUND_END_STYLES,
@@ -17,8 +17,6 @@ import { playSound } from "../../shared/sounds.js";
 import { MobileOddsGroup } from "./MobileOddsGroup.jsx";
 import { PackagedCoinFlipBettingPanel } from "./PackagedCoinFlipBettingPanel.jsx";
 import {
-  COIN_FLIP_LOSS_RESET_MS,
-  COIN_FLIP_LOSS_SEALED_HOLD_MS,
   COIN_FLIP_PAGE_LOAD_ANIMATION_MS,
   COIN_FLIP_PROGRESSION_COIN_SIZE,
   COIN_FLIP_PROGRESSION_RECEIVER_SIZE,
@@ -60,6 +58,7 @@ export function CoinFlipPage({ onGameChange }) {
   const coinProfitAnimationRef = useRef(null);
   const coinWinModalTimeoutRef = useRef(null);
   const coinLossResetTimeoutRef = useRef(null);
+  const lossResetHandledRef = useRef(false);
   const coinWinModalResetRef = useRef(false);
   const pendingTossRef = useRef(null);
   const selectedSideRef = useRef(selectedSide);
@@ -75,6 +74,7 @@ export function CoinFlipPage({ onGameChange }) {
     coinHistory.length < maxRoundsToWin &&
     !isCoinFlipping &&
     !coinWinModal &&
+    progressionLockingIndex == null &&
     progressionLosingIndex == null;
   const canFlipCoin = canStartCoinFlip;
   const coinProgressionSteps = useMemo(
@@ -116,7 +116,9 @@ export function CoinFlipPage({ onGameChange }) {
       if (coinWinModalTimeoutRef.current) {
         window.clearTimeout(coinWinModalTimeoutRef.current);
       }
-      clearCoinLossResetTimer();
+      if (coinLossResetTimeoutRef.current) {
+        window.clearTimeout(coinLossResetTimeoutRef.current);
+      }
     };
   }, []);
 
@@ -174,6 +176,7 @@ export function CoinFlipPage({ onGameChange }) {
 
   function resetCoinRound() {
     clearCoinLossResetTimer();
+    lossResetHandledRef.current = false;
     setCoinRoundStatus("idle");
     setCoinResult(null);
     setCoinHistory([]);
@@ -191,11 +194,22 @@ export function CoinFlipPage({ onGameChange }) {
     setCoinProgressionKey((currentKey) => currentKey + 1);
   }
 
-  function scheduleCoinLossReset(delayMs = COIN_FLIP_LOSS_RESET_MS) {
+  function resetCoinRoundAfterLoss() {
+    if (lossResetHandledRef.current) {
+      return;
+    }
+
+    lossResetHandledRef.current = true;
+    clearCoinLossResetTimer();
+    resetCoinRound();
+  }
+
+  function scheduleCoinLossReset() {
     clearCoinLossResetTimer();
     coinLossResetTimeoutRef.current = window.setTimeout(() => {
-      resetCoinRound();
-    }, delayMs);
+      coinLossResetTimeoutRef.current = null;
+      resetCoinRoundAfterLoss();
+    }, getCoinReceiverLossTotalMs());
   }
 
   const handleProgressionLockComplete = useCallback((index) => {
@@ -204,10 +218,8 @@ export function CoinFlipPage({ onGameChange }) {
     setProgressionLockingIndex(null);
   }, []);
 
-  const handleProgressionLossComplete = useCallback((index) => {
-    setProgressionLossIndex(index);
-    setProgressionLosingIndex(null);
-    scheduleCoinLossReset(COIN_FLIP_LOSS_SEALED_HOLD_MS);
+  const handleProgressionLossComplete = useCallback(() => {
+    resetCoinRoundAfterLoss();
   }, []);
 
   function closeCoinWinModal() {
@@ -253,6 +265,7 @@ export function CoinFlipPage({ onGameChange }) {
       setProgressionLockingIndex(null);
       setProgressionLosingIndex(null);
       setProgressionLossIndex(null);
+      setCoinProgressionKey((currentKey) => currentKey + 1);
     }
     setCoinRoundStatus("active");
     window.setTimeout(() => runCoinFlipAnimation(true), 60);
@@ -342,8 +355,6 @@ export function CoinFlipPage({ onGameChange }) {
 
     if (!isAllowedToFlip) return;
 
-    playSound(coinFlipSound);
-
     const activeSelectedSide = selectedSideRef.current;
     const didWin = Math.random() < coinFlipFairProbability;
     const result = didWin ? activeSelectedSide : activeSelectedSide === "heads" ? "tails" : "heads";
@@ -371,6 +382,7 @@ export function CoinFlipPage({ onGameChange }) {
       setProgressionLockingIndex(null);
       setProgressionLosingIndex(null);
       setProgressionLossIndex(null);
+      setCoinProgressionKey((currentKey) => currentKey + 1);
       runCoinFlipAnimation(true);
       return;
     }
@@ -425,33 +437,35 @@ export function CoinFlipPage({ onGameChange }) {
               <div className="joker-coin-flip-game-frame__top">
                 <div
                   className="joker-coin-flip-history-rail"
-                  aria-label="Coin Flip preview history"
+                  aria-label="Coin Flip win streak"
                   ref={coinHistoryRailRef}
                 >
-                  <CoinProgression
-                    key={coinProgressionKey}
-                    steps={coinProgressionSteps}
-                    activeIndex={progressionActiveIndex}
-                    completedThrough={progressionCompletedThrough}
-                    lockingIndex={progressionLockingIndex}
-                    losingIndex={progressionLosingIndex}
-                    lossIndex={progressionLossIndex}
-                    receiverSize={COIN_FLIP_PROGRESSION_RECEIVER_SIZE}
-                    onLockComplete={handleProgressionLockComplete}
-                    onLossComplete={handleProgressionLossComplete}
-                    renderCoin={(index) => {
-                      const historyItem = coinHistory[index];
-                      const isLossSlot =
-                        progressionLosingIndex === index || progressionLossIndex === index;
-                      if (!historyItem && !isLossSlot) return null;
-                      return (
-                        <Coin
-                          side={historyItem?.result ?? coinSide}
-                          style={{ "--coin-size": `${COIN_FLIP_PROGRESSION_COIN_SIZE}px` }}
-                        />
-                      );
-                    }}
-                  />
+                  <div className="joker-coin-flip-history-track">
+                    <CoinProgression
+                      key={coinProgressionKey}
+                      steps={coinProgressionSteps}
+                      activeIndex={progressionActiveIndex}
+                      completedThrough={progressionCompletedThrough}
+                      lockingIndex={progressionLockingIndex}
+                      losingIndex={progressionLosingIndex}
+                      lossIndex={progressionLossIndex}
+                      receiverSize={COIN_FLIP_PROGRESSION_RECEIVER_SIZE}
+                      onLockComplete={handleProgressionLockComplete}
+                      onLossComplete={handleProgressionLossComplete}
+                      renderCoin={(index) => {
+                        const historyItem = coinHistory[index];
+                        const isLossSlot =
+                          progressionLosingIndex === index || progressionLossIndex === index;
+                        if (!historyItem && !isLossSlot) return null;
+                        return (
+                          <Coin
+                            side={historyItem?.result ?? coinSide}
+                            style={{ "--coin-size": `${COIN_FLIP_PROGRESSION_COIN_SIZE}px` }}
+                          />
+                        );
+                      }}
+                    />
+                  </div>
                 </div>
               </div>
               <div className="joker-coin-flip-game-frame__bottom">
@@ -472,7 +486,7 @@ export function CoinFlipPage({ onGameChange }) {
                               tossPhase={tossPhase}
                               tossOutcome={tossOutcome}
                               onTossEnd={handleTossEnd}
-                              tapHint="tap to flip"
+                              tapHint="Tap to flip"
                               tapHintVisible={tapHintVisible && canFlipCoin && !isPageLoadEnter}
                             />
                           </button>

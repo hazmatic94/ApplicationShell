@@ -12,7 +12,7 @@
     "clean": "rm -rf dist node_modules .yarn yarn.lock && rm -f .pnp.cjs .pnp.loader.mjs"
   },
   "dependencies": {
-    "@joker/design-system": "https://github.com/mjprod/DesignSystemGames.git#main",
+    "@joker/design-system": "https://github.com/mjprod/DesignSystemJokerShowroom.git#main",
     "@vitejs/plugin-react": "^4.3.4",
     "lucide-react": "^0.468.0",
     "react": "^18.3.1",

@@ -37,6 +37,8 @@ describe("rouletteGameLogic", () => {
     expect(didRouletteBetWin("green", 7)).toBe(false);
     expect(didRouletteBetWin("red", 1)).toBe(true);
     expect(didRouletteBetWin("black", 1)).toBe(false);
+    expect(didRouletteBetWin("red", 0)).toBe(false);
+    expect(didRouletteBetWin("black", 0)).toBe(false);
   });
 
   it("formats result labels", () => {
