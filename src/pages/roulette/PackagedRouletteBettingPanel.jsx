@@ -1,4 +1,7 @@
-import { RouletteBettingPanel as JokerRouletteBettingPanel } from "@joker/design-system";
+import {
+  playButtonClickSound,
+  RouletteBettingPanel as JokerRouletteBettingPanel,
+} from "@joker/design-system";
 
 export function PackagedRouletteBettingPanel({
   betAmount,
@@ -27,12 +30,14 @@ export function PackagedRouletteBettingPanel({
   function handlePlaceBet(event) {
     if (isSpinning) return;
 
+    playButtonClickSound();
     onPlaceBet?.(event);
   }
 
   function handleCashout(event) {
     if (isSpinning) return;
 
+    playButtonClickSound();
     onCashout?.(event);
   }
 

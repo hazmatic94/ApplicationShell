@@ -3,6 +3,7 @@ import {fileURLToPath} from 'node:url';
 import {defineConfig} from 'vitest/config';
 
 const appBase = '/showroom/gameshell/';
+const designSystemRoot = fileURLToPath(new URL('../DesignSystemGames', import.meta.url));
 
 function redirectMissingBaseSlash() {
   const baseWithoutSlash = appBase.replace(/\/$/, '');
@@ -52,10 +53,25 @@ export default defineConfig({
     exclude: ['@joker/design-system'],
   },
   resolve: {
-    alias: {
-      '../EnterBetPrecursor/index.js': fileURLToPath(
-        new URL('./node_modules/@joker/design-system/dist/components/EnterBetPrecursor/index.js', import.meta.url),
-      ),
-    },
+    alias: [
+      {
+        find: '@joker/design-system/styles.css',
+        replacement: `${designSystemRoot}/src/styles/index.css`,
+      },
+      {
+        find: /^@joker\/design-system\/styles\/(.+)$/,
+        replacement: `${designSystemRoot}/src/styles/$1`,
+      },
+      {
+        find: '@joker/design-system',
+        replacement: `${designSystemRoot}/dist/index.js`,
+      },
+      {
+        find: '../EnterBetPrecursor/index.js',
+        replacement: fileURLToPath(
+          new URL('../DesignSystemGames/dist/components/EnterBetPrecursor/index.js', import.meta.url),
+        ),
+      },
+    ],
   },
 });

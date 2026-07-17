@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import {
   RouletteWheel,
   RouletteWheelWin,
@@ -17,8 +17,10 @@ export function RouletteGameAreaSlot({
   wheelSessionKey = 0,
 }) {
   const onSpinCompleteRef = useRef(onSpinComplete);
-  const handledSpinRequestRef = useRef(0);
+  const wheelRootRef = useRef(null);
+  const inFlightSpinRequestIdRef = useRef(0);
   const deliveredSpinRequestRef = useRef(0);
+  const wheelSessionKeyRef = useRef(wheelSessionKey);
   const isSpinningRef = useRef(false);
 
   useEffect(() => {
@@ -26,9 +28,40 @@ export function RouletteGameAreaSlot({
   }, [onSpinComplete]);
 
   useEffect(() => {
-    handledSpinRequestRef.current = spinRequestId;
-    deliveredSpinRequestRef.current = spinRequestId;
-  }, [wheelSessionKey]);
+    if (wheelSessionKeyRef.current === wheelSessionKey) {
+      return;
+    }
+
+    wheelSessionKeyRef.current = wheelSessionKey;
+    inFlightSpinRequestIdRef.current = 0;
+    deliveredSpinRequestRef.current = Math.max(deliveredSpinRequestRef.current, spinRequestId);
+  }, [wheelSessionKey, spinRequestId]);
+
+  const deliverSpinResult = useCallback((resultNumber, completedRequestId) => {
+    if (!Number.isInteger(resultNumber) || completedRequestId < 1) {
+      return;
+    }
+
+    if (deliveredSpinRequestRef.current >= completedRequestId) {
+      return;
+    }
+
+    deliveredSpinRequestRef.current = completedRequestId;
+    inFlightSpinRequestIdRef.current = 0;
+    onSpinCompleteRef.current?.(resultNumber, completedRequestId);
+  }, []);
+
+  const handleWheelSpinComplete = useCallback(
+    (result) => {
+      const completedRequestId = inFlightSpinRequestIdRef.current;
+      if (!completedRequestId) {
+        return;
+      }
+
+      deliverSpinResult(result.targetPocket.value, completedRequestId);
+    },
+    [deliverSpinResult],
+  );
 
   const {
     wheelRotation,
@@ -39,29 +72,15 @@ export function RouletteGameAreaSlot({
     isSpinning,
     targetPocket,
     celebratingPocket,
-    displayedResult,
     spin,
-  } = useRouletteWheelSpin();
+  } = useRouletteWheelSpin({
+    soundEnabled: true,
+    wheelRootRef,
+    onSpinComplete: handleWheelSpinComplete,
+  });
 
   const resolvedCelebratingPocket =
     celebrationVariant === "lose" ? null : celebratingPocket;
-
-  useEffect(() => {
-    if (!spinRequestId || isSpinning || displayedResult == null) {
-      return;
-    }
-
-    if (handledSpinRequestRef.current !== spinRequestId) {
-      return;
-    }
-
-    if (deliveredSpinRequestRef.current >= spinRequestId) {
-      return;
-    }
-
-    deliveredSpinRequestRef.current = spinRequestId;
-    onSpinCompleteRef.current?.(displayedResult);
-  }, [displayedResult, isSpinning, spinRequestId]);
 
   useEffect(() => {
     isSpinningRef.current = isSpinning;
@@ -69,7 +88,12 @@ export function RouletteGameAreaSlot({
   }, [isSpinning, onSpinningChange]);
 
   useEffect(() => {
-    if (!spinRequestId || spinRequestId === handledSpinRequestRef.current) {
+    if (!spinRequestId) {
+      inFlightSpinRequestIdRef.current = 0;
+      return undefined;
+    }
+
+    if (deliveredSpinRequestRef.current >= spinRequestId) {
       return undefined;
     }
 
@@ -77,13 +101,13 @@ export function RouletteGameAreaSlot({
     let rafId = 0;
 
     const attemptSpin = () => {
-      if (cancelled || handledSpinRequestRef.current === spinRequestId) {
+      if (cancelled || deliveredSpinRequestRef.current >= spinRequestId) {
         return;
       }
 
       if (!isSpinningRef.current) {
+        inFlightSpinRequestIdRef.current = spinRequestId;
         spin();
-        handledSpinRequestRef.current = spinRequestId;
         return;
       }
 
@@ -112,14 +136,17 @@ export function RouletteGameAreaSlot({
         .join(" ")}
       style={{ flex: 1, minHeight: 0 }}
     >
-      <RouletteWrapper>
+      <RouletteWrapper data-roulette-wrapper>
         <RouletteWheelWin
           active={celebrationActive}
           variant={celebrationVariant}
+          soundEnabled
           size={ROULETTE_WHEEL_NATIVE_WIDTH}
         >
           <RouletteWheel
+            ref={wheelRootRef}
             size={ROULETTE_WHEEL_NATIVE_WIDTH}
+            performanceMode
             wheelRotation={wheelRotation}
             ballPosition={ballPosition}
             ballBounceScale={ballBounceScale}

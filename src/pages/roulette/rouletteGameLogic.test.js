@@ -5,6 +5,7 @@ import {
   formatRouletteResultLabel,
   formatRouletteStreakWinMultiplier,
   getRouletteFairBaseMultiplier,
+  getRouletteOddsOptions,
   getRouletteWinBaseMultiplier,
 } from "./rouletteGameLogic.js";
 
@@ -44,5 +45,13 @@ describe("rouletteGameLogic", () => {
   it("formats result labels", () => {
     expect(formatRouletteResultLabel(0, "green")).toBe("0");
     expect(formatRouletteResultLabel(7, "red")).toBe("7 red");
+  });
+
+  it("doubles displayed odds for each streak win", () => {
+    const firstSpin = getRouletteOddsOptions("100", 0);
+    const secondSpin = getRouletteOddsOptions("100", 1);
+
+    expect(firstSpin[0].odds).toBe("192");
+    expect(secondSpin[0].odds).toBe("384");
   });
 });

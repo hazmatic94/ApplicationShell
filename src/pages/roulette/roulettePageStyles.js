@@ -34,9 +34,29 @@ export function getRoulettePageStyles(gameRoundEndStyles) {
     --roulette-sync-streak-rail-height: var(--roulette-betting-divider-offset);
     --roulette-win-streak-chip-size: ${ROULETTE_WIN_CHIP_SIZE}px;
     --roulette-streak-rail-content-height: calc(
-      28px + var(--roulette-win-streak-chip-size) + 54px + 24px
+      var(--roulette-win-streak-chip-size) + 54px
+    );
+    --roulette-mobile-top-band-height: calc(
+      var(--spacing-24) + var(--roulette-streak-rail-content-height)
     );
     --roulette-celebration-bleed-top: 96px;
+    --roulette-win-streak-layer: 8;
+  }
+
+  .joker-roulette-game-frame__stage {
+    position: relative;
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    width: 100%;
+    min-width: 0;
+    min-height: 0;
+    height: 100%;
+    box-sizing: border-box;
+  }
+
+  .joker-roulette-game-frame .joker-roulette-game-frame__stage.is-round-ending {
+    animation: none;
   }
 
   .joker-roulette-game-frame__top {
@@ -47,18 +67,20 @@ export function getRoulettePageStyles(gameRoundEndStyles) {
     align-items: stretch;
     justify-content: flex-start;
     position: relative;
-    z-index: 4;
+    z-index: var(--roulette-win-streak-layer);
     border-bottom: 0;
     box-sizing: border-box;
     padding: var(--spacing-24) 0 0 var(--spacing-24);
-    overflow: visible;
+    overflow: hidden;
     background: transparent;
-    min-height: calc(var(--spacing-24) + var(--roulette-streak-rail-content-height));
+    flex-shrink: 0;
+    min-height: var(--roulette-mobile-top-band-height);
+    max-height: var(--roulette-mobile-top-band-height);
   }
 
   .joker-roulette-streak-rail {
     position: relative;
-    z-index: 2;
+    z-index: 1;
     display: flex;
     width: 100%;
     min-width: 0;
@@ -81,7 +103,7 @@ export function getRoulettePageStyles(gameRoundEndStyles) {
     left: 0;
     bottom: 0;
     width: 140px;
-    z-index: 2;
+    z-index: 6;
     pointer-events: none;
     display: none;
     background: linear-gradient(
@@ -151,54 +173,111 @@ export function getRoulettePageStyles(gameRoundEndStyles) {
     align-items: flex-start;
     justify-content: flex-start;
     margin: 0;
-    padding: 28px 20px 24px 0;
+    padding: 0 var(--spacing-20) 0 0;
   }
 
   .joker-roulette-streak-rail .joker-win-streak-row__slot {
     align-items: flex-start;
-    min-height: calc(var(--win-streak-row-chip-size, var(--roulette-win-streak-chip-size)) + 54px);
+    min-height: calc(var(--win-streak-row-chip-size, var(--roulette-win-streak-chip-size)) + 14px + 30px);
   }
 
   .joker-roulette-streak-rail .joker-roulette-win-chip {
     --roulette-win-chip-size: var(--roulette-win-streak-row-chip-size);
+    position: relative;
+    z-index: 1;
   }
 
-  .joker-roulette-game-frame.is-celebrating-loss .joker-roulette-game-frame__top,
-  .joker-roulette-game-frame.is-celebrating-win .joker-roulette-game-frame__top {
+  .joker-roulette-streak-rail .joker-roulette-win-chip__multiplier {
     z-index: 2;
+  }
+
+  .joker-roulette-game-frame.is-celebrating-loss .joker-roulette-game-frame__top {
+    z-index: var(--roulette-win-streak-layer);
     pointer-events: none;
   }
 
-  .joker-roulette-game-frame.is-celebrating-loss .game-area-wheel.is-celebrating-loss,
-  .joker-roulette-game-frame.is-celebrating-win .game-area-wheel.is-celebrating-win {
+  .joker-roulette-game-frame.is-celebrating-win .joker-roulette-game-frame__top {
+    z-index: var(--roulette-win-streak-layer);
+    pointer-events: none;
+    overflow: visible;
+  }
+
+  .joker-roulette-game-frame.is-celebrating-win .joker-roulette-streak-rail {
+    position: relative;
+    z-index: 1;
+    overflow-y: visible;
+  }
+
+  .joker-roulette-game-frame.is-celebrating-loss .game-area-wheel.is-celebrating-loss {
     z-index: 5;
     overflow: hidden;
-    margin-top: calc(-1 * var(--roulette-celebration-bleed-top));
-    padding-top: var(--roulette-celebration-bleed-top);
+    clip-path: inset(calc(-1 * var(--roulette-celebration-bleed-top)) 0 0 0);
     box-sizing: border-box;
   }
 
-  .joker-roulette-game-frame.is-celebrating-loss .game-area-wheel.is-celebrating-loss .joker-roulette-wrapper,
-  .joker-roulette-game-frame.is-celebrating-win .game-area-wheel.is-celebrating-win .joker-roulette-wrapper {
-    overflow: visible;
+  .joker-roulette-game-frame.is-celebrating-win .game-area-wheel.is-celebrating-win {
+    z-index: 3;
+    overflow: hidden;
+    clip-path: inset(calc(-1 * var(--roulette-celebration-bleed-top)) 0 0 0);
+    box-sizing: border-box;
+  }
+
+  .joker-roulette-game-frame.is-celebrating-win .joker-roulette-wheel-composition__wheel {
+    animation: none !important;
+    transform: none !important;
   }
 
   .game-area-wheel {
     position: relative;
     z-index: 1;
-    flex: 1 1 auto;
+    flex: 1 1 0%;
     min-height: 0;
     width: 100%;
     padding: 0;
     margin: 0;
     overflow: hidden;
+    box-sizing: border-box;
+    --roulette-wheel-native-width: 1111px;
+    --roulette-wheel-native-height: 1162px;
+    --roulette-wheel-native-inset-top: 40px;
   }
 
   .game-area-wheel .joker-roulette-wrapper {
-    --roulette-wheel-native-inset-top: 0px;
     width: 100%;
     height: 100%;
-    padding-top: 0;
+    min-width: 0;
+    min-height: 0;
+  }
+
+  .game-area-wheel .joker-roulette-wrapper__wheel-slot > .joker-roulette-wheel-composition {
+    --roulette-wheel-size: var(--roulette-wheel-native-width);
+    width: var(--roulette-wheel-native-width);
+    height: var(--roulette-wheel-native-height);
+  }
+
+  .joker-roulette-game-frame.is-page-load-enter .joker-roulette-wrapper__wheel-slot > .joker-roulette-wheel-composition {
+    transform-origin: center center;
+    animation: joker-roulette-load-wheel-enter 480ms var(--ease-out) both;
+  }
+
+  @keyframes joker-roulette-load-wheel-enter {
+    from {
+      opacity: 0;
+      transform: rotate(-16deg) scale(0.94);
+    }
+
+    to {
+      opacity: 1;
+      transform: rotate(0deg) scale(1);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .joker-roulette-game-frame.is-page-load-enter .joker-roulette-wrapper__wheel-slot > .joker-roulette-wheel-composition {
+      animation: none;
+      opacity: 1;
+      transform: none;
+    }
   }
 
   .joker-roulette-result-overlay {
@@ -219,10 +298,12 @@ export function getRoulettePageStyles(gameRoundEndStyles) {
     .joker-roulette-game-frame__top {
       position: relative;
       flex: 0 0 auto;
+      flex-shrink: 0;
       min-height: var(--roulette-sync-streak-rail-height);
+      max-height: var(--roulette-sync-streak-rail-height);
       padding: var(--spacing-24) 0 0 var(--spacing-24);
       justify-content: flex-start;
-      overflow: visible;
+      overflow: hidden;
     }
 
     .joker-roulette-streak-rail {
@@ -270,19 +351,31 @@ export function getRoulettePageStyles(gameRoundEndStyles) {
 
     .joker-roulette-game-frame__top {
       position: relative;
-      z-index: 1;
+      z-index: var(--roulette-win-streak-layer);
       display: flex;
       flex-direction: column;
       justify-content: flex-start;
+      flex: 0 0 auto;
+      flex-shrink: 0;
+      height: var(--roulette-mobile-top-band-height);
+      min-height: var(--roulette-mobile-top-band-height);
+      max-height: var(--roulette-mobile-top-band-height);
       padding: var(--spacing-24) 0 0 var(--spacing-24);
       gap: 0;
+      box-sizing: border-box;
+      overflow: hidden;
+    }
+
+    .joker-roulette-game-frame.is-celebrating-win .joker-roulette-game-frame__top {
+      overflow: visible;
     }
 
     .joker-roulette-streak-rail {
-      z-index: 2;
+      z-index: 1;
+      flex: 1 1 auto;
+      min-height: 0;
       align-items: flex-start;
       justify-content: flex-start;
-      flex: 0 0 auto;
       padding-block: 0;
       padding-inline: 0;
     }
