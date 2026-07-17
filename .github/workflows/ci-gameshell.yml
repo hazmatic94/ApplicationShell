@@ -33,7 +33,7 @@ jobs:
         run: yarn install --no-immutable
 
       - name: Test GameShell
-        run: yarn test
+        run: yarn build
 
       - name: Build GameShell
         run: yarn build

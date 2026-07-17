@@ -1,5 +1,6 @@
 import { Suspense, useEffect, useState } from "react";
 import { MobileShellScrollFix } from "./shared/MobileShellScrollFix.jsx";
+import { NavigationlessRoute } from "./shared/NavigationlessRoute.jsx";
 import { gameRouteMap, normalizePathname, withBase } from "./shared/routing.js";
 import { resolveGameRoute } from "./shared/routes.jsx";
 
@@ -29,13 +30,14 @@ export function App() {
     setPathname(normalizedNextPath);
   }
 
-  const { Page } = resolveGameRoute(pathname);
+  const { Page, navigationless } = resolveGameRoute(pathname);
+  const page = <Page onGameChange={navigateToGame} />;
 
   return (
     <>
       <MobileShellScrollFix />
       <Suspense fallback={null}>
-        <Page onGameChange={navigateToGame} />
+        {navigationless ? <NavigationlessRoute>{page}</NavigationlessRoute> : page}
       </Suspense>
     </>
   );

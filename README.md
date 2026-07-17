@@ -38,7 +38,6 @@ src/
     sounds.js             # shared audio playback
     gameRoundEnd.jsx      # win/loss round-end overlay
     MobileShellScrollFix.jsx
-  components/             # LEGACY — unused; see src/components/README.md
   data/
     navigationData.js
 assets/                   # images, audio (referenced from page modules)
@@ -83,8 +82,4 @@ Import cross-game utilities from `src/shared/`:
 
 ## Design system
 
-UI shell and packaged betting panels come from `@joker/design-system` (GitHub dependency). Page modules compose those components; they do not use the local `src/components/` tree.
-
-## Legacy `src/components/`
-
-The `src/components/` directory is leftover from an earlier shell extraction. **Nothing in the app imports it.** Do not extend it for new work — use `@joker/design-system` and `src/pages/` instead. Details: `src/components/README.md`.
+UI shell and packaged betting panels come from `@joker/design-system` (GitHub dependency). Page modules compose those components.
