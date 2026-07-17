@@ -430,11 +430,11 @@ __metadata:
 
 "@joker/design-system@file:../DesignSystemGames::locator=game-shell%40workspace%3A.":
   version: 0.1.62
-  resolution: "@joker/design-system@file:../DesignSystemGames#../DesignSystemGames::hash=e63e41&locator=game-shell%40workspace%3A."
+  resolution: "@joker/design-system@file:../DesignSystemGames#../DesignSystemGames::hash=aeabab&locator=game-shell%40workspace%3A."
   peerDependencies:
     react: ">=18"
     react-dom: ">=18"
-  checksum: 10c0/1a27d8edd2b2747f0cc60de180471a1a2027631445f4e44e474a9f3155e84693814f2fea6acfc4cf58f785a058050188bf059abcae6718b8ac80083effdc14a1
+  checksum: 10c0/bd5adcc95c0a183fd94936d0e822216976e95568ee2b674d2065f97a54cb4d48f66b9c719fb79741ce8fa3cdd8c67e3665128838e9369b7d2cef5d77b4092a4c
   languageName: node
   linkType: hard
 

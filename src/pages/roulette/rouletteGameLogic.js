@@ -65,8 +65,17 @@ export function getRouletteOddsOptions(betAmount, streakWinCount = 0) {
 }
 
 export function didRouletteBetWin(betType, resultNumber) {
+  if (!Number.isInteger(resultNumber)) {
+    return false;
+  }
+
   if (betType === "green") {
     return resultNumber === 0;
+  }
+
+  // Zero is green — red/black bets lose when the ball lands there.
+  if (resultNumber === 0) {
+    return false;
   }
 
   return getPocketColor(resultNumber) === betType;

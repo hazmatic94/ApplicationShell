@@ -95,7 +95,7 @@ export function getCoinFlipPageStyles(gameRoundEndStyles) {
   width: 100%;
   min-width: 0;
   flex: 0 0 auto;
-  align-items: center;
+  align-items: flex-start;
   justify-content: flex-start;
   padding-block: 0;
   padding-inline: 0;
@@ -115,9 +115,9 @@ export function getCoinFlipPageStyles(gameRoundEndStyles) {
   display: flex;
   width: max-content;
   min-width: 100%;
-  align-items: center;
+  align-items: flex-start;
   justify-content: flex-start;
-  padding-inline-start: var(--spacing-24);
+  padding-inline-start: 0;
   overflow: visible;
   box-sizing: border-box;
 }
@@ -135,21 +135,19 @@ export function getCoinFlipPageStyles(gameRoundEndStyles) {
 }
 
 .joker-coin-flip-history-rail .joker-coin-progression__track {
-  align-items: center;
   justify-content: flex-start;
   margin: 0;
-  padding: 0;
+  padding-inline-start: var(--spacing-24);
 }
 
 @media (min-width: 1024px) {
   .joker-coin-flip-game-frame__top {
     position: relative;
     flex: 0 0 auto;
-    height: var(--coin-flip-sync-history-rail-height);
     min-height: var(--coin-flip-sync-history-rail-height);
-    max-height: var(--coin-flip-sync-history-rail-height);
     padding: var(--spacing-24) 0 0;
     justify-content: flex-start;
+    overflow: visible;
   }
 
   .joker-coin-flip-history-rail {
@@ -157,7 +155,7 @@ export function getCoinFlipPageStyles(gameRoundEndStyles) {
     height: auto;
     max-height: none;
     flex: 0 0 auto;
-    align-items: center;
+    align-items: flex-start;
     justify-content: flex-start;
     min-height: 0;
     padding-block: 0;
@@ -169,9 +167,9 @@ export function getCoinFlipPageStyles(gameRoundEndStyles) {
     width: max-content;
     min-width: 100%;
     min-height: 0;
-    align-items: center;
+    align-items: flex-start;
     justify-content: flex-start;
-    padding-inline-start: var(--spacing-24);
+    padding-inline-start: 0;
     box-sizing: border-box;
   }
 }
@@ -193,40 +191,6 @@ export function getCoinFlipPageStyles(gameRoundEndStyles) {
 .joker-coin-flip-game-frame.is-page-load-enter .joker-coin-toss-rings__coin-shadow {
   animation: none;
   opacity: 0.3;
-}
-
-.joker-coin-flip-game-frame.is-page-load-enter .joker-coin-receiver__active-fx {
-  opacity: 0;
-}
-
-.joker-coin-flip-game-frame.is-page-load-enter .joker-coin-progression__step {
-  opacity: 0;
-  transform: translateY(8px);
-  animation: joker-coin-flip-load-progression-step 300ms var(--ease-out) var(--coin-flip-load-step-delay, 220ms) both;
-}
-
-.joker-coin-flip-game-frame.is-page-load-enter .joker-coin-progression__step:nth-child(1) {
-  --coin-flip-load-step-delay: 220ms;
-}
-
-.joker-coin-flip-game-frame.is-page-load-enter .joker-coin-progression__step:nth-child(2) {
-  --coin-flip-load-step-delay: 260ms;
-}
-
-.joker-coin-flip-game-frame.is-page-load-enter .joker-coin-progression__step:nth-child(3) {
-  --coin-flip-load-step-delay: 300ms;
-}
-
-.joker-coin-flip-game-frame.is-page-load-enter .joker-coin-progression__step:nth-child(4) {
-  --coin-flip-load-step-delay: 340ms;
-}
-
-.joker-coin-flip-game-frame.is-page-load-enter .joker-coin-progression__step:nth-child(5) {
-  --coin-flip-load-step-delay: 380ms;
-}
-
-.joker-coin-flip-game-frame.is-page-load-enter .joker-coin-progression__step:nth-child(6) {
-  --coin-flip-load-step-delay: 420ms;
 }
 
 .joker-coin-flip-game-frame.is-page-load-enter .joker-coin-toss-demo__hint {
@@ -278,19 +242,11 @@ export function getCoinFlipPageStyles(gameRoundEndStyles) {
   }
 }
 
-@keyframes joker-coin-flip-load-progression-step {
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
   .joker-coin-flip-game-frame.is-page-load-enter .joker-coin-toss__playfield,
   .joker-coin-flip-game-frame.is-page-load-enter .joker-coin-toss-rings__ring--outer,
   .joker-coin-flip-game-frame.is-page-load-enter .joker-coin-toss-rings__ring--inner,
   .joker-coin-flip-game-frame.is-page-load-enter .joker-coin-toss-rings__particles,
-  .joker-coin-flip-game-frame.is-page-load-enter .joker-coin-progression__step,
   .joker-coin-flip-game-frame.is-page-load-enter .joker-coin-toss-demo__hint {
     animation: none;
     opacity: 1;
@@ -517,7 +473,7 @@ export function getCoinFlipPageStyles(gameRoundEndStyles) {
 
   .joker-coin-flip-history-rail {
     z-index: 1;
-    align-items: center;
+    align-items: flex-start;
     justify-content: flex-start;
     flex: 0 0 auto;
     padding-block: 0;
@@ -529,10 +485,9 @@ export function getCoinFlipPageStyles(gameRoundEndStyles) {
     width: max-content;
     min-width: 100%;
     min-height: 0;
-    align-items: center;
+    align-items: flex-start;
     justify-content: flex-start;
-    margin-inline: 0;
-    padding-inline-start: var(--spacing-24);
+    padding-inline-start: 0;
     box-sizing: border-box;
   }
 

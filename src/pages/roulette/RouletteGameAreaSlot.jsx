@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import {
   RouletteWheel,
+  RouletteWheelWin,
   RouletteWrapper,
   ROULETTE_WHEEL_NATIVE_WIDTH,
   useRouletteWheelSpin,
@@ -8,16 +9,26 @@ import {
 import "@joker/design-system/styles/roulette.css";
 
 export function RouletteGameAreaSlot({
+  celebrationActive = false,
+  celebrationVariant = "win",
   onSpinComplete,
   onSpinningChange,
   spinRequestId,
+  wheelSessionKey = 0,
 }) {
   const onSpinCompleteRef = useRef(onSpinComplete);
-  const wheelRootRef = useRef(null);
+  const handledSpinRequestRef = useRef(0);
+  const deliveredSpinRequestRef = useRef(0);
+  const isSpinningRef = useRef(false);
 
   useEffect(() => {
     onSpinCompleteRef.current = onSpinComplete;
   }, [onSpinComplete]);
+
+  useEffect(() => {
+    handledSpinRequestRef.current = spinRequestId;
+    deliveredSpinRequestRef.current = spinRequestId;
+  }, [wheelSessionKey]);
 
   const {
     wheelRotation,
@@ -28,17 +39,29 @@ export function RouletteGameAreaSlot({
     isSpinning,
     targetPocket,
     celebratingPocket,
+    displayedResult,
     spin,
-  } = useRouletteWheelSpin({
-    soundEnabled: false,
-    wheelRootRef,
-    onSpinComplete: (result) => {
-      onSpinCompleteRef.current?.(result.targetPocket.value);
-    },
-  });
+  } = useRouletteWheelSpin();
 
-  const handledSpinRequestRef = useRef(0);
-  const isSpinningRef = useRef(isSpinning);
+  const resolvedCelebratingPocket =
+    celebrationVariant === "lose" ? null : celebratingPocket;
+
+  useEffect(() => {
+    if (!spinRequestId || isSpinning || displayedResult == null) {
+      return;
+    }
+
+    if (handledSpinRequestRef.current !== spinRequestId) {
+      return;
+    }
+
+    if (deliveredSpinRequestRef.current >= spinRequestId) {
+      return;
+    }
+
+    deliveredSpinRequestRef.current = spinRequestId;
+    onSpinCompleteRef.current?.(displayedResult);
+  }, [displayedResult, isSpinning, spinRequestId]);
 
   useEffect(() => {
     isSpinningRef.current = isSpinning;
@@ -52,8 +75,6 @@ export function RouletteGameAreaSlot({
 
     let cancelled = false;
     let rafId = 0;
-    let attempts = 0;
-    const maxAttempts = 180;
 
     const attemptSpin = () => {
       if (cancelled || handledSpinRequestRef.current === spinRequestId) {
@@ -63,16 +84,6 @@ export function RouletteGameAreaSlot({
       if (!isSpinningRef.current) {
         spin();
         handledSpinRequestRef.current = spinRequestId;
-        return;
-      }
-
-      if (isSpinningRef.current) {
-        handledSpinRequestRef.current = spinRequestId;
-        return;
-      }
-
-      attempts += 1;
-      if (attempts >= maxAttempts) {
         return;
       }
 
@@ -88,20 +99,36 @@ export function RouletteGameAreaSlot({
   }, [spinRequestId, spin]);
 
   return (
-    <div className="game-area-wheel" style={{ flex: 1, minHeight: 0 }}>
+    <div
+      className={[
+        "game-area-wheel",
+        celebrationActive && celebrationVariant === "lose"
+          ? "is-celebrating-loss"
+          : celebrationActive && celebrationVariant === "win"
+            ? "is-celebrating-win"
+            : "",
+      ]
+        .filter(Boolean)
+        .join(" ")}
+      style={{ flex: 1, minHeight: 0 }}
+    >
       <RouletteWrapper>
-        <RouletteWheel
-          ref={wheelRootRef}
+        <RouletteWheelWin
+          active={celebrationActive}
+          variant={celebrationVariant}
           size={ROULETTE_WHEEL_NATIVE_WIDTH}
-          wheelRotation={wheelRotation}
-          ballPosition={ballPosition}
-          ballBounceScale={ballBounceScale}
-          ballBounceLift={ballBounceLift}
-          showBall={showBall}
-          targetPocket={targetPocket}
-          celebratingPocket={celebratingPocket}
-          performanceMode
-        />
+        >
+          <RouletteWheel
+            size={ROULETTE_WHEEL_NATIVE_WIDTH}
+            wheelRotation={wheelRotation}
+            ballPosition={ballPosition}
+            ballBounceScale={ballBounceScale}
+            ballBounceLift={ballBounceLift}
+            showBall={showBall}
+            targetPocket={targetPocket}
+            celebratingPocket={resolvedCelebratingPocket}
+          />
+        </RouletteWheelWin>
       </RouletteWrapper>
     </div>
   );
