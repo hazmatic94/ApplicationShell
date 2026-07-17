@@ -430,11 +430,11 @@ __metadata:
 
 "@joker/design-system@https://github.com/mjprod/DesignSystemJokerShowroom.git#main":
   version: 0.1.62
-  resolution: "@joker/design-system@https://github.com/mjprod/DesignSystemJokerShowroom.git#commit=fc3c03a7f630d7ec4b7c515a96a379c710fae1be"
+  resolution: "@joker/design-system@https://github.com/mjprod/DesignSystemJokerShowroom.git#commit=4fc0586e4c0ad129b5592704a1349019d9eafc4a"
   peerDependencies:
     react: ">=18"
     react-dom: ">=18"
-  checksum: 10c0/dbbff865a2c7388f6c6f8711499c08ed43366070e7b88f4a2afad24d8f15422ce306497ad302b2f7eda15b8878a7dd8e9c55b522ef18d2d31d43b39d14c61a1f
+  checksum: 10c0/a612beb8bc231208e06b9612e9e934a4f4a5e9ae8d540b7a6a3a5e1f7a0e745fd833a345b86b0b20455a51514d20699c3f02b039844103aaac8b7c463f672c00
   languageName: node
   linkType: hard
 

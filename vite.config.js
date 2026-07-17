@@ -5,11 +5,13 @@ import {defineConfig} from 'vitest/config';
 const appBase = '/showroom/gameshell/';
 
 function repairIncompleteRouletteWheelBuild() {
-  const wrapperReplacement = fileURLToPath(
-    new URL('./src/vendor/RouletteWrapper.jsx', import.meta.url),
-  );
-  const pathsReplacement = fileURLToPath(
-    new URL('./src/vendor/rouletteWheelPaths.js', import.meta.url),
+  const wrapperReplacement = '\0joker:RouletteWrapper';
+  const pathsReplacement = '\0joker:rouletteWheelPaths';
+  const originalPaths = fileURLToPath(
+    new URL(
+      './node_modules/@joker/design-system/dist/components/RouletteWheel/rouletteWheelPaths.js',
+      import.meta.url,
+    ),
   );
 
   return {
@@ -18,16 +20,53 @@ function repairIncompleteRouletteWheelBuild() {
     resolveId(source, importer) {
       if (
         source === './RouletteWrapper' &&
-        importer?.includes('/@joker/design-system/dist/components/RouletteWheel/')
+        importer?.includes(
+          '/@joker/design-system/dist/components/RouletteWheel/',
+        )
       ) {
         return wrapperReplacement;
       }
 
       if (
         source === './rouletteWheelPaths' &&
-        importer?.includes('/@joker/design-system/dist/components/RouletteWheel/')
+        importer?.includes(
+          '/@joker/design-system/dist/components/RouletteWheel/',
+        )
       ) {
         return pathsReplacement;
+      }
+
+      return null;
+    },
+    load(id) {
+      if (id === wrapperReplacement) {
+        return `
+          import React, {forwardRef} from 'react';
+
+          export const RouletteWrapper = forwardRef(function RouletteWrapper(
+            {children, className, ...props},
+            ref,
+          ) {
+            const classes = ['joker-roulette-wrapper', className].filter(Boolean).join(' ');
+            return React.createElement(
+              'div',
+              {...props, ref, className: classes, 'data-roulette-wrapper': ''},
+              React.createElement(
+                'div',
+                {className: 'joker-roulette-wrapper__wheel-slot'},
+                children,
+              ),
+            );
+          });
+        `;
+      }
+
+      if (id === pathsReplacement) {
+        return `
+          export * from ${JSON.stringify(originalPaths)};
+          export const ROULETTE_WHEEL_NATIVE_WIDTH = 1111;
+          export const ROULETTE_WHEEL_NATIVE_HEIGHT = 1162;
+        `;
       }
 
       return null;
@@ -45,7 +84,9 @@ function redirectMissingBaseSlash() {
         const url = req.url?.split('?')[0] ?? '';
 
         if (url === baseWithoutSlash) {
-          const query = req.url?.includes('?') ? req.url.slice(req.url.indexOf('?')) : '';
+          const query = req.url?.includes('?')
+            ? req.url.slice(req.url.indexOf('?'))
+            : '';
           res.writeHead(301, {Location: `${appBase}${query}`});
           res.end();
           return;
@@ -58,7 +99,11 @@ function redirectMissingBaseSlash() {
 }
 
 export default defineConfig({
-  plugins: [react(), repairIncompleteRouletteWheelBuild(), redirectMissingBaseSlash()],
+  plugins: [
+    react(),
+    repairIncompleteRouletteWheelBuild(),
+    redirectMissingBaseSlash(),
+  ],
   base: appBase,
   test: {
     environment: 'node',
@@ -85,7 +130,10 @@ export default defineConfig({
   resolve: {
     alias: {
       '../EnterBetPrecursor/index.js': fileURLToPath(
-        new URL('./node_modules/@joker/design-system/dist/components/EnterBetPrecursor/index.js', import.meta.url),
+        new URL(
+          './node_modules/@joker/design-system/dist/components/EnterBetPrecursor/index.js',
+          import.meta.url,
+        ),
       ),
     },
   },
