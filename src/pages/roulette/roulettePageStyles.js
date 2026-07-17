@@ -361,7 +361,7 @@ export function getRoulettePageStyles(gameRoundEndStyles) {
       height: var(--roulette-mobile-top-band-height);
       min-height: var(--roulette-mobile-top-band-height);
       max-height: var(--roulette-mobile-top-band-height);
-      padding: var(--spacing-24) 0 0 var(--spacing-24);
+      padding: 0 0 0 var(--spacing-24);
       gap: 0;
       box-sizing: border-box;
       overflow: hidden;
@@ -373,12 +373,16 @@ export function getRoulettePageStyles(gameRoundEndStyles) {
 
     .joker-roulette-streak-rail {
       z-index: 1;
-      flex: 1 1 auto;
+      flex: 0 0 auto;
       min-height: 0;
       align-items: flex-start;
       justify-content: flex-start;
       padding-block: 0;
       padding-inline: 0;
+    }
+
+    .joker-roulette-streak-rail .joker-win-streak-row {
+      margin-top: var(--spacing-24);
     }
 
     .joker-roulette-streak-track {
