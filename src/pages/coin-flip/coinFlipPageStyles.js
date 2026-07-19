@@ -137,10 +137,12 @@ export function getCoinFlipPageStyles(gameRoundEndStyles) {
 .joker-coin-flip-history-rail .joker-coin-progression__track {
   justify-content: flex-start;
   margin: 0;
-  padding-inline-start: var(--spacing-24);
+  padding-top: 0;
+  padding-bottom: var(--spacing-24);
+  padding-inline: var(--spacing-24);
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 1000px) {
   .joker-coin-flip-game-frame__top {
     position: relative;
     flex: 0 0 auto;
@@ -433,7 +435,7 @@ export function getCoinFlipPageStyles(gameRoundEndStyles) {
   line-height: inherit;
 }
 
-@media (max-width: 1023px) {
+@media (max-width: 999px) {
   .joker-coin-flip-stage {
     --coin-flip-mobile-odds-reserve: 52px;
     --coin-flip-mobile-felt-card-scale: 0.96;

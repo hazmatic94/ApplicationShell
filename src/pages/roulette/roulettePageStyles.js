@@ -295,7 +295,7 @@ export function getRoulettePageStyles(gameRoundEndStyles) {
     pointer-events: auto;
   }
 
-  @media (min-width: 1024px) {
+  @media (min-width: 1000px) {
     .joker-roulette-game-frame__top {
       position: relative;
       flex: 0 0 auto;
@@ -335,7 +335,7 @@ export function getRoulettePageStyles(gameRoundEndStyles) {
     }
   }
 
-  @media (max-width: 1023px) {
+  @media (max-width: 999px) {
     .joker-game-shell--roulette .joker-navigation-mobile-content .joker-game-shell-empty-stage {
       overflow: hidden;
     }

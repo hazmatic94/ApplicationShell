@@ -30,7 +30,7 @@ export function MobileShellScrollFix() {
           min-height: 100%;
         }
 
-        @media (min-width: 1024px) {
+        @media (min-width: 1000px) {
           .joker-game-shell .joker-page-wrapper {
             align-items: stretch;
             padding: var(--game-shell-page-padding);
@@ -48,7 +48,7 @@ export function MobileShellScrollFix() {
           width: 100%;
         }
 
-        @media (max-width: 1023px) {
+        @media (max-width: 999px) {
           .joker-game-shell--hilo .joker-navigation-mobile-content .joker-hilo-betting-panel {
             display: grid;
             grid-template-rows: auto auto auto;

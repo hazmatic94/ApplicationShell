@@ -37,7 +37,7 @@ export function getHiloPageStyles(gameRoundEndStyles) {
   gap: var(--spacing-8);
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 1000px) {
   .joker-hilo-betting-panel.is-hilo-pre-game:not(.is-hilo-pre-game-ready) .joker-button--hi-lo {
     pointer-events: none;
     cursor: not-allowed;
@@ -51,7 +51,7 @@ export function getHiloPageStyles(gameRoundEndStyles) {
   }
 }
 
-@media (max-width: 1023px) {
+@media (max-width: 999px) {
   .joker-hilo-betting-panel.is-hilo-pre-game.is-awaiting-hilo-choice .joker-betting-submit-group .joker-button {
     pointer-events: none;
     cursor: not-allowed;
@@ -305,7 +305,7 @@ export function getHiloPageStyles(gameRoundEndStyles) {
   flex: 0 0 auto;
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 1000px) {
   .joker-hilo-game-frame__top {
     position: relative;
     flex: 0 0 auto;
@@ -847,7 +847,7 @@ export function getHiloPageStyles(gameRoundEndStyles) {
   min-width: 0;
 }
 
-@media (max-width: 1023px) {
+@media (max-width: 999px) {
   .joker-hilo-stage {
     --hilo-history-mini-mobile-scale: 0.7;
     --hilo-mobile-odds-reserve: 52px;

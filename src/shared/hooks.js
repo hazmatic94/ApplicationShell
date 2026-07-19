@@ -1,7 +1,6 @@
 /** Cross-game React hooks (layout, balance timing, rail menu). */
 import { useEffect, useRef, useState } from "react";
-
-const gameShellMobilePanelQuery = "(max-width: 1023px)";
+import { gameShellMobilePanelQuery } from "./breakpoints.js";
 
 export function useGameShellBettingPanelLayout() {
   const [layout, setLayout] = useState(() => {

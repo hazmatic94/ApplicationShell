@@ -23,7 +23,7 @@ export function getMinesPageStyles(gameRoundEndStyles) {
   justify-self: stretch;
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 1000px) {
   .joker-game-shell--mines .joker-game-shell-betting {
     overflow-y: hidden;
   }
@@ -91,7 +91,7 @@ export function getMinesPageStyles(gameRoundEndStyles) {
   overflow: visible;
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 1000px) {
   .joker-mines-board-area {
     --mines-board-padding: 40px;
     place-items: center;
@@ -112,7 +112,7 @@ export function getMinesPageStyles(gameRoundEndStyles) {
   }
 }
 
-@media (max-width: 1023px) {
+@media (max-width: 999px) {
   .joker-mines-board-area {
     --mines-board-padding: 8px;
   }
