@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useRef } from "react";
 import {
   RouletteWheel,
-  RouletteWheelWin,
   RouletteWrapper,
   ROULETTE_WHEEL_NATIVE_WIDTH,
   useRouletteWheelSpin,
 } from "@joker/design-system";
 import "@joker/design-system/styles/roulette.css";
+import { RouletteWheelCelebration } from "./RouletteWheelCelebration.jsx";
 
 export function RouletteGameAreaSlot({
   celebrationActive = false,
@@ -71,16 +71,12 @@ export function RouletteGameAreaSlot({
     showBall,
     isSpinning,
     targetPocket,
-    celebratingPocket,
     spin,
   } = useRouletteWheelSpin({
     soundEnabled: true,
     wheelRootRef,
     onSpinComplete: handleWheelSpinComplete,
   });
-
-  const resolvedCelebratingPocket =
-    celebrationVariant === "lose" ? null : celebratingPocket;
 
   useEffect(() => {
     isSpinningRef.current = isSpinning;
@@ -137,7 +133,7 @@ export function RouletteGameAreaSlot({
       style={{ flex: 1, minHeight: 0 }}
     >
       <RouletteWrapper data-roulette-wrapper>
-        <RouletteWheelWin
+        <RouletteWheelCelebration
           active={celebrationActive}
           variant={celebrationVariant}
           soundEnabled
@@ -153,9 +149,8 @@ export function RouletteGameAreaSlot({
             ballBounceLift={ballBounceLift}
             showBall={showBall}
             targetPocket={targetPocket}
-            celebratingPocket={resolvedCelebratingPocket}
           />
-        </RouletteWheelWin>
+        </RouletteWheelCelebration>
       </RouletteWrapper>
     </div>
   );
