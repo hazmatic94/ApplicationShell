@@ -1,5 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { HigherCard, LowerCard, MobileHiLoOddsGroup, WinModalCard } from "@joker/design-system";
+import { HigherCard, LowerCard, MobileHiLoOddsGroup } from "@joker/design-system";
+import { GameWinModalCard } from "../../shared/GameWinModalCard.jsx";
+import { GameWinModalOverlay } from "../../shared/GameWinModalOverlay.jsx";
 import { GameRoundEndTransition } from "../../shared/gameRoundEnd.jsx";
 import { formatCurrency } from "../../shared/formatting.js";
 import { hiloRanks, hiloSuits, HILO_PAGE_LOAD_ANIMATION_MS } from "./hiloConfig.js";
@@ -20,6 +22,7 @@ export function HiloStage({
   onHigherSame,
   onLowerSame,
   onSkipCard,
+  balance,
   onWinModalClose,
   onWinCoinsLand,
   pendingPrediction,
@@ -173,17 +176,16 @@ export function HiloStage({
         </div>
       </div>
       {winModal && (
-        <div className="joker-hilo-result-card" role="status" aria-live="polite">
-          <WinModalCard
+        <GameWinModalOverlay className="joker-hilo-result-card" role="status" aria-live="polite">
+          <GameWinModalCard
             title={winModal.title}
             amountWon={formatCurrency(winModal.profit)}
-            currency={null}
-            message="Your winnings from this round have been added to your balance."
-            closeLabel="Close"
+            balance={balance}
+            profit={winModal.profit}
             onCoinsLand={onWinCoinsLand}
             onClose={onWinModalClose}
           />
-        </div>
+        </GameWinModalOverlay>
       )}
     </section>
   );

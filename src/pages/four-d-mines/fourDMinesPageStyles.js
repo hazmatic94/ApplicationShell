@@ -1,5 +1,8 @@
+import { GAME_WIN_MODAL_OVERLAY_STYLES } from "../../shared/GameWinModalOverlay.jsx";
+
 export function getFourDMinesPageStyles(gameRoundEndStyles) {
   return `
+${GAME_WIN_MODAL_OVERLAY_STYLES}
 .joker-mines-stage {
   display: grid;
   width: 100%;
@@ -111,21 +114,8 @@ export function getFourDMinesPageStyles(gameRoundEndStyles) {
   pointer-events: none;
 }
 
-.joker-mines-result-card {
-  position: absolute;
-  inset: 0;
-  z-index: 40;
-  display: grid;
-  place-items: center;
-  padding: var(--spacing-24);
-  pointer-events: auto;
-  transform: scale(0.96);
-  animation: joker-mines-cashout-pop 420ms var(--ease-standard) both;
-}
-
 .joker-mines-result-card > * {
-  max-width: min(500px, calc(100cqw - var(--spacing-48)));
-  box-shadow: 0 var(--spacing-24) var(--spacing-64) rgb(0 0 0 / 0.42);
+  animation: joker-mines-cashout-pop 420ms var(--ease-standard) both;
 }
 
 @keyframes joker-mines-cashout-pop {

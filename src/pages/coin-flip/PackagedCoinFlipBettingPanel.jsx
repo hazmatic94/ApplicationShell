@@ -10,11 +10,8 @@ export function PackagedCoinFlipBettingPanel({
   onCashout,
   onFlipCoin,
   onPlaceBet,
-  onRoundsToWinChange,
   onSideChange,
   roundLocked = false,
-  roundsToWinValue,
-  defaultRoundsToWinValue = "4",
   selectedSide,
 }) {
   function handleBetAmountChange(event) {
@@ -27,12 +24,6 @@ export function PackagedCoinFlipBettingPanel({
     if (isFlipping) return;
 
     onSideChange(value, option);
-  }
-
-  function handleRoundsToWinChange(value, option) {
-    if (roundLocked) return;
-
-    onRoundsToWinChange?.(value, option);
   }
 
   function handlePlaceBet(event) {
@@ -67,10 +58,7 @@ export function PackagedCoinFlipBettingPanel({
       onOddsValueChange={handleOddsValueChange}
       onPlaceBet={inGame ? handleFlipCoin : handlePlaceBet}
       onCashout={handleCashout}
-      onRoundsToWinChange={handleRoundsToWinChange}
       oddsOptions={oddsOptions}
-      roundsToWinValue={roundsToWinValue}
-      defaultRoundsToWinValue={defaultRoundsToWinValue}
       submitLabel="Flip Coin"
       flipCoinLabel="Flip Coin"
       cashoutLabel="Cashout"

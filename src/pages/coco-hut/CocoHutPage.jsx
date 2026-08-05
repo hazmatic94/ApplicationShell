@@ -2,6 +2,7 @@ import { useState } from "react";
 import { GameShell } from "@joker/design-system";
 import cocoHutBackground from "../../../assets/cocohut-bg.png?url";
 import { formatBalance } from "../../shared/formatting.js";
+import { playPlaceBetSound } from "../../shared/gameSounds.js";
 import { useGameShellBettingPanelLayout } from "../../shared/hooks.js";
 import { PackagedCocoHutBettingPanel } from "./PackagedCocoHutBettingPanel.jsx";
 import { cocoHutNavigationPreset } from "./cocoHutConfig.js";
@@ -18,6 +19,7 @@ export function CocoHutPage({ onGameChange }) {
   const bettingPanelLayout = useGameShellBettingPanelLayout();
 
   function handleBetAction() {
+    playPlaceBetSound();
     // STUB: wire round flow here when gameplay is specced.
   }
 

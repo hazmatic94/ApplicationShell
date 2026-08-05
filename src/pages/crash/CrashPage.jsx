@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { GameShell, WinModalCard } from "@joker/design-system";
-import minesCashoutSound from "../../../assets/mines-cashout.mp3?url";
+import { GameShell } from "@joker/design-system";
 import { formatBalance, formatCurrency } from "../../shared/formatting.js";
+import { playCashoutSound, playLossSound, playPlaceBetSound } from "../../shared/gameSounds.js";
+import { GameWinModalCard } from "../../shared/GameWinModalCard.jsx";
+import { GameWinModalOverlay } from "../../shared/GameWinModalOverlay.jsx";
 import { useDeferredWinCredit, useGameShellBettingPanelLayout } from "../../shared/hooks.js";
-import { playSound } from "../../shared/sounds.js";
 import { PackagedCrashBettingPanel } from "./PackagedCrashBettingPanel.jsx";
 import {
   crashGraphDurationSeconds,
@@ -27,7 +28,7 @@ export function CrashPage({ onGameChange }) {
   const [betAmount, setBetAmount] = useState("");
   const [bettingMode, setBettingMode] = useState("manual");
   const [balance, setBalance] = useState(150000);
-  const { deferWinCredit, applyDeferredWinCredit } = useDeferredWinCredit(setBalance);
+  const { deferWinCredit, applyDeferredWinCredit, getDisplayBalance } = useDeferredWinCredit(setBalance);
   const [roundStatus, setRoundStatus] = useState("idle");
   const [numberOfBets, setNumberOfBets] = useState("");
   const [crashResult, setCrashResult] = useState(null);
@@ -91,6 +92,7 @@ export function CrashPage({ onGameChange }) {
       const nextMultiplier = Math.min(getCrashMultiplierAt(elapsedMs), crashRound.crashPoint);
 
       if (elapsedMs >= crashRound.crashTimeMs || nextMultiplier >= crashRound.crashPoint) {
+        playLossSound();
         setCrashRound((currentRound) => ({
           ...currentRound,
           status: "crashed",
@@ -124,7 +126,7 @@ export function CrashPage({ onGameChange }) {
   }, [crashRound.status, crashRound.crashTimeMs, crashRound.crashPoint]);
 
   useEffect(() => {
-    if (!crashResult) return undefined;
+    if (!crashResult || crashResult.type === "win") return undefined;
 
     const timer = window.setTimeout(() => {
       setCrashResult(null);
@@ -142,6 +144,10 @@ export function CrashPage({ onGameChange }) {
   }, [crashResult]);
 
   function handleCrashResultClose() {
+    if (crashResult?.type === "win") {
+      applyDeferredWinCredit();
+    }
+
     setCrashResult(null);
     setCrashResetting(false);
     setRoundStatus("idle");
@@ -158,6 +164,7 @@ export function CrashPage({ onGameChange }) {
 
     if (roundStatus === "active") {
       const payout = numericBetAmount * crashRound.multiplier;
+      playCashoutSound();
       setRoundStatus("cashedOut");
       setCrashResetting(true);
       setCrashRound((currentRound) => ({
@@ -174,6 +181,7 @@ export function CrashPage({ onGameChange }) {
     }
 
     const nextRound = createCrashRound();
+    playPlaceBetSound();
     crashStartRef.current = performance.now();
     setCrashResult(null);
     setBalance((currentBalance) => Math.max(0, currentBalance - numericBetAmount));
@@ -185,7 +193,7 @@ export function CrashPage({ onGameChange }) {
     <>
       <style>{getCrashPageStyles()}</style>
       <GameShell
-        balance={formatBalance(balance)}
+        balance={formatBalance(getDisplayBalance(balance))}
         className="joker-game-shell--crash"
         defaultValue={crashNavigationPreset.defaultValue}
         game={crashNavigationPreset.game}
@@ -331,18 +339,19 @@ export function CrashPage({ onGameChange }) {
                 </div>
               )}
               {crashResult?.type === "win" && (
-                <div className="joker-crash-result-overlay" role="status" aria-live="polite">
-                  <WinModalCard
+                <GameWinModalOverlay className="joker-crash-result-overlay" role="status" aria-live="polite">
+                  <GameWinModalCard
                     className="joker-crash-result-card"
                     title="Cashout Successful"
                     amountWon={formatCurrency(crashResult.amount)}
-                    currency={null}
+                    balance={balance}
+                    profit={crashResult.amount}
                     message={`Cashed out at ${formatCrashMultiplier(crashResult.multiplier)}. Added to your balance.`}
-                    closeLabel="Close"
+                    messageHighlight="balance"
                     onCoinsLand={applyDeferredWinCredit}
                     onClose={handleCrashResultClose}
                   />
-                </div>
+                </GameWinModalOverlay>
               )}
             </div>
           </div>

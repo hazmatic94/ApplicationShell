@@ -5,9 +5,35 @@ export function MobileShellScrollFix() {
         html,
         body,
         #root {
+          width: 100%;
           height: 100%;
+          min-height: 100%;
+          margin: 0;
+          padding: 0;
           scrollbar-width: none;
           -ms-overflow-style: none;
+        }
+
+        body {
+          overflow: hidden;
+          background: var(--joker-black-800);
+        }
+
+        #root {
+          height: 100vh;
+          min-height: 100vh;
+          min-height: 100dvh;
+        }
+
+        #root > * {
+          height: 100%;
+          min-height: 0;
+        }
+
+        .joker-game-shell {
+          height: 100%;
+          min-height: 100vh;
+          min-height: 100dvh;
         }
 
         html::-webkit-scrollbar,

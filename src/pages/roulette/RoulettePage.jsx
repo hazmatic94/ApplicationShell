@@ -4,17 +4,17 @@ import {
   GameShell,
   MobileRouletteOddsGroup,
   RouletteGameHeaderRail,
-  WinModalCard,
   getPocketColor,
 } from "@joker/design-system";
-import minesCashoutSound from "../../../assets/mines-cashout.mp3?url";
 import {
   GAME_ROUND_END_STYLES,
   GameRoundEndTransition,
 } from "../../shared/gameRoundEnd.jsx";
 import { formatBalance, formatCurrency } from "../../shared/formatting.js";
+import { playCashoutSound } from "../../shared/gameSounds.js";
+import { GameWinModalCard } from "../../shared/GameWinModalCard.jsx";
+import { GameWinModalOverlay } from "../../shared/GameWinModalOverlay.jsx";
 import { useDeferredWinCredit, useGameShellBettingPanelLayout } from "../../shared/hooks.js";
-import { playSound } from "../../shared/sounds.js";
 import { PackagedRouletteBettingPanel } from "./PackagedRouletteBettingPanel.jsx";
 import { RouletteGameAreaSlot } from "./RouletteGameAreaSlot.jsx";
 import { RouletteStreakChip } from "./RouletteStreakChip.jsx";
@@ -49,7 +49,7 @@ export function RoulettePage({ onGameChange }) {
   const [lockedBetAmount, setLockedBetAmount] = useState("");
   const [selectedOdds, setSelectedOdds] = useState("red");
   const [balance, setBalance] = useState(150000);
-  const { deferWinCredit, applyDeferredWinCredit } = useDeferredWinCredit(setBalance);
+  const { deferWinCredit, applyDeferredWinCredit, getDisplayBalance } = useDeferredWinCredit(setBalance);
   const [inGame, setInGame] = useState(false);
   const [isWheelSpinning, setIsWheelSpinning] = useState(false);
   const [roundPhase, setRoundPhase] = useState(ROULETTE_ROUND_PHASE.IDLE);
@@ -252,6 +252,11 @@ export function RoulettePage({ onGameChange }) {
   }, [roundPhase, spinRequestId, recoverStalledSpin]);
 
   function handlePlaceBet() {
+    if (rouletteWinModal) {
+      applyDeferredWinCredit();
+      resetRouletteRound();
+    }
+
     if (!hasBetAmount || !selectedOdds || inGame || spinLocked || isRoundLocked) {
       return;
     }
@@ -290,12 +295,14 @@ export function RoulettePage({ onGameChange }) {
 
     const cashoutProfit = calculateRouletteStreakProfit(lockedBetAmount, streakWins);
 
-    playSound(minesCashoutSound);
+    playCashoutSound();
     deferWinCredit(cashoutProfit);
+    setInGame(false);
     setRouletteWinModal({ profit: cashoutProfit });
   }
 
   function handleRouletteCashoutClose() {
+    applyDeferredWinCredit();
     setRouletteWinModal(null);
     resetRouletteRound();
   }
@@ -312,7 +319,7 @@ export function RoulettePage({ onGameChange }) {
     <>
       <style>{getRoulettePageStyles(GAME_ROUND_END_STYLES)}</style>
       <GameShell
-        balance={formatBalance(balance)}
+        balance={formatBalance(getDisplayBalance(balance))}
         className="joker-game-shell--roulette"
         defaultValue={rouletteNavigationPreset.defaultValue}
         game={rouletteNavigationPreset.game}
@@ -348,9 +355,6 @@ export function RoulettePage({ onGameChange }) {
             .join(" ")}
           aria-label="Roulette game area"
         >
-          <div className="joker-roulette-wheel-edge-fade" aria-hidden="true" />
-          <div className="joker-roulette-wheel-edge-fade joker-roulette-wheel-edge-fade--right" aria-hidden="true" />
-          <div className="joker-roulette-wheel-edge-fade joker-roulette-wheel-edge-fade--bottom" aria-hidden="true" />
           <div
             className={[
               "joker-roulette-game-frame__stage",
@@ -360,6 +364,15 @@ export function RoulettePage({ onGameChange }) {
               .filter(Boolean)
               .join(" ")}
           >
+            <div className="joker-roulette-wheel-edge-fade" aria-hidden="true" />
+            <div
+              className="joker-roulette-wheel-edge-fade joker-roulette-wheel-edge-fade--right"
+              aria-hidden="true"
+            />
+            <div
+              className="joker-roulette-wheel-edge-fade joker-roulette-wheel-edge-fade--bottom"
+              aria-hidden="true"
+            />
             <div className="joker-roulette-game-frame__top">
               <div
                 className="joker-roulette-streak-rail"
@@ -421,18 +434,17 @@ export function RoulettePage({ onGameChange }) {
             }
           />
           {rouletteWinModal ? (
-            <div className="joker-roulette-result-overlay" role="status" aria-live="polite">
-              <WinModalCard
+            <GameWinModalOverlay className="joker-roulette-result-overlay" role="status" aria-live="polite">
+              <GameWinModalCard
                 className="joker-roulette-result-card"
                 title="Cashout Successful"
                 amountWon={formatCurrency(rouletteWinModal.profit)}
-                currency={null}
-                message="Your winnings from this round have been added to your balance."
-                closeLabel="Close"
+                balance={balance}
+                profit={rouletteWinModal.profit}
                 onCoinsLand={applyDeferredWinCredit}
                 onClose={handleRouletteCashoutClose}
               />
-            </div>
+            </GameWinModalOverlay>
           ) : null}
           </div>
         </div>

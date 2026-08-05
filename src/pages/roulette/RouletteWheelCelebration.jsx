@@ -1,8 +1,8 @@
 import { useEffect, useRef } from "react";
 import {
-  playCoinReceiverLossSound,
   playCoinReceiverWinSound,
 } from "@joker/design-system";
+import { playLossSound } from "../../shared/gameSounds.js";
 import { burstRouletteWinParticles } from "./rouletteWheelCelebration.js";
 import { ROULETTE_WHEEL_CELEBRATION_STYLES } from "./rouletteWheelCelebrationStyles.js";
 
@@ -39,7 +39,7 @@ export function RouletteWheelCelebration({
       return;
     }
 
-    playCoinReceiverLossSound();
+    playLossSound();
   }, [active, variant, soundEnabled]);
 
   const rootStyle = {

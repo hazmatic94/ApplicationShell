@@ -3,6 +3,8 @@ import {
   calculateCoinFlipMultiplier,
   calculateCoinFlipProfit,
   formatCoinFlipMultiplier,
+  getCoinFlipOddsOptions,
+  getCoinFlipProgressionStepCount,
 } from "./coinFlipGameLogic.js";
 
 describe("coinFlipGameLogic", () => {
@@ -22,5 +24,19 @@ describe("coinFlipGameLogic", () => {
 
   it("formats multipliers for display", () => {
     expect(formatCoinFlipMultiplier(1.92)).toBe("1.92x");
+  });
+
+  it("grows progression steps with streak length", () => {
+    expect(getCoinFlipProgressionStepCount(0)).toBe(4);
+    expect(getCoinFlipProgressionStepCount(4)).toBe(5);
+    expect(getCoinFlipProgressionStepCount(7)).toBe(8);
+  });
+
+  it("shows next win payout from current streak", () => {
+    const idleOptions = getCoinFlipOddsOptions(100, 0);
+    expect(idleOptions[0].odds).toBe("192");
+
+    const streakOptions = getCoinFlipOddsOptions(100, 2);
+    expect(streakOptions[0].odds).toBe("768");
   });
 });

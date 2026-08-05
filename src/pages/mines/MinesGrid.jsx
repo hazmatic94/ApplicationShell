@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { WinModalCard } from "@joker/design-system";
 import { GameRoundEndTransition } from "../../shared/gameRoundEnd.jsx";
+import { GameWinModalCard } from "../../shared/GameWinModalCard.jsx";
+import { GameWinModalOverlay } from "../../shared/GameWinModalOverlay.jsx";
 import { formatCurrency } from "../../shared/formatting.js";
 import {
   MINES_PAGE_LOAD_ANIMATION_MS,
@@ -11,6 +12,7 @@ import { getTileContent } from "./minesGameLogic.jsx";
 import { MinesBoardTile } from "./MinesBoardTile.jsx";
 
 export function MinesGrid({
+  balance,
   board,
   cashoutResult,
   columns,
@@ -97,17 +99,16 @@ export function MinesGrid({
           animationKey={`mines-loss-${revealedTiles.join("-")}`}
         />
         {cashoutResult && (
-          <div className="joker-mines-result-card" role="status" aria-live="polite">
-            <WinModalCard
+          <GameWinModalOverlay className="joker-mines-result-card" role="status" aria-live="polite">
+            <GameWinModalCard
               title="Cashout Successful"
               amountWon={formatCurrency(cashoutResult.profit)}
-              currency={null}
-              message="Your winnings from this round have been added to your balance."
-              closeLabel="Close"
+              balance={balance}
+              profit={cashoutResult.profit}
               onCoinsLand={onWinCoinsLand}
               onClose={onResultClose}
             />
-          </div>
+          </GameWinModalOverlay>
         )}
       </div>
     </section>

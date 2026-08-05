@@ -1,7 +1,9 @@
+import { GAME_WIN_MODAL_OVERLAY_STYLES } from "../../shared/GameWinModalOverlay.jsx";
 import { ROULETTE_WIN_CHIP_SIZE } from "./rouletteConfig.js";
 
 export function getRoulettePageStyles(gameRoundEndStyles) {
   return `
+${GAME_WIN_MODAL_OVERLAY_STYLES}
 
   .joker-game-shell--roulette .joker-game-inner-canvas,
   .joker-game-shell--roulette .joker-game-shell-empty-stage,
@@ -27,10 +29,7 @@ export function getRoulettePageStyles(gameRoundEndStyles) {
     box-sizing: border-box;
     overflow: hidden;
     background: var(--joker-black-800);
-    --roulette-betting-divider-offset: calc(
-      var(--spacing-32) + calc(var(--body-12) * var(--text-body-line-height)) +
-        var(--spacing-8) + var(--input-control-height) + var(--spacing-24)
-    );
+    --roulette-betting-divider-offset: var(--betting-panel-bet-field-stack-offset);
     --roulette-sync-streak-rail-height: var(--roulette-betting-divider-offset);
     --roulette-win-streak-chip-size: ${ROULETTE_WIN_CHIP_SIZE}px;
     --roulette-streak-rail-content-height: calc(
@@ -41,6 +40,7 @@ export function getRoulettePageStyles(gameRoundEndStyles) {
     );
     --roulette-celebration-bleed-top: 96px;
     --roulette-win-streak-layer: 8;
+    --roulette-edge-fade-layer: 6;
     --roulette-mobile-odds-layer: 20;
   }
 
@@ -104,7 +104,7 @@ export function getRoulettePageStyles(gameRoundEndStyles) {
     left: 0;
     bottom: 0;
     width: 140px;
-    z-index: 6;
+    z-index: var(--roulette-edge-fade-layer);
     pointer-events: none;
     display: none;
     background: linear-gradient(
@@ -281,18 +281,25 @@ export function getRoulettePageStyles(gameRoundEndStyles) {
     }
   }
 
-  .joker-roulette-result-overlay {
-    position: absolute;
-    inset: 0;
-    z-index: 40;
-    display: grid;
-    place-items: center;
-    padding: var(--spacing-24);
-    pointer-events: none;
+  .joker-roulette-result-overlay .joker-roulette-result-card {
+    animation: joker-roulette-result-pop 420ms var(--ease-standard) both;
   }
 
-  .joker-roulette-result-overlay .joker-roulette-result-card {
-    pointer-events: auto;
+  @keyframes joker-roulette-result-pop {
+    0% {
+      opacity: 0;
+      transform: scale(0.92) translateY(var(--spacing-12));
+    }
+
+    68% {
+      opacity: 1;
+      transform: scale(1.03) translateY(0);
+    }
+
+    100% {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
   }
 
   @media (min-width: 1000px) {
@@ -398,7 +405,6 @@ export function getRoulettePageStyles(gameRoundEndStyles) {
 
     .joker-roulette-game-frame__stage {
       position: relative;
-      z-index: 7;
     }
 
     .joker-roulette-mobile-odds {
@@ -427,13 +433,13 @@ export function getRoulettePageStyles(gameRoundEndStyles) {
       pointer-events: auto;
     }
 
-    .joker-roulette-game-frame .joker-roulette-wheel-edge-fade:not(.joker-roulette-wheel-edge-fade--bottom) {
-      display: none;
+    .joker-roulette-game-frame__stage .joker-roulette-wheel-edge-fade:not(.joker-roulette-wheel-edge-fade--bottom) {
+      display: block;
     }
 
-    .joker-roulette-game-frame .joker-roulette-wheel-edge-fade--bottom {
+    .joker-roulette-game-frame__stage .joker-roulette-wheel-edge-fade--bottom {
       display: block;
-      z-index: 5;
+      z-index: var(--roulette-edge-fade-layer);
     }
   }
 ${gameRoundEndStyles}

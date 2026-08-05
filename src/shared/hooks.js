@@ -33,9 +33,12 @@ export function useGameShellBettingPanelLayout() {
 
 export function useDeferredWinCredit(setBalance) {
   const pendingWinCreditRef = useRef(0);
+  const [pendingWinCredit, setPendingWinCredit] = useState(0);
 
   const deferWinCredit = (amount) => {
-    pendingWinCreditRef.current = amount;
+    const nextAmount = Number(amount) || 0;
+    pendingWinCreditRef.current = nextAmount;
+    setPendingWinCredit(nextAmount);
   };
 
   const applyDeferredWinCredit = () => {
@@ -45,10 +48,18 @@ export function useDeferredWinCredit(setBalance) {
     }
 
     pendingWinCreditRef.current = 0;
+    setPendingWinCredit(0);
     setBalance((currentBalance) => currentBalance + amount);
   };
 
-  return { deferWinCredit, applyDeferredWinCredit };
+  const getDisplayBalance = (balance) => Number(balance) + pendingWinCredit;
+
+  return {
+    deferWinCredit,
+    applyDeferredWinCredit,
+    pendingWinCredit,
+    getDisplayBalance,
+  };
 }
 
 export function useOpenGameMenu(openMenuLabel) {

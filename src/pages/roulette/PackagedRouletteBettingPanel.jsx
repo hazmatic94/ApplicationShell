@@ -1,5 +1,5 @@
+import { playPlaceBetSound } from "../../shared/gameSounds.js";
 import {
-  playButtonClickSound,
   RouletteBettingPanel as JokerRouletteBettingPanel,
 } from "@joker/design-system";
 
@@ -30,14 +30,13 @@ export function PackagedRouletteBettingPanel({
   function handlePlaceBet(event) {
     if (isSpinning) return;
 
-    playButtonClickSound();
+    playPlaceBetSound();
     onPlaceBet?.(event);
   }
 
   function handleCashout(event) {
     if (isSpinning) return;
 
-    playButtonClickSound();
     onCashout?.(event);
   }
 

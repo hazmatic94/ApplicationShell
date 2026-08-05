@@ -1,14 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { GameShell, isValidFourDNumber, normalizeFourDNumber } from "@joker/design-system";
-import minesCashoutSound from "../../../assets/mines-cashout.mp3?url";
-import minesPlaceBetSound from "../../../assets/mines-placebet.mp3?url";
 import {
   GAME_ROUND_END_RESET_MS,
   GAME_ROUND_END_STYLES,
 } from "../../shared/gameRoundEnd.jsx";
 import { formatBalance } from "../../shared/formatting.js";
+import { playCashoutSound, playLossSound, playPlaceBetSound } from "../../shared/gameSounds.js";
 import { useDeferredWinCredit, useGameShellBettingPanelLayout, useOpenGameMenu } from "../../shared/hooks.js";
-import { playSound } from "../../shared/sounds.js";
 import { calculateMultiplier } from "../mines/minesGameLogic.jsx";
 import { FourDMinesGrid } from "./FourDMinesGrid.jsx";
 import { PackagedFourDMinesBettingPanel } from "./PackagedFourDMinesBettingPanel.jsx";
@@ -40,7 +38,7 @@ export function FourDMinesPage({ onGameChange }) {
   const [bettingPanelKey, setBettingPanelKey] = useState(0);
   const [activeFourDNumber, setActiveFourDNumber] = useState("");
   const [balance, setBalance] = useState(150000);
-  const { deferWinCredit, applyDeferredWinCredit } = useDeferredWinCredit(setBalance);
+  const { deferWinCredit, applyDeferredWinCredit, getDisplayBalance } = useDeferredWinCredit(setBalance);
   const [board, setBoard] = useState([]);
   const [message, setMessage] = useState("");
   const [mines, setMines] = useState(String(minFourDMinesAmount));
@@ -105,6 +103,7 @@ export function FourDMinesPage({ onGameChange }) {
     setLossResult(false);
 
     if (shouldResetCashout) {
+      applyDeferredWinCredit();
       dismissCashoutResult();
       return;
     }
@@ -130,6 +129,7 @@ export function FourDMinesPage({ onGameChange }) {
       setRoundStatus("lost");
       setLossResult(true);
       setMessage("");
+      playLossSound();
 
       clearResultTimer();
       resultResetTimeout.current = window.setTimeout(
@@ -147,11 +147,13 @@ export function FourDMinesPage({ onGameChange }) {
 
   function handleBetAction() {
     if (roundStatus === "cashedOut") {
-      return;
+      clearResultTimer();
+      applyDeferredWinCredit();
+      dismissCashoutResult();
     }
 
     if (gameInPlay) {
-      playSound(minesCashoutSound);
+      playCashoutSound();
       deferWinCredit(currentProfit);
       setCashoutResult({
         multiplier,
@@ -163,7 +165,6 @@ export function FourDMinesPage({ onGameChange }) {
       setMessage("");
 
       clearResultTimer();
-      resultResetTimeout.current = window.setTimeout(dismissCashoutResult, 3000);
       return;
     }
 
@@ -179,7 +180,7 @@ export function FourDMinesPage({ onGameChange }) {
 
     const normalizedFourDNumber = normalizeFourDNumber(fourDNumber);
     const nextBoard = createFourDRoundBoard(activeMineCount, normalizedFourDNumber);
-    playSound(minesPlaceBetSound);
+    playPlaceBetSound();
 
     clearResultTimer();
 
@@ -198,7 +199,7 @@ export function FourDMinesPage({ onGameChange }) {
     <>
       <style>{getFourDMinesPageStyles(GAME_ROUND_END_STYLES)}</style>
       <GameShell
-        balance={formatBalance(balance)}
+        balance={formatBalance(getDisplayBalance(balance))}
         className="joker-game-shell--4d-mines"
         defaultValue={fourDMinesNavigationPreset.defaultValue}
         game={fourDMinesNavigationPreset.game}
@@ -224,6 +225,7 @@ export function FourDMinesPage({ onGameChange }) {
         }
       >
         <FourDMinesGrid
+          balance={balance}
           board={board}
           cashoutResult={cashoutResult}
           columns={fourDMinesGrid.columns}

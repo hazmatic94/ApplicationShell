@@ -1,5 +1,8 @@
+import { GAME_WIN_MODAL_OVERLAY_STYLES } from "../../shared/GameWinModalOverlay.jsx";
+
 export function getHiloPageStyles(gameRoundEndStyles) {
   return `
+${GAME_WIN_MODAL_OVERLAY_STYLES}
 .joker-game-shell .joker-navigation-body {
   max-width: none;
   justify-self: center;
@@ -81,10 +84,7 @@ export function getHiloPageStyles(gameRoundEndStyles) {
   height: 100%;
   min-height: 0;
   box-sizing: border-box;
-  --hilo-betting-divider-offset: calc(
-    var(--spacing-32) + calc(var(--body-12) * var(--text-body-line-height)) +
-      var(--spacing-8) + var(--input-control-height) + var(--spacing-24)
-  );
+  --hilo-betting-divider-offset: var(--betting-panel-bet-field-stack-offset);
   --hilo-sync-history-rail-height: var(--hilo-betting-divider-offset);
   --hilo-sync-divider-band: calc(
     var(--hilo-betting-divider-offset) + var(--border-width-default)
@@ -485,7 +485,7 @@ export function getHiloPageStyles(gameRoundEndStyles) {
   border-radius: 0 0 20px 20px;
   background: var(--joker-black-600);
   color: var(--joker-white-50);
-  font-family: var(--font-display);
+  font-family: var(--font-heading);
   font-size: 20px;
   font-weight: 500;
   letter-spacing: 0.06em;
@@ -644,21 +644,8 @@ export function getHiloPageStyles(gameRoundEndStyles) {
   text-align: center;
 }
 
-.joker-hilo-result-card {
-  position: absolute;
-  inset: 0;
-  z-index: 40;
-  display: grid;
-  place-items: center;
-  padding: var(--spacing-24);
-  pointer-events: auto;
-  transform: scale(0.96);
-  animation: joker-hilo-result-pop 420ms var(--ease-standard) both;
-}
-
 .joker-hilo-result-card > * {
-  max-width: min(500px, calc(100% - var(--spacing-48)));
-  box-shadow: 0 var(--spacing-24) var(--spacing-64) rgb(0 0 0 / 0.42);
+  animation: joker-hilo-result-pop 420ms var(--ease-standard) both;
 }
 
 @keyframes joker-hilo-result-pop {

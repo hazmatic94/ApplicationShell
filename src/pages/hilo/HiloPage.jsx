@@ -2,14 +2,13 @@ import { useEffect, useRef, useState } from "react";
 import { GameShell } from "@joker/design-system";
 import hiloCardDrawSound from "../../../assets/hilo-card-draw.mp3?url";
 import hiloNextSound from "../../../assets/hilo-next.mp3?url";
-import minesBombSound from "../../../assets/mines-bomb.mp3?url";
-import minesCashoutSound from "../../../assets/mines-cashout.mp3?url";
-import minesPlaceBetSound from "../../../assets/mines-placebet.mp3?url";
 import {
   GAME_ROUND_END_RESET_MS,
   GAME_ROUND_END_STYLES,
 } from "../../shared/gameRoundEnd.jsx";
 import { formatBalance } from "../../shared/formatting.js";
+import { playCashoutSound, playLossSound, playPlaceBetSound } from "../../shared/gameSounds.js";
+import { GameWinModalCard } from "../../shared/GameWinModalCard.jsx";
 import { useDeferredWinCredit, useGameShellBettingPanelLayout, useOpenGameMenu } from "../../shared/hooks.js";
 import { playSound } from "../../shared/sounds.js";
 import { HiloStage } from "./HiloStage.jsx";
@@ -32,7 +31,7 @@ import { getHiloPageStyles } from "./hiloPageStyles.js";
 export function HiloPage({ onGameChange }) {
   const [betAmount, setBetAmount] = useState("");
   const [balance, setBalance] = useState(150000);
-  const { deferWinCredit, applyDeferredWinCredit } = useDeferredWinCredit(setBalance);
+  const { deferWinCredit, applyDeferredWinCredit, getDisplayBalance } = useDeferredWinCredit(setBalance);
   const [currentCard, setCurrentCard] = useState(() => getInitialHiloPreview().currentCard);
   const [deck, setDeck] = useState([]);
   const [history, setHistory] = useState(() => getInitialHiloPreview().history);
@@ -41,8 +40,6 @@ export function HiloPage({ onGameChange }) {
   const [pendingPrediction, setPendingPrediction] = useState("");
   const [skipAvailable, setSkipAvailable] = useState(true);
   const [hiloWinModal, setHiloWinModal] = useState(null);
-  const hiloWinModalTimeoutRef = useRef(null);
-  const hiloWinModalResetRef = useRef(false);
   const hiloRoundResetTimeoutRef = useRef(null);
   const hiloHistoryLengthRef = useRef(history.length);
 
@@ -66,10 +63,6 @@ export function HiloPage({ onGameChange }) {
 
   useEffect(() => {
     return () => {
-      if (hiloWinModalTimeoutRef.current) {
-        window.clearTimeout(hiloWinModalTimeoutRef.current);
-      }
-
       if (hiloRoundResetTimeoutRef.current) {
         window.clearTimeout(hiloRoundResetTimeoutRef.current);
       }
@@ -96,13 +89,6 @@ export function HiloPage({ onGameChange }) {
     }
   }
 
-  function clearHiloWinModalTimer() {
-    if (hiloWinModalTimeoutRef.current) {
-      window.clearTimeout(hiloWinModalTimeoutRef.current);
-      hiloWinModalTimeoutRef.current = null;
-    }
-  }
-
   function resetHiloRound() {
     clearHiloRoundResetTimer();
     const preview = createHiloPreviewState();
@@ -114,30 +100,25 @@ export function HiloPage({ onGameChange }) {
     setPendingPrediction("");
     setSkipAvailable(true);
     setHiloWinModal(null);
-    hiloWinModalResetRef.current = false;
   }
 
   function scheduleHiloRoundReset() {
     clearHiloRoundResetTimer();
     hiloRoundResetTimeoutRef.current = window.setTimeout(() => {
       hiloRoundResetTimeoutRef.current = null;
-      clearHiloWinModalTimer();
       resetHiloRound();
     }, GAME_ROUND_END_RESET_MS);
   }
 
   function closeHiloWinModal() {
     clearHiloRoundResetTimer();
-    clearHiloWinModalTimer();
+    applyDeferredWinCredit();
     setHiloWinModal(null);
-    hiloWinModalResetRef.current = false;
     resetHiloRound();
   }
 
   function showHiloWinModal({ title, profit }) {
     setHiloWinModal({ title, profit });
-    clearHiloWinModalTimer();
-    scheduleHiloRoundReset();
   }
 
   function handleHiloWinModalClose() {
@@ -171,12 +152,10 @@ export function HiloPage({ onGameChange }) {
       return;
     }
 
-    clearHiloWinModalTimer();
     clearHiloRoundResetTimer();
     setHiloWinModal(null);
-    hiloWinModalResetRef.current = false;
 
-    playSound(minesPlaceBetSound);
+    playPlaceBetSound();
 
     const nextRound = createHiloRound(currentCard);
 
@@ -206,7 +185,7 @@ export function HiloPage({ onGameChange }) {
 
         if (result.roundStatus === "win") {
           deferWinCredit(result.winProfit);
-          playSound(minesCashoutSound);
+          playCashoutSound();
           showHiloWinModal({
             title: "You Won",
             profit: result.winProfit,
@@ -215,7 +194,7 @@ export function HiloPage({ onGameChange }) {
         }
 
         if (result.roundStatus === "loss") {
-          playSound(minesBombSound);
+          playLossSound();
           scheduleHiloRoundReset();
           return;
         }
@@ -238,7 +217,7 @@ export function HiloPage({ onGameChange }) {
 
     deferWinCredit(currentProfit);
     setRoundStatus("cash-out");
-    playSound(minesCashoutSound);
+    playCashoutSound();
     showHiloWinModal({
       title: "Cashout Successful",
       profit: currentProfit,
@@ -273,7 +252,7 @@ export function HiloPage({ onGameChange }) {
 
     if (result.roundStatus === "win") {
       deferWinCredit(result.winProfit);
-      playSound(minesCashoutSound);
+      playCashoutSound();
       showHiloWinModal({
         title: "You Won",
         profit: result.winProfit,
@@ -282,7 +261,7 @@ export function HiloPage({ onGameChange }) {
     }
 
     if (result.roundStatus === "loss") {
-      playSound(minesBombSound);
+      playLossSound();
       scheduleHiloRoundReset();
     }
   }
@@ -318,7 +297,7 @@ export function HiloPage({ onGameChange }) {
     if (remainingDeck.length === 0 && currentProfit > 0) {
       deferWinCredit(currentProfit);
       setRoundStatus("win");
-      playSound(minesCashoutSound);
+      playCashoutSound();
       showHiloWinModal({
         title: "You Won",
         profit: currentProfit,
@@ -330,7 +309,7 @@ export function HiloPage({ onGameChange }) {
     <>
       <style>{getHiloPageStyles(GAME_ROUND_END_STYLES)}</style>
       <GameShell
-        balance={formatBalance(balance)}
+        balance={formatBalance(getDisplayBalance(balance))}
         className="joker-game-shell--hilo"
         defaultValue={hiloNavigationPreset.defaultValue}
         game={hiloNavigationPreset.game}
@@ -369,6 +348,7 @@ export function HiloPage({ onGameChange }) {
           onHigherSame={() => handleHiloChoiceSelection("higher")}
           onLowerSame={() => handleHiloChoiceSelection("lower")}
           onSkipCard={handleSkipCard}
+          balance={balance}
           onWinModalClose={handleHiloWinModalClose}
           onWinCoinsLand={applyDeferredWinCredit}
           pendingPrediction={pendingPrediction}

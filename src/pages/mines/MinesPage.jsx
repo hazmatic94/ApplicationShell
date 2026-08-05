@@ -1,15 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { GameShell } from "@joker/design-system";
-import minesBombSound from "../../../assets/mines-bomb.mp3?url";
-import minesCashoutSound from "../../../assets/mines-cashout.mp3?url";
-import minesPlaceBetSound from "../../../assets/mines-placebet.mp3?url";
 import {
   GAME_ROUND_END_RESET_MS,
   GAME_ROUND_END_STYLES,
 } from "../../shared/gameRoundEnd.jsx";
 import { formatBalance } from "../../shared/formatting.js";
+import { playCashoutSound, playLossSound, playPlaceBetSound } from "../../shared/gameSounds.js";
 import { useDeferredWinCredit, useGameShellBettingPanelLayout, useOpenGameMenu } from "../../shared/hooks.js";
-import { playSound } from "../../shared/sounds.js";
 import { MinesGrid } from "./MinesGrid.jsx";
 import { PackagedMinesBettingPanel } from "./PackagedMinesBettingPanel.jsx";
 import {
@@ -43,7 +40,7 @@ export function MinesPage({ onGameChange }) {
   const [bettingMode, setBettingMode] = useState("manual");
   const [betAmount, setBetAmount] = useState("");
   const [balance, setBalance] = useState(150000);
-  const { deferWinCredit, applyDeferredWinCredit } = useDeferredWinCredit(setBalance);
+  const { deferWinCredit, applyDeferredWinCredit, getDisplayBalance } = useDeferredWinCredit(setBalance);
   const [board, setBoard] = useState([]);
   const [message, setMessage] = useState("");
   const [mines, setMines] = useState(String(minTileAmount));
@@ -119,6 +116,7 @@ export function MinesPage({ onGameChange }) {
     setLossResult(false);
 
     if (shouldResetCashout) {
+      applyDeferredWinCredit();
       dismissCashoutResult();
       return;
     }
@@ -157,6 +155,7 @@ export function MinesPage({ onGameChange }) {
       setShieldActive(false);
       setLossResult(true);
       setMessage("");
+      playLossSound();
 
       clearResultTimer();
       resultResetTimeout.current = window.setTimeout(
@@ -172,37 +171,14 @@ export function MinesPage({ onGameChange }) {
     }, 1500);
   }
 
-  function handleBetAction() {
-    if (roundStatus === "cashedOut") {
-      return;
-    }
-
-    if (gameInPlay) {
-      playSound(minesCashoutSound);
-      deferWinCredit(currentProfit);
-      setCashoutResult({
-        multiplier,
-        profit: currentProfit,
-      });
-      setRoundStatus("cashedOut");
-      setFreshRevealedTiles([]);
-      setShieldActive(false);
-      setShieldUsed(false);
-      setLossResult(false);
-      setMessage("");
-
-      clearResultTimer();
-      resultResetTimeout.current = window.setTimeout(dismissCashoutResult, 3000);
-      return;
-    }
-
-    if (numericBetAmount <= 0 || numericBetAmount > balance) {
+  function startNewRound(availableBalance = getDisplayBalance(balance)) {
+    if (numericBetAmount <= 0 || numericBetAmount > availableBalance) {
       setMessage("Enter a valid bet amount");
-      return;
+      return false;
     }
 
     const nextBoard = createRoundBoard(activeMineCount, mineTiles);
-    playSound(minesPlaceBetSound);
+    playPlaceBetSound();
 
     clearResultTimer();
 
@@ -216,13 +192,45 @@ export function MinesPage({ onGameChange }) {
     setCashoutResult(null);
     setLossResult(false);
     setMessage("");
+    return true;
+  }
+
+  function handleBetAction() {
+    if (roundStatus === "cashedOut") {
+      clearResultTimer();
+      const availableBalance = getDisplayBalance(balance);
+      applyDeferredWinCredit();
+      dismissCashoutResult();
+      startNewRound(availableBalance);
+      return;
+    }
+
+    if (gameInPlay) {
+      playCashoutSound();
+      deferWinCredit(currentProfit);
+      setCashoutResult({
+        multiplier,
+        profit: currentProfit,
+      });
+      setRoundStatus("cashedOut");
+      setFreshRevealedTiles([]);
+      setShieldActive(false);
+      setShieldUsed(false);
+      setLossResult(false);
+      setMessage("");
+
+      clearResultTimer();
+      return;
+    }
+
+    startNewRound();
   }
 
   return (
     <>
       <style>{getMinesPageStyles(GAME_ROUND_END_STYLES)}</style>
       <GameShell
-        balance={formatBalance(balance)}
+        balance={formatBalance(getDisplayBalance(balance))}
         className="joker-game-shell--mines"
         defaultValue={minesNavigationPreset.defaultValue}
         game={minesNavigationPreset.game}
@@ -249,6 +257,7 @@ export function MinesPage({ onGameChange }) {
         }
       >
         <MinesGrid
+          balance={balance}
           board={board}
           cashoutResult={cashoutResult}
           freshRevealedTiles={freshRevealedTiles}

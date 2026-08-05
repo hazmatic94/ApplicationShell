@@ -23,12 +23,16 @@ export function formatCoinFlipMultiplier(multiplier) {
   return `${multiplier.toFixed(2)}x`;
 }
 
-export function getCoinFlipOddsOptions(betAmount, roundsToWin = String(coinFlipMaxWins)) {
-  const maxRounds = Number(roundsToWin) || coinFlipMaxWins;
-  const targetMultiplier = calculateCoinFlipMultiplier(maxRounds);
-  const targetProfit = calculateCoinFlipProfit(betAmount, maxRounds);
+export function getCoinFlipProgressionStepCount(streakWinCount = 0) {
+  return Math.max(coinFlipMaxWins, streakWinCount + 1);
+}
+
+export function getCoinFlipOddsOptions(betAmount, streakWinCount = 0) {
+  const stake = Number(betAmount) || 0;
+  const nextWinCount = streakWinCount + 1;
+  const nextMultiplier = calculateCoinFlipMultiplier(nextWinCount);
   const oddsLabel =
-    Number(betAmount) > 0 ? formatJkcAmount(targetProfit) : formatCoinFlipMultiplier(targetMultiplier);
+    stake > 0 ? formatJkcAmount(calculateCoinFlipProfit(betAmount, nextWinCount)) : formatCoinFlipMultiplier(nextMultiplier);
 
   return [
     { value: "heads", label: "Bet Heads", sideIcon: "heads", odds: oddsLabel },
