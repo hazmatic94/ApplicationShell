@@ -24,10 +24,20 @@ export function MobileShellScrollFix() {
           width: 100%;
           height: 100dvh;
           min-height: 100vh;
+          grid-template-rows: minmax(0, 1fr);
         }
 
-        .joker-game-shell > .joker-navigation-shell,
-        .joker-game-shell .joker-navigation,
+        .joker-game-shell > .joker-navigation-shell {
+          min-height: 0;
+          height: 100%;
+        }
+
+        .joker-game-shell .joker-navigation {
+          min-height: 0;
+          height: 100%;
+          grid-template-rows: auto minmax(0, 1fr);
+        }
+
         .joker-game-shell .joker-navigation-body,
         .joker-game-shell .joker-navigation-content {
           min-height: 0;
@@ -52,10 +62,11 @@ export function MobileShellScrollFix() {
 
         .joker-game-shell .joker-page-wrapper > .joker-game-inner-frame,
         .joker-game-shell .joker-page-wrapper > .joker-game-inner {
-          flex: 1 1 auto;
+          flex: 1 1 0;
           width: 100%;
           height: 100%;
           min-height: 0;
+          align-self: stretch;
         }
 
         .joker-game-shell .joker-game-inner,
