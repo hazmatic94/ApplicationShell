@@ -3,7 +3,7 @@ import { fileURLToPath } from "node:url";
 import { defineConfig } from "vite";
 
 const designSystemRoot = fileURLToPath(
-  new URL("../../Documents/Joker Ds", import.meta.url),
+  new URL("./node_modules/@joker/design-system", import.meta.url),
 );
 
 export default defineConfig({
