@@ -1,3 +1,4 @@
+import fs from "node:fs";
 import react from "@vitejs/plugin-react";
 import { fileURLToPath } from "node:url";
 import { defineConfig } from "vite";
@@ -5,12 +6,16 @@ import { defineConfig } from "vite";
 const designSystemRoot = fileURLToPath(
   new URL("./node_modules/@joker/design-system", import.meta.url),
 );
+const designSystemResolved = fs.realpathSync(designSystemRoot);
 
 export default defineConfig({
   plugins: [react()],
   server: {
     fs: {
-      allow: [".."],
+      allow: ["..", designSystemResolved],
+    },
+    watch: {
+      ignored: ["!**/node_modules/@joker/design-system/**"],
     },
   },
   optimizeDeps: {
