@@ -10,7 +10,7 @@
     "sync:ds": "npm install github:hazmatic94/Joker-DS#main && rm -rf node_modules/.vite"
   },
   "dependencies": {
-    "@joker/design-system": "github:hazmatic94/Joker-DS#main",
+    "@joker/design-system": "git+https://github.com/hazmatic94/Joker-DS.git#main",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
