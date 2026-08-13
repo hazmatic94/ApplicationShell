@@ -210,6 +210,22 @@ export function MobileShellScrollFix() {
         .joker-game-shell .joker-game-shell-empty-stage > * {
           min-height: 100%;
         }
+
+        .joker-hilo-betting-panel.is-mobile > .joker-betting-main,
+        .joker-navigation-mobile-content
+          .joker-hilo-betting-panel
+          > .joker-betting-main,
+        .joker-mobile-game-betting
+          .joker-hilo-betting-panel
+          > .joker-betting-main {
+          order: 3;
+        }
+
+        .joker-navigation-mobile-content
+          .joker-hilo-betting-panel
+          .joker-betting-main {
+          gap: var(--spacing-16);
+        }
       `}
     </style>
   );

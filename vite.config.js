@@ -20,8 +20,10 @@ export default defineConfig({
   },
   optimizeDeps: {
     exclude: ["@joker/design-system"],
+    include: ["react", "react-dom", "react/jsx-runtime", "react/jsx-dev-runtime"],
   },
   resolve: {
+    dedupe: ["react", "react-dom"],
     alias: [
       {
         find: "@joker/design-system/styles.css",
