@@ -10,7 +10,6 @@ export function PackagedHiloBettingPanel({ layout = "desktop" }) {
   const [prediction, setPrediction] = useState("");
   const isMobileLayout = layout === "mobile";
   const hasBetAmount = String(betAmount).trim().length > 0;
-  const oddsDisabled = !isMobileLayout && !hasBetAmount;
 
   function handleBetAmountChange(event) {
     const nextValue = event.currentTarget.value.replace(/[^\d.]/g, "");
@@ -44,7 +43,6 @@ export function PackagedHiloBettingPanel({ layout = "desktop" }) {
       {isMobileLayout ? (
         <MobileHiLoOddsGroup
           className="joker-hilo-betting-actions"
-          disabled={oddsDisabled}
           value={prediction}
           onValueChange={setPrediction}
         />
@@ -57,7 +55,6 @@ export function PackagedHiloBettingPanel({ layout = "desktop" }) {
           showDirection
           value={prediction}
           onValueChange={setPrediction}
-          disabled={oddsDisabled}
           options={[
             {
               value: "lower",
